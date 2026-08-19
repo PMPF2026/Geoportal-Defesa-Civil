@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "name": "Geoportal-Defesa-Civil",
-  "public": true,
   "routes": [
     {
       "src": "/(.*\\.geojson)",
