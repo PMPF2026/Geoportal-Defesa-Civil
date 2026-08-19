@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Defesa Civil - WebGIS Municipal Passo Fundo/RS</title>
+  <meta name="description" content="Portal Geoespacial e Sistema de Gestão de Riscos e Apoio à Tomada de Decisão - Defesa Civil de Passo Fundo/RS">
+
+  <!-- Favicon Oficial Defesa Civil Passo Fundo -->
+  <link rel="icon" type="image/jpeg" href="assets/logo-defesa-civil.jpg">
+  <link rel="shortcut icon" type="image/jpeg" href="assets/logo-defesa-civil.jpg">
+  <link rel="apple-touch-icon" href="assets/logo-defesa-civil.jpg">
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+  <!-- OpenLayers 10 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.3.1/ol.css">
+
+  <!-- Lucide Static Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/font/lucide.css">
+
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/map-controls.css">
+  <link rel="stylesheet" href="css/popup.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ================= HEADER INSTITUCIONAL ================= -->
+    <header class="app-header">
+      <div class="header-brand" id="header-brand" title="Prefeitura de Passo Fundo - Defesa Civil">
+        <img src="assets/logo-defesa-civil.jpg" alt="Defesa Civil Passo Fundo" class="header-logo">
+        <div class="header-brand-text">
+          <span class="header-inst-title">PREFEITURA DE PASSO FUNDO</span>
+          <span class="header-main-title">DEFESA CIVIL</span>
+          <span class="header-sub-title">PORTAL GEOESPACIAL / WEBGIS</span>
+        </div>
+      </div>
+
+      <div class="header-tools">
+        <div class="badge-alert" title="Decreto Estadual de Emergência 57.600/2024 - Mapeamento ADA 03/09/2024">
+          <span class="pulse-dot"></span>
+          <span>Enchente 2024 (ADA)</span>
+        </div>
+
+        <button class="header-btn" id="btn-import-layer" title="Adicionar arquivo GeoJSON ou KML local">
+          <i class="lucide-upload"></i>
+          <span>Importar Camada</span>
+        </button>
+        <input type="file" id="input-import-geojson" accept=".geojson,.json,.kml" style="display: none;" />
+
+        <button class="header-btn" id="btn-open-dashboard-modal" title="Abrir Painel Estratégico de Indicadores">
+          <i class="lucide-layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button class="header-btn" id="btn-export-map-png" title="Exportar imagem do mapa em alta resolução">
+          <i class="lucide-camera"></i>
+          <span>Exportar Mapa</span>
+        </button>
+
+        <button class="header-btn primary" id="btn-generate-report" title="Gerar Boletim de Situação da Defesa Civil">
+          <i class="lucide-file-text"></i>
+          <span>Boletim / Relatório</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= MAIN CONTAINER ================= -->
+    <main class="main-container">
+      <!-- SIDEBAR RETRÁTIL -->
+      <aside class="app-sidebar" id="sidebar">
+        <!-- Floating Sidebar Toggle Button -->
+        <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Recolher / Expandir Painel (Atalho: Esc)">
+          <i class="lucide-chevron-left"></i>
+        </button>
+
+        <!-- Search Box with Autocomplete -->
+        <div class="sidebar-search-container">
+          <div class="search-input-wrapper">
+            <i class="lucide-search search-icon"></i>
+            <input 
+              type="text" 
+              id="search-input" 
+              class="search-input" 
+              placeholder="Buscar bairro, rua, rodovia ou coordenadas..." 
+              autocomplete="off"
+            />
+            <button class="search-clear-btn" id="search-clear-btn" title="Limpar busca">&times;</button>
+          </div>
+          <!-- Autocomplete Dropdown -->
+          <div class="search-results-dropdown" id="search-results"></div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="sidebar-tabs">
+          <button class="sidebar-tab-btn active" data-tab="camadas" title="Gerenciador de Camadas Temáticas">
+            <i class="lucide-layers"></i>
+            <span>Camadas</span>
+          </button>
+          <button class="sidebar-tab-btn" data-tab="legenda" title="Legenda Cartográfica Dinâmica">
+            <i class="lucide-list"></i>
+            <span>Legenda</span>
+          </button>
+          <button class="sidebar-tab-btn" data-tab="mapas-base" title="Provedores de Mapas-Base">
+            <i class="lucide-map"></i>
+            <span>Mapas Base</span>
+          </button>
+          <button class="sidebar-tab-btn" data-tab="analise" title="Ferramentas de Análise Espacial">
+            <i class="lucide-shield-alert"></i>
+            <span>Análise</span>
+          </button>
+          <button class="sidebar-tab-btn" data-tab="dashboard" title="Indicadores e Estatísticas">
+            <i class="lucide-bar-chart-2"></i>
+            <span>Métricas</span>
+          </button>
+          <button class="sidebar-tab-btn" data-tab="sobre" title="Informações e Metadados">
+            <i class="lucide-info"></i>
+            <span>Sobre</span>
+          </button>
+        </nav>
+
+        <!-- Tab Content Panels -->
+        <div class="sidebar-content">
+          <!-- TAB 1: CAMADAS -->
+          <div class="tab-panel active" id="tab-camadas">
+            <!-- Operational Presets -->
+            <div class="presets-section">
+              <div class="presets-title">Cenários Operacionais Rápidos</div>
+              <div class="presets-grid" id="preset-container"></div>
+            </div>
+
+            <!-- Layer Filter Search Input -->
+            <div class="layer-filter-wrapper">
+              <i class="lucide-filter layer-filter-icon"></i>
+              <input type="text" id="layer-filter-input" class="layer-filter-input" placeholder="Filtrar camadas pelo nome..." />
+            </div>
+
+            <div class="layer-toolbar">
+              <span class="layer-toolbar-title">Camadas Geoespaciais (16)</span>
+              <div class="layer-toolbar-actions">
+                <button class="mini-btn" id="btn-expand-all-layers" title="Expandir Todos os Grupos">
+                  <i class="lucide-chevrons-down"></i> Expandir
+                </button>
+                <button class="mini-btn" id="btn-collapse-all-layers" title="Recolher Todos os Grupos">
+                  <i class="lucide-chevrons-up"></i> Recolher
+                </button>
+                <button class="mini-btn" id="btn-turn-all-off" title="Ocultar Todas as Camadas">
+                  <i class="lucide-eye-off"></i> Ocultar
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Layer Groups Accordions -->
+            <div id="layer-tree-container"></div>
+          </div>
+
+          <!-- TAB 2: LEGENDA -->
+          <div class="tab-panel" id="tab-legenda">
+            <div class="layer-toolbar">
+              <span class="layer-toolbar-title">Legenda Cartográfica Dinâmica</span>
+            </div>
+            <div id="legend-container"></div>
+          </div>
+
+          <!-- TAB 3: MAPAS-BASE -->
+          <div class="tab-panel" id="tab-mapas-base">
+            <div class="layer-toolbar">
+              <span class="layer-toolbar-title">Provedores de Mapas-Base</span>
+            </div>
+            <div class="basemap-grid" id="basemap-grid"></div>
+          </div>
+
+          <!-- TAB 4: ANÁLISE ESPACIAL -->
+          <div class="tab-panel" id="tab-analise">
+            <div class="layer-toolbar">
+              <span class="layer-toolbar-title">Módulo de Análise Espacial</span>
+            </div>
+
+            <!-- Tool 1: Geração de Buffer Dinâmico -->
+            <div class="analysis-tool-card">
+              <div class="analysis-tool-title">
+                <i class="lucide-circle-dot" style="color:var(--dc-orange-primary);"></i>
+                <span>Geração de Buffer de Segurança</span>
+              </div>
+              <p class="analysis-tool-desc">
+                Cria uma zona de amortecimento/segurança métrica no entorno dos elementos da camada selecionada.
+              </p>
+              
+              <div class="analysis-control-group">
+                <label class="analysis-label">Camada Alvo:</label>
+                <select id="analysis-buffer-layer" class="analysis-select">
+                  <option value="areas_enchente_2024">Áreas de Enchente 2024</option>
+                  <option value="malha_hidrica">Malha Hídrica (Cursos D'água)</option>
+                  <option value="ferrovia">Ferrovia (Linha Férrea)</option>
+                  <option value="rodovia_federal">Rodovia Federal (BR)</option>
+                  <option value="rodovia_estadual">Rodovia Estadual (ERS)</option>
+                </select>
+              </div>
+
+              <div class="analysis-control-group">
+                <label class="analysis-label">Faixas Rápidas de APP (Cursos D'água - Lei 12.651/2012):</label>
+                <div style="display:flex; gap:6px; margin-top:2px;">
+                  <button class="mini-btn app-preset-btn" data-radius="30" title="Faixa mínima de APP para rios até 10m de largura">30m APP</button>
+                  <button class="mini-btn app-preset-btn" data-radius="50" title="Faixa de APP para rios de 10m a 50m">50m APP</button>
+                  <button class="mini-btn app-preset-btn" data-radius="100" title="Faixa de APP para rios de 50m a 200m">100m APP</button>
+                </div>
+              </div>
+
+              <div class="analysis-control-group">
+                <label class="analysis-label">Raio do Buffer Personalizado (metros):</label>
+                <input type="number" id="analysis-buffer-radius" class="analysis-input" value="100" min="10" max="5000" step="50" />
+              </div>
+
+              <div style="display:flex; gap:6px;">
+                <button class="analysis-btn" id="btn-run-buffer">
+                  <i class="lucide-play"></i> Gerar Buffer
+                </button>
+                <button class="analysis-btn secondary" id="btn-clear-analysis" style="width: auto;">
+                  <i class="lucide-trash-2"></i> Limpar
+                </button>
+              </div>
+
+              <div class="analysis-results-box" id="analysis-buffer-results"></div>
+            </div>
+
+            <!-- Tool 2: Cruzamento de Enchentes com População -->
+            <div class="analysis-tool-card">
+              <div class="analysis-tool-title">
+                <i class="lucide-alert-triangle" style="color:var(--dc-hazard-red);"></i>
+                <span>Diagnóstico de Impacto - Enchente 2024</span>
+              </div>
+              <p class="analysis-tool-desc">
+                Cruza a mancha de inundação oficial de 2024 com setores censitários e bairros para calcular moradores e domicílios potencialmente expostos ao risco hidrológico.
+              </p>
+              <button class="analysis-btn" id="btn-run-flood-intersect" style="background:var(--dc-hazard-red); border-color:#dc2626;">
+                <i class="lucide-crosshair"></i> Processar Diagnóstico de Impacto
+              </button>
+
+              <div class="analysis-results-box" id="analysis-flood-results"></div>
+            </div>
+          </div>
+
+          <!-- TAB 5: DASHBOARD / MÉTRICAS -->
+          <div class="tab-panel" id="tab-dashboard">
+            <div class="layer-toolbar">
+              <span class="layer-toolbar-title">Indicadores Territoriais Oficiais</span>
+              <button class="mini-btn" id="btn-expand-dash-tab" onclick="document.getElementById('btn-open-dashboard-modal').click();">
+                <i class="lucide-maximize-2"></i> Expandir
+              </button>
+            </div>
+
+            <div class="dashboard-container">
+              <!-- KPI Cards Grid -->
+              <div class="kpi-grid">
+                <div class="kpi-card kpi-hazard">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Mancha Enchente</span>
+                    <i class="lucide-alert-triangle kpi-icon" style="color:var(--dc-hazard-red);"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="floodAreaKm2">4.91</span><span class="kpi-unit">km²</span></div>
+                  <div class="kpi-subtitle"><span data-kpi="floodAreaHa">490.9</span> ha atingidos</div>
+                </div>
+
+                <div class="kpi-card kpi-people">
+                  <div class="kpi-header">
+                    <span class="kpi-title">População Total</span>
+                    <i class="lucide-users kpi-icon" style="color:var(--dc-safe-green);"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="totalPop">206.215</span><span class="kpi-unit">hab</span></div>
+                  <div class="kpi-subtitle">Censo IBGE 2022</div>
+                </div>
+
+                <div class="kpi-card kpi-water">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Malha Hídrica</span>
+                    <i class="lucide-droplet kpi-icon" style="color:var(--dc-info-cyan);"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="hidroKm">1.708,73</span><span class="kpi-unit">km</span></div>
+                  <div class="kpi-subtitle">3.739 trechos fluviais</div>
+                </div>
+
+                <div class="kpi-card kpi-roads">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Malha Viária</span>
+                    <i class="lucide-navigation kpi-icon" style="color:var(--dc-warning-amber);"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="totalViasKm">1.959,34</span><span class="kpi-unit">km</span></div>
+                  <div class="kpi-subtitle">Total de vias e rodovias</div>
+                </div>
+              </div>
+
+              <!-- Charts in Sidebar -->
+              <div class="chart-card">
+                <div class="chart-card-header">
+                  <span class="chart-card-title"><i class="lucide-pie-chart"></i> Extensão da Infraestrutura Viária</span>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chart-roads-sidebar"></canvas>
+                </div>
+              </div>
+
+              <div class="chart-card">
+                <div class="chart-card-header">
+                  <span class="chart-card-title"><i class="lucide-bar-chart"></i> Densidade Setorial (hab/km²)</span>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chart-density-sidebar"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 6: SOBRE / METADADOS -->
+          <div class="tab-panel" id="tab-sobre">
+            <div class="layer-toolbar">
+              <span class="layer-toolbar-title">Sobre o Sistema WebGIS</span>
+            </div>
+
+            <div class="about-hero-card">
+              <img src="assets/logo-defesa-civil.jpg" alt="Brasão Oficial Defesa Civil Passo Fundo" class="about-logo">
+              <div>
+                <div style="font-size:13.5px; font-weight:800; color:#ffffff;">Defesa Civil de Passo Fundo / RS</div>
+                <div style="font-size:11px; color:var(--dc-orange-primary); font-weight:600;">Coordenadoria Municipal de Proteção e Defesa Civil</div>
+              </div>
+            </div>
+
+            <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6; display:flex; flex-direction:column; gap:12px;">
+              <p>
+                O <strong>Portal Geoespacial da Defesa Civil de Passo Fundo/RS</strong> é uma plataforma de inteligência territorial e apoio à tomada de decisão operacional em situações de emergência, desastres hidrológicos e planejamento preventivo de risco.
+              </p>
+              
+              <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); padding:10px 12px; border-radius:var(--radius-md);">
+                <strong style="color:var(--text-main); display:block; margin-bottom:4px;">Parâmetros Cartográficos Oficiais:</strong>
+                <ul style="margin-left: 16px;">
+                  <li><strong>Datum Geodésico:</strong> SIRGAS 2000</li>
+                  <li><strong>Projeção Cartográfica:</strong> UTM Fuso 22S (EPSG:31982)</li>
+                  <li><strong>Unidade de Medida:</strong> Metro (m)</li>
+                  <li><strong>Área Territorial Oficial:</strong> 784,41 km²</li>
+                  <li><strong>População Oficial (IBGE 2022):</strong> 206.215 hab</li>
+                </ul>
+              </div>
+
+              <div style="background:rgba(239, 68, 68, 0.1); border:1px solid var(--dc-hazard-red); padding:10px 12px; border-radius:var(--radius-md); color:#fca5a5;">
+                <strong>Contatos de Emergência - Defesa Civil:</strong><br>
+                📞 Emergência Municipal: <strong>199</strong><br>
+                🚒 Corpo de Bombeiros Militar: <strong>193</strong><br>
+                🚑 SAMU: <strong>192</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MAPA PRINCIPAL OPENLAYERS -->
+      <section class="map-container">
+        <div id="map"></div>
+
+        <!-- Floating Quick Status Pill (Top Center) -->
+        <div class="map-status-pill">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--dc-orange-primary);"></span>
+          <span>Passo Fundo / RS &bull; SIRGAS 2000 UTM 22S</span>
+        </div>
+
+        <!-- Floating Map Controls (Top Right) -->
+        <div class="map-floating-toolbar">
+          <!-- Navigation Controls -->
+          <div class="map-btn-group">
+            <button class="map-control-btn" id="btn-zoom-in" data-tooltip="Aproximar (+)">
+              <i class="lucide-plus"></i>
+            </button>
+            <button class="map-control-btn" id="btn-zoom-out" data-tooltip="Afastar (-)">
+              <i class="lucide-minus"></i>
+            </button>
+            <button class="map-control-btn" id="btn-home-view" data-tooltip="Restaurar Visão Geral (H)">
+              <i class="lucide-home"></i>
+            </button>
+            <button class="map-control-btn" id="btn-my-location" data-tooltip="Minha Localização GPS">
+              <i class="lucide-crosshair"></i>
+            </button>
+          </div>
+
+          <!-- Measurement Controls -->
+          <div class="map-btn-group">
+            <button class="map-control-btn" id="btn-measure-dist" data-tooltip="Medir Distância (Linha)">
+              <i class="lucide-ruler"></i>
+            </button>
+            <button class="map-control-btn" id="btn-measure-area" data-tooltip="Medir Área (Polígono)">
+              <i class="lucide-pentagon"></i>
+            </button>
+            <button class="map-control-btn" id="btn-measure-clear" data-tooltip="Limpar Medições">
+              <i class="lucide-eraser"></i>
+            </button>
+          </div>
+
+          <!-- Fullscreen Control -->
+          <div class="map-btn-group">
+            <button class="map-control-btn" id="btn-fullscreen" data-tooltip="Tela Cheia">
+              <i class="lucide-expand"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- OpenLayers Popup Overlay -->
+        <div id="popup" class="ol-popup">
+          <a href="#" id="popup-closer" class="ol-popup-closer">&times;</a>
+          <div id="popup-content"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ================= FOOTER / STATUS BAR ================= -->
+    <footer class="app-footer">
+      <div class="footer-info">
+        <span><strong>Defesa Civil</strong> &bull; Passo Fundo/RS</span>
+        <span>Datum: <strong>SIRGAS 2000</strong></span>
+        <span>Projeção: <strong>UTM 22S (EPSG:31982)</strong></span>
+      </div>
+
+      <div class="footer-coords">
+        <span class="coord-tag">UTM:</span>
+        <span id="status-coords-utm">E: 363.254 m | N: 6.873.812 m</span>
+        <span class="coord-tag" style="margin-left:8px;">GEO:</span>
+        <span id="status-coords-geo">-28.26120° S, -52.40830° O</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ================= MODAL DASHBOARD COMPLETO ================= -->
+  <div class="modal-overlay" id="dashboard-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <img src="assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="modal-logo">
+          <span>Painel Estratégico de Gestão Territorial e Riscos - Defesa Civil Passo Fundo</span>
+        </div>
+        <button class="modal-close-btn" id="btn-close-dashboard-modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Top Stats Row -->
+        <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+          <div class="kpi-card kpi-hazard">
+            <div class="kpi-title">Área Enchente 2024</div>
+            <div class="kpi-value"><span data-kpi="floodAreaKm2">4.91</span><span class="kpi-unit">km²</span></div>
+            <div class="kpi-subtitle"><span data-kpi="floodAreaHa">490.9</span> hectares</div>
+          </div>
+          <div class="kpi-card kpi-people">
+            <div class="kpi-title">População Censo 2022</div>
+            <div class="kpi-value"><span data-kpi="totalPop">206.215</span><span class="kpi-unit">hab</span></div>
+            <div class="kpi-subtitle"><span data-kpi="totalDomicilios">95.786</span> domicílios</div>
+          </div>
+          <div class="kpi-card kpi-water">
+            <div class="kpi-title">Extensão Hidrográfica</div>
+            <div class="kpi-value"><span data-kpi="hidroKm">1.708,73</span><span class="kpi-unit">km</span></div>
+            <div class="kpi-subtitle">3.739 trechos fluviais</div>
+          </div>
+          <div class="kpi-card kpi-roads">
+            <div class="kpi-title">Área Territorial</div>
+            <div class="kpi-value"><span data-kpi="totalAreaKm2">784.41</span><span class="kpi-unit">km²</span></div>
+            <div class="kpi-subtitle">Densidade: <span data-kpi="avgDensity">262.9</span> hab/km²</div>
+          </div>
+        </div>
+
+        <!-- 2 Column Charts -->
+        <div class="modal-grid-2col">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title"><i class="lucide-users"></i> Top 10 Bairros Mais Populosos (Clique para aproximar)</span>
+            </div>
+            <div class="chart-wrapper" style="height: 260px;">
+              <canvas id="chart-bairros-modal"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title"><i class="lucide-map-pin"></i> População por Distrito (Clique para aproximar)</span>
+            </div>
+            <div class="chart-wrapper" style="height: 260px;">
+              <canvas id="chart-distritos-modal"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <img src="assets/logo-defesa-civil.jpg" alt="Defesa Civil Passo Fundo" class="loading-logo">
+    <div class="spinner"></div>
+    <div class="loading-title">Portal Geoespacial Defesa Civil Passo Fundo</div>
+    <div class="loading-desc" id="loading-desc">Inicializando projeções SIRGAS 2000 UTM 22S e camadas prioritárias...</div>
+  </div>
+
+  <!-- External Libraries: Proj4js, Turf.js, Chart.js, OpenLayers 10 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ol@v10.3.1/dist/ol.js"></script>
+
+  <!-- Application Main Entry Script (ES6 Modules) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

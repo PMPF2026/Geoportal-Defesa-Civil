@@ -1,0 +1,20 @@
+# .gitignore - Portal WebGIS Defesa Civil Passo Fundo
+
+# Arquivo de municípios grande demais para o GitHub (34.7 MB)
+Municípios do RS.geojson
+
+# Arquivos de configuração QGIS (não relevantes para o WebGIS)
+*.qmd
+
+# Logs e temporários do sistema
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
+
+# Arquivos de ambiente e segredos
+.env
+.env.local
+
+# Pasta de artefatos do agente (não faz parte do projeto)
+.gemini/
