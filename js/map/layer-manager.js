@@ -264,7 +264,17 @@ export class LayerManager {
       ];
     }
 
-    // 5. Distritos (Marcadores Pontuais Elegantes)
+    // 5. Distritos e Pontos Especializados
+    if (config.id === 'edificacoes_app') {
+      return new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: s.pointRadius || 5.5,
+          fill: new ol.style.Fill({ color: s.pointColor || '#ea580c' }),
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 1.8 })
+        })
+      });
+    }
+
     if (config.geometryType === 'Point') {
       return (feature, resolution) => {
         const name = feature.get('nome') || '';
@@ -282,6 +292,22 @@ export class LayerManager {
             stroke: new ol.style.Stroke({ color: '#0f172a', width: 3.5 }),
             backgroundFill: new ol.style.Fill({ color: 'rgba(15, 23, 42, 0.85)' }),
             padding: [3, 7, 3, 7]
+          })
+        });
+      };
+    }
+
+    // 6. Curvas de Nível Altimétricas (Topografia com cotas mestras e intermediárias)
+    if (config.id === 'curvas_nivel_10m') {
+      return (feature, resolution) => {
+        // Exibir somente em escalas de aproximação detalhadas para alta performance
+        if (resolution > 35) return null;
+        const elev = parseFloat(feature.get('ELEV')) || 0;
+        const isMestra = (elev % 50 === 0);
+        return new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            color: isMestra ? 'rgba(180, 83, 9, 0.85)' : 'rgba(217, 119, 6, 0.45)',
+            width: isMestra ? 1.6 : 0.8
           })
         });
       };

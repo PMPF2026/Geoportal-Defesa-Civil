@@ -46,6 +46,13 @@ export const LAYER_GROUPS = [
     iconClass: 'population',
     iconName: 'users',
     description: 'Distribuição, densidade demográfica setorial e domicílios (Censo IBGE 2022)'
+  },
+  {
+    id: 'topografia',
+    title: '7. Topografia & Altimetria',
+    iconClass: 'topography',
+    iconName: 'mountain',
+    description: 'Curvas de nível altimétricas do relevo municipal com intervalo vertical de 10 metros'
   }
 ];
 
@@ -115,8 +122,95 @@ export const LAYERS_CONFIG = [
     },
     searchable: false
   },
+  {
+    id: 'app_30metros',
+    name: 'APP — 30 Metros (Rio Passo Fundo)',
+    fileName: 'APP_30metros.geojson',
+    group: 'defesa_civil',
+    geometryType: 'MultiPolygon',
+    defaultVisible: true,
+    defaultOpacity: 0.75,
+    zIndex: 42,
+    isCore: true,
+    isLazy: false,
+    style: {
+      fillColor: 'rgba(16, 185, 129, 0.30)',
+      strokeColor: '#059669',
+      strokeWidth: 2.0,
+      strokeDash: [4, 4],
+      previewColor: '#059669'
+    },
+    popupConfig: {
+      titleField: 'APP 30m',
+      defaultTitle: 'Área de Preservação Permanente (APP 30m)',
+      fields: [
+        { key: 'APP 30m', label: 'Classificação Legal' },
+        { key: 'AREA hec', label: 'Área da Faixa (hectares)', format: 'number' },
+        { key: 'AREA m²', label: 'Área Total (m²)', format: 'number' }
+      ]
+    },
+    searchable: false
+  },
+  {
+    id: 'edificacoes_app',
+    name: 'Residências na APP (318 Pontos)',
+    fileName: 'Edificações em APP.geojson',
+    group: 'defesa_civil',
+    geometryType: 'Point',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 72,
+    isCore: true,
+    isLazy: false,
+    style: {
+      pointColor: '#ea580c',
+      pointRadius: 5.5,
+      strokeColor: '#ffffff',
+      strokeWidth: 1.8,
+      previewColor: '#ea580c'
+    },
+    popupConfig: {
+      titleField: 'Edificacoe',
+      titlePrefix: 'Residência na APP — ID: ',
+      fields: [
+        { key: 'id', label: 'Identificador (ID)' },
+        { key: 'Edificacoe', label: 'Tipo de Edificação' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['id', 'Edificacoe']
+  },
 
   // ================= 2. HIDROGRAFIA =================
+  {
+    id: 'rio_passo_fundo',
+    name: 'Rio Passo Fundo (Curso Principal)',
+    fileName: 'Rio Passo Fundo.geojson',
+    group: 'hidrografia',
+    geometryType: 'MultiLineString',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 54,
+    isCore: true,
+    isLazy: false,
+    style: {
+      strokeColor: '#0284c7',
+      strokeWidth: 3.5,
+      previewColor: '#0284c7'
+    },
+    popupConfig: {
+      titleField: 'Nome',
+      defaultTitle: 'Rio Passo Fundo',
+      fields: [
+        { key: 'Nome', label: 'Curso Hídrico Principal' },
+        { key: 'Distância', label: 'Extensão do Segmento (m)', format: 'number' },
+        { key: 'Comp_total', label: 'Comprimento Total (m)', format: 'number' },
+        { key: 'SubClasses', label: 'Entidade CAD/GIS' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['Nome']
+  },
   {
     id: 'malha_hidrica',
     name: 'Malha Hídrica (Rios e Arroios)',
@@ -555,6 +649,35 @@ export const LAYERS_CONFIG = [
     },
     searchable: true,
     searchFields: ['CD_SETOR', 'NM_DIST']
+  },
+
+  // ================= 7. TOPOGRAFIA =================
+  {
+    id: 'curvas_nivel_10m',
+    name: 'Curvas de Nível (10 Metros)',
+    fileName: 'Curva de Nível 10 metros.geojson',
+    group: 'topografia',
+    geometryType: 'MultiLineString',
+    defaultVisible: false,
+    defaultOpacity: 0.8,
+    zIndex: 18,
+    isLazy: true,
+    minZoom: 13,
+    style: {
+      strokeColor: '#b45309',
+      strokeWidth: 1.0,
+      previewColor: '#b45309'
+    },
+    popupConfig: {
+      titleField: 'ELEV',
+      titlePrefix: 'Curva de Nível — Cota ',
+      fields: [
+        { key: 'ELEV', label: 'Altitude / Cota (m)', format: 'number' },
+        { key: 'ID', label: 'Identificador Cartográfico' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['ELEV']
   }
 ];
 
@@ -562,6 +685,12 @@ export const LAYERS_CONFIG = [
  * Predefined Quick Operational Map Scenarios / Presets
  */
 export const OPERATIONAL_PRESETS = [
+  {
+    id: 'preset_app_risco',
+    name: '🌊 APP & Rio Passo Fundo',
+    description: 'Foco no Rio Passo Fundo, faixa de APP de 30m e 318 residências mapeadas',
+    activeLayers: ['rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'areas_enchente_2024', 'bairros', 'limite_territorial']
+  },
   {
     id: 'preset_defesa_civil',
     name: '🚨 Cenário de Risco & Enchentes',
@@ -584,6 +713,6 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_geral',
     name: '🏛️ Visão Geral Padrão',
     description: 'Configuração institucional inicial com camadas territoriais e de risco',
-    activeLayers: ['areas_enchente_2024', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'limite_territorial', 'bairros', 'distritos']
+    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'limite_territorial', 'bairros', 'distritos']
   }
 ];

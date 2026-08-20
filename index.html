@@ -142,7 +142,7 @@
             </div>
 
             <div class="layer-toolbar">
-              <span class="layer-toolbar-title">Camadas Geoespaciais (16)</span>
+              <span class="layer-toolbar-title">Camadas Geoespaciais (20)</span>
               <div class="layer-toolbar-actions">
                 <button class="mini-btn" id="btn-expand-all-layers" title="Expandir Todos os Grupos">
                   <i class="lucide-chevrons-down"></i> Expandir
@@ -265,6 +265,15 @@
                   </div>
                   <div class="kpi-value"><span data-kpi="floodAreaKm2">4.91</span><span class="kpi-unit">km²</span></div>
                   <div class="kpi-subtitle"><span data-kpi="floodAreaHa">490.9</span> ha atingidos</div>
+                </div>
+
+                <div class="kpi-card kpi-hazard" style="border-left-color: var(--dc-orange-primary);">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Residências em APP</span>
+                    <i class="lucide-home kpi-icon" style="color:var(--dc-orange-primary);"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="residenciasApp">318</span><span class="kpi-unit">unid</span></div>
+                  <div class="kpi-subtitle">Faixa 30m Rio Passo Fundo</div>
                 </div>
 
                 <div class="kpi-card kpi-people">
@@ -444,11 +453,16 @@
 
       <div class="modal-body">
         <!-- Top Stats Row -->
-        <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+        <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 20px;">
           <div class="kpi-card kpi-hazard">
             <div class="kpi-title">Área Enchente 2024</div>
             <div class="kpi-value"><span data-kpi="floodAreaKm2">4.91</span><span class="kpi-unit">km²</span></div>
             <div class="kpi-subtitle"><span data-kpi="floodAreaHa">490.9</span> hectares</div>
+          </div>
+          <div class="kpi-card kpi-hazard" style="border-left: 3px solid var(--dc-orange-primary);">
+            <div class="kpi-title">Residências na APP 30m</div>
+            <div class="kpi-value"><span data-kpi="residenciasApp">318</span><span class="kpi-unit">unid</span></div>
+            <div class="kpi-subtitle">Rio Passo Fundo (130,5 ha)</div>
           </div>
           <div class="kpi-card kpi-people">
             <div class="kpi-title">População Censo 2022</div>
