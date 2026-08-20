@@ -144,7 +144,9 @@ export const LAYERS_CONFIG = [
       titlePrefix: 'Residência na APP — ID: ',
       fields: [
         { key: 'id', label: 'Identificador (ID)' },
-        { key: 'Edificacoe', label: 'Tipo de Edificação' }
+        { key: 'Edificacoe', label: 'Tipo de Edificação' },
+        { key: 'dist_rio_m', label: 'Distância até o Rio Passo Fundo (m)', format: 'number' },
+        { key: 'faixa_dist', label: 'Faixa de Proximidade / Risco' }
       ]
     },
     searchable: true,
