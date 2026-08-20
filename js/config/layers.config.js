@@ -93,36 +93,6 @@ export const LAYERS_CONFIG = [
     searchFields: ['mun_nm', 'st_dec_576', 'corede']
   },
   {
-    id: 'buffer_defesa_civil',
-    name: 'Buffer de Segurança / Entorno',
-    fileName: 'Buffer.geojson',
-    group: 'defesa_civil',
-    geometryType: 'MultiPolygon',
-    defaultVisible: false,
-    defaultOpacity: 0.7,
-    zIndex: 45,
-    isCore: false,
-    isLazy: true,
-    style: {
-      fillColor: 'rgba(245, 158, 11, 0.22)',
-      strokeColor: '#f59e0b',
-      strokeWidth: 2,
-      strokeDash: [6, 4],
-      previewColor: '#f59e0b'
-    },
-    popupConfig: {
-      titleField: 'NM_MUN',
-      titlePrefix: 'Zona de Amortecimento - ',
-      fields: [
-        { key: 'NM_MUN', label: 'Município' },
-        { key: 'AREA_KM2', label: 'Área Abrangida (km²)', format: 'number' },
-        { key: 'CD_MUN', label: 'Código IBGE' },
-        { key: 'NM_RGI', label: 'Região Geográfica Imediata' }
-      ]
-    },
-    searchable: false
-  },
-  {
     id: 'app_30metros',
     name: 'APP — 30 Metros (Rio Passo Fundo)',
     fileName: 'APP_30metros.geojson',
@@ -694,8 +664,8 @@ export const OPERATIONAL_PRESETS = [
   {
     id: 'preset_defesa_civil',
     name: '🚨 Cenário de Risco & Enchentes',
-    description: 'Foco em mancha de inundação 2024, buffer de segurança, malha hídrica e bairros',
-    activeLayers: ['areas_enchente_2024', 'buffer_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
+    description: 'Foco em mancha de inundação 2024, faixa de APP, malha hídrica e bairros',
+    activeLayers: ['areas_enchente_2024', 'app_30metros', 'edificacoes_app', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
   },
   {
     id: 'preset_logistica',
