@@ -106,12 +106,22 @@ export class PopupUI {
 
     fieldsToRender.forEach(field => {
       let val = props[field.key];
+      
+      // Se for o campo de distância e estiver vazio, calcular sob demanda
+      if ((field.key === 'dist_rio_m' || field.format === 'distance_m') && (val === undefined || val === null || val === '')) {
+        const computed = this.computeDistanceToRio(feature);
+        if (computed !== null) {
+          val = computed;
+          props['dist_rio_m'] = computed;
+        }
+      }
+
       if (val === undefined || val === null || val === '') return;
 
-      // Destaque visual prioritário para Distância até a calha do Rio Passo Fundo
+      // Destaque visual para Distância até a calha do Rio Passo Fundo (1 casa decimal)
       if (field.key === 'dist_rio_m' || field.format === 'distance_m') {
         const num = parseFloat(val);
-        const distStr = !isNaN(num) ? `${formatNumber(num, 2)} m` : escapeHtml(String(val));
+        const distStr = !isNaN(num) ? `${formatNumber(num, 1)} m` : escapeHtml(String(val));
         rowsHtml += `
           <tr style="background: rgba(234, 88, 12, 0.15); border-left: 3px solid #ea580c;">
             <th style="color: #fdba74; font-weight: 700;">${escapeHtml(field.label)}</th>
@@ -244,6 +254,45 @@ export class PopupUI {
           Notification.success('Atributos copiados com sucesso!');
         });
       });
+    }
+  }
+
+  /**
+   * Calcula a menor distância métrica (SIRGAS 2000 UTM 22S) entre o ponto da residência
+   * e a geometria principal do Rio Passo Fundo
+   */
+  computeDistanceToRio(feature) {
+    try {
+      const geom = feature.getGeometry();
+      if (!geom) return null;
+      let ptCoord;
+      if (geom.getType() === 'Point') {
+        ptCoord = geom.getCoordinates();
+      } else {
+        const extent = geom.getExtent();
+        ptCoord = [ (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2 ];
+      }
+      
+      const rioLayer = this.layerManager ? this.layerManager.getLayer('rio_passo_fundo') : null;
+      if (!rioLayer) return null;
+      const rioFeatures = rioLayer.getSource().getFeatures();
+      if (!rioFeatures || rioFeatures.length === 0) return null;
+
+      let minDist = Infinity;
+      for (const rf of rioFeatures) {
+        const rGeom = rf.getGeometry();
+        if (rGeom && typeof rGeom.getClosestPoint === 'function') {
+          const closestPt = rGeom.getClosestPoint(ptCoord);
+          const d = Math.hypot(ptCoord[0] - closestPt[0], ptCoord[1] - closestPt[1]);
+          if (d < minDist) {
+            minDist = d;
+          }
+        }
+      }
+      return minDist !== Infinity ? Math.round(minDist * 10) / 10 : null;
+    } catch (e) {
+      console.warn('[PopupUI] Erro ao calcular distância geométrica até o rio:', e);
+      return null;
     }
   }
 }

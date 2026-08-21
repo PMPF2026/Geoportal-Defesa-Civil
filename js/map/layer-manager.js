@@ -344,30 +344,15 @@ export class LayerManager {
       ];
     }
 
-    // 5. Distritos e Pontos Especializados (Residências em APP com identificação métrica)
+    // 5. Distritos e Pontos Especializados (Residências em APP)
     if (config.id === 'edificacoes_app') {
-      return (feature, resolution) => {
-        const dist = feature.get('dist_rio_m');
-        const showLabel = resolution < 3.0; // Exibe rótulo em escalas de aproximação (Zoom >= 16)
-
-        return new ol.style.Style({
-          image: new ol.style.Circle({
-            radius: s.pointRadius || 6,
-            fill: new ol.style.Fill({ color: s.pointColor || '#ea580c' }),
-            stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.0 })
-          }),
-          text: (showLabel && dist !== undefined && dist !== null) ? new ol.style.Text({
-            text: `${Number(dist).toFixed(1).replace('.', ',')} m`,
-            offsetY: 15,
-            font: 'bold 11px "Inter", sans-serif',
-            fill: new ol.style.Fill({ color: '#ffffff' }),
-            stroke: new ol.style.Stroke({ color: '#0f172a', width: 3.5 }),
-            backgroundFill: new ol.style.Fill({ color: 'rgba(15, 23, 42, 0.92)' }),
-            backgroundStroke: new ol.style.Stroke({ color: '#ea580c', width: 1.2 }),
-            padding: [2, 6, 2, 6]
-          }) : undefined
-        });
-      };
+      return new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: s.pointRadius || 6,
+          fill: new ol.style.Fill({ color: s.pointColor || '#ea580c' }),
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.0 })
+        })
+      });
     }
 
     if (config.geometryType === 'Point') {
