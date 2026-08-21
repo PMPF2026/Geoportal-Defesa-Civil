@@ -377,39 +377,39 @@
         </div>
 
         <!-- Floating Map Controls (Top Right) -->
-        <div class="map-floating-toolbar">
+        <div class="map-floating-toolbar" role="toolbar" aria-label="Ferramentas e Controles do Mapa">
           <!-- Navigation Controls -->
-          <div class="map-btn-group">
-            <button class="map-control-btn" id="btn-zoom-in" data-tooltip="Aproximar (+)">
+          <div class="map-btn-group" role="group" aria-label="Controles de Navegação e Zoom">
+            <button class="map-control-btn" id="btn-zoom-in" data-tooltip="Aproximar Zoom (+)" title="Aproximar Zoom (+)" aria-label="Aproximar Zoom no Mapa">
               <i class="lucide-plus"></i>
             </button>
-            <button class="map-control-btn" id="btn-zoom-out" data-tooltip="Afastar (-)">
+            <button class="map-control-btn" id="btn-zoom-out" data-tooltip="Afastar Zoom (-)" title="Afastar Zoom (-)" aria-label="Afastar Zoom no Mapa">
               <i class="lucide-minus"></i>
             </button>
-            <button class="map-control-btn" id="btn-home-view" data-tooltip="Restaurar Visão Geral (H)">
+            <button class="map-control-btn" id="btn-home-view" data-tooltip="Extensão Inicial (Passo Fundo)" title="Extensão Inicial (Passo Fundo)" aria-label="Restaurar Extensão Inicial do Município">
               <i class="lucide-home"></i>
             </button>
-            <button class="map-control-btn" id="btn-my-location" data-tooltip="Minha Localização GPS">
+            <button class="map-control-btn" id="btn-my-location" data-tooltip="Minha Localização GPS" title="Minha Localização GPS" aria-label="Aproximar para Minha Localização Atual via GPS">
               <i class="lucide-crosshair"></i>
             </button>
           </div>
 
           <!-- Measurement Controls -->
-          <div class="map-btn-group">
-            <button class="map-control-btn" id="btn-measure-dist" data-tooltip="Medir Distância (Linha)">
+          <div class="map-btn-group" role="group" aria-label="Ferramentas de Medição Cartográfica">
+            <button class="map-control-btn" id="btn-measure-dist" data-tooltip="Medir Distância (Linha)" title="Medir Distância (Linha)" aria-label="Ferramenta de Medição de Distância Linear em Metros">
               <i class="lucide-ruler"></i>
             </button>
-            <button class="map-control-btn" id="btn-measure-area" data-tooltip="Medir Área (Polígono)">
+            <button class="map-control-btn" id="btn-measure-area" data-tooltip="Medir Área (Polígono)" title="Medir Área (Polígono)" aria-label="Ferramenta de Medição de Área Superficial em m² ou Hectares">
               <i class="lucide-pentagon"></i>
             </button>
-            <button class="map-control-btn" id="btn-measure-clear" data-tooltip="Limpar Medições">
+            <button class="map-control-btn" id="btn-measure-clear" data-tooltip="Limpar Medições" title="Limpar Medições" aria-label="Limpar Todas as Medições Desenhas no Mapa">
               <i class="lucide-eraser"></i>
             </button>
           </div>
 
           <!-- Fullscreen Control -->
-          <div class="map-btn-group">
-            <button class="map-control-btn" id="btn-fullscreen" data-tooltip="Tela Cheia">
+          <div class="map-btn-group" role="group" aria-label="Controle de Visualização">
+            <button class="map-control-btn" id="btn-fullscreen" data-tooltip="Alternar Tela Cheia (F11)" title="Alternar Tela Cheia" aria-label="Alternar Modo de Tela Cheia do Geoportal">
               <i class="lucide-expand"></i>
             </button>
           </div>

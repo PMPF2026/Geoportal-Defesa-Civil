@@ -17,11 +17,13 @@
 .map-btn-group {
   display: flex;
   flex-direction: column;
-  background: var(--dc-blue-navy);
-  border: 1px solid var(--dc-blue-border);
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  overflow: visible;
+  position: relative;
 }
 
 .map-control-btn {
@@ -29,56 +31,104 @@
   height: 38px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-main);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
   cursor: pointer;
   position: relative;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .map-control-btn:last-child {
   border-bottom: none;
 }
 
+.map-control-btn i {
+  font-size: 16px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
 .map-control-btn:hover {
-  background: var(--dc-blue-surface);
-  color: var(--dc-orange-primary);
+  background: var(--dc-orange-primary);
+  color: #ffffff;
+}
+
+.map-control-btn:hover i {
+  color: #ffffff;
+  transform: scale(1.12);
 }
 
 .map-control-btn.active {
   background: var(--dc-orange-primary);
   color: #ffffff;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4), 0 0 10px rgba(255, 120, 0, 0.5);
 }
 
-/* Tooltip on Hover */
+.map-control-btn.active i {
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+/* Tooltip on Hover (High-Contrast, Polished Badge) */
 .map-control-btn[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
-  right: 48px;
+  right: calc(100% + 10px);
   top: 50%;
-  transform: translateY(-50%);
-  background: var(--dc-blue-dark);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  font-weight: 500;
+  transform: translateY(-50%) translateX(6px);
+  background: #090e1a;
+  color: #ffffff;
+  padding: 6px 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--dc-blue-border);
-  transition: opacity var(--transition-fast);
+  visibility: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+  border: 1px solid var(--dc-orange-primary);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
   z-index: 1000;
 }
 
-.map-control-btn:hover[data-tooltip]::after {
+/* Tooltip Arrow */
+.map-control-btn[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  right: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  border-width: 5px 0 5px 6px;
+  border-style: solid;
+  border-color: transparent transparent transparent var(--dc-orange-primary);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  z-index: 1001;
+}
+
+.map-control-btn:hover[data-tooltip]::after,
+.map-control-btn:hover[data-tooltip]::before {
   opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Disable tooltips on touch devices so they don't stick */
+@media (hover: none) {
+  .map-control-btn[data-tooltip]::after,
+  .map-control-btn[data-tooltip]::before {
+    display: none !important;
+  }
 }
 
 /* Floating Quick Status Badge (Top Center) */
