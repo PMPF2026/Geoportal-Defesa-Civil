@@ -85,11 +85,15 @@ class WebGisApp {
       // 14. Bind Floating Controls and Keyboard Shortcuts
       this.bindFloatingControls();
       this.bindKeyboardShortcuts();
+      this.refreshIcons();
 
       // 15. Load initial core layers
       await this.layerManager.initLayers();
 
-      // 16. Hide Loading Overlay
+      // 16. Refresh Lucide Icons across all rendered components
+      this.refreshIcons();
+
+      // 17. Hide Loading Overlay
       const loader = document.getElementById('loading-overlay');
       if (loader) {
         loader.classList.add('hidden');
@@ -101,6 +105,18 @@ class WebGisApp {
       Notification.error(`Erro na inicialização: ${err.message}`);
       const loader = document.getElementById('loading-overlay');
       if (loader) loader.classList.add('hidden');
+    }
+  }
+
+  refreshIcons() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      document.querySelectorAll('i[class*="lucide-"]').forEach(el => {
+        const match = el.className.match(/lucide-([a-z0-9-]+)/);
+        if (match && !el.getAttribute('data-lucide')) {
+          el.setAttribute('data-lucide', match[1]);
+        }
+      });
+      window.lucide.createIcons();
     }
   }
 

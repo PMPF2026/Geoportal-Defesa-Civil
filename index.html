@@ -409,36 +409,59 @@
           <!-- Navigation Controls -->
           <div class="map-btn-group" role="group" aria-label="Controles de Navegação e Zoom">
             <button class="map-control-btn" id="btn-zoom-in" data-tooltip="Aproximar Zoom (+)" title="Aproximar Zoom (+)" aria-label="Aproximar Zoom no Mapa">
-              <i class="lucide-plus"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
             </button>
             <button class="map-control-btn" id="btn-zoom-out" data-tooltip="Afastar Zoom (-)" title="Afastar Zoom (-)" aria-label="Afastar Zoom no Mapa">
-              <i class="lucide-minus"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
             </button>
             <button class="map-control-btn" id="btn-home-view" data-tooltip="Extensão Inicial (Passo Fundo)" title="Extensão Inicial (Passo Fundo)" aria-label="Restaurar Extensão Inicial do Município">
-              <i class="lucide-home"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
             </button>
             <button class="map-control-btn" id="btn-my-location" data-tooltip="Minha Localização GPS" title="Minha Localização GPS" aria-label="Aproximar para Minha Localização Atual via GPS">
-              <i class="lucide-crosshair"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="22" y1="12" x2="18" y2="12"></line>
+                <line x1="6" y1="12" x2="2" y2="12"></line>
+                <line x1="12" y1="6" x2="12" y2="2"></line>
+                <line x1="12" y1="22" x2="12" y2="18"></line>
+              </svg>
             </button>
           </div>
 
           <!-- Measurement Controls -->
           <div class="map-btn-group" role="group" aria-label="Ferramentas de Medição Cartográfica">
             <button class="map-control-btn" id="btn-measure-dist" data-tooltip="Medir Distância (Linha)" title="Medir Distância (Linha)" aria-label="Ferramenta de Medição de Distância Linear em Metros">
-              <i class="lucide-ruler"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.3 15.3l-6.6-6.6a2 2 0 0 0-2.8 0L2.7 17.9a2 2 0 0 0 0 2.8l1.4 1.4a2 2 0 0 0 2.8 0l9.2-9.2 1.4 1.4-1.4 1.4 1.4 1.4 1.4-1.4 1.4 1.4-1.4 1.4 1.4 1.4 2.8-2.8a2 2 0 0 0 0-2.8z"></path>
+              </svg>
             </button>
             <button class="map-control-btn" id="btn-measure-area" data-tooltip="Medir Área (Polígono)" title="Medir Área (Polígono)" aria-label="Ferramenta de Medição de Área Superficial em m² ou Hectares">
-              <i class="lucide-pentagon"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 22 8.5 18 21 6 21 2 8.5 12 2"></polygon>
+              </svg>
             </button>
             <button class="map-control-btn" id="btn-measure-clear" data-tooltip="Limpar Medições" title="Limpar Medições" aria-label="Limpar Todas as Medições Desenhas no Mapa">
-              <i class="lucide-eraser"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2L22 11L18 15"></path>
+                <path d="M11 4L20 13"></path>
+              </svg>
             </button>
           </div>
 
           <!-- Fullscreen Control -->
           <div class="map-btn-group" role="group" aria-label="Controle de Visualização">
             <button class="map-control-btn" id="btn-fullscreen" data-tooltip="Alternar Tela Cheia (F11)" title="Alternar Tela Cheia" aria-label="Alternar Modo de Tela Cheia do Geoportal">
-              <i class="lucide-expand"></i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+              </svg>
             </button>
           </div>
         </div>
@@ -474,50 +497,95 @@
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <img src="assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="modal-logo">
-          <span>Painel Estratégico de Gestão Territorial e Riscos - Defesa Civil Passo Fundo</span>
+          <i class="lucide-layout-dashboard" style="color:var(--dc-orange-primary);"></i>
+          <span>Painel Estratégico de Indicadores — Defesa Civil Passo Fundo/RS</span>
         </div>
-        <button class="modal-close-btn" id="btn-close-dashboard-modal">&times;</button>
+        <button class="modal-close" id="btn-close-dashboard-modal" title="Fechar Dashboard">&times;</button>
       </div>
 
       <div class="modal-body">
-        <!-- Top Stats Row -->
-        <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 20px;">
-          <div class="kpi-card kpi-hazard">
-            <div class="kpi-title">Área Enchente 2024</div>
-            <div class="kpi-value"><span data-kpi="floodAreaKm2">4.91</span><span class="kpi-unit">km²</span></div>
-            <div class="kpi-subtitle"><span data-kpi="floodAreaHa">490.9</span> hectares</div>
+        <div class="kpi-grid">
+          <div class="kpi-card" style="border-left: 4px solid var(--dc-hazard-red);">
+            <div class="kpi-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: var(--dc-hazard-red);">
+              <i class="lucide-alert-triangle kpi-icon" style="color:var(--dc-hazard-red);"></i>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Área Enchente 2024 (ADA)</span>
+              <span class="kpi-value" id="modal-kpi-flood-area">4,91 km²</span>
+              <span class="kpi-sub">490,9 ha (Decreto Emergencial)</span>
+            </div>
           </div>
-          <div class="kpi-card kpi-hazard" style="border-left: 3px solid var(--dc-orange-primary);">
-            <div class="kpi-title">Residências na APP 30m</div>
-            <div class="kpi-value"><span data-kpi="residenciasApp">318</span><span class="kpi-unit">unid</span></div>
-            <div class="kpi-subtitle">Rio Passo Fundo (130,5 ha)</div>
+
+          <div class="kpi-card" style="border-left: 4px solid var(--dc-orange-primary);">
+            <div class="kpi-icon-wrap" style="background: rgba(255, 120, 0, 0.15); color: var(--dc-orange-primary);">
+              <i class="lucide-home kpi-icon" style="color:var(--dc-orange-primary);"></i>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Residências em APP (30m)</span>
+              <span class="kpi-value" id="modal-kpi-residencias">318 un</span>
+              <span class="kpi-sub">Rio Passo Fundo</span>
+            </div>
           </div>
-          <div class="kpi-card kpi-people">
-            <div class="kpi-title">População Censo 2022</div>
-            <div class="kpi-value"><span data-kpi="totalPop">206.215</span><span class="kpi-unit">hab</span></div>
-            <div class="kpi-subtitle"><span data-kpi="totalDomicilios">95.786</span> domicílios</div>
+
+          <div class="kpi-card" style="border-left: 4px solid var(--dc-safe-green);">
+            <div class="kpi-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: var(--dc-safe-green);">
+              <i class="lucide-users kpi-icon" style="color:var(--dc-safe-green);"></i>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">População Municipal</span>
+              <span class="kpi-value" id="modal-kpi-population">206.215</span>
+              <span class="kpi-sub">Censo Demográfico IBGE 2022</span>
+            </div>
           </div>
-          <div class="kpi-card kpi-water">
-            <div class="kpi-title">Extensão Hidrográfica</div>
-            <div class="kpi-value"><span data-kpi="hidroKm">1.708,73</span><span class="kpi-unit">km</span></div>
-            <div class="kpi-subtitle">3.739 trechos fluviais</div>
+
+          <div class="kpi-card" style="border-left: 4px solid var(--dc-info-cyan);">
+            <div class="kpi-icon-wrap" style="background: rgba(14, 165, 233, 0.15); color: var(--dc-info-cyan);">
+              <i class="lucide-droplet kpi-icon" style="color:var(--dc-info-cyan);"></i>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Malha Hidrográfica</span>
+              <span class="kpi-value" id="modal-kpi-hidro">1.708,7 km</span>
+              <span class="kpi-sub">3.739 trechos fluviais</span>
+            </div>
           </div>
-          <div class="kpi-card kpi-roads">
-            <div class="kpi-title">Área Territorial</div>
-            <div class="kpi-value"><span data-kpi="totalAreaKm2">784.41</span><span class="kpi-unit">km²</span></div>
-            <div class="kpi-subtitle">Densidade: <span data-kpi="avgDensity">262.9</span> hab/km²</div>
+
+          <div class="kpi-card" style="border-left: 4px solid var(--dc-warning-amber);">
+            <div class="kpi-icon-wrap" style="background: rgba(245, 158, 11, 0.15); color: var(--dc-warning-amber);">
+              <i class="lucide-navigation kpi-icon" style="color:var(--dc-warning-amber);"></i>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Malha Viária Urbana</span>
+              <span class="kpi-value" id="modal-kpi-roads">1.501,6 km</span>
+              <span class="kpi-sub">11.595 vias cadastradas</span>
+            </div>
           </div>
         </div>
 
-        <!-- 2 Column Charts -->
-        <div class="modal-grid-2col">
+        <div class="dashboard-grid">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title"><i class="lucide-pie-chart"></i> Extensão da Infraestrutura Viária</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-modal-vias"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title"><i class="lucide-bar-chart"></i> Densidade Setorial (hab/km²)</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-modal-densidade"></canvas>
+            </div>
+          </div>
+
           <div class="chart-card">
             <div class="chart-card-header">
               <span class="chart-card-title"><i class="lucide-users"></i> Top 10 Bairros Mais Populosos (Clique para aproximar)</span>
             </div>
-            <div class="chart-wrapper" style="height: 260px;">
-              <canvas id="chart-bairros-modal"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="chart-modal-bairros"></canvas>
             </div>
           </div>
 
@@ -525,8 +593,8 @@
             <div class="chart-card-header">
               <span class="chart-card-title"><i class="lucide-map-pin"></i> População por Distrito (Clique para aproximar)</span>
             </div>
-            <div class="chart-wrapper" style="height: 260px;">
-              <canvas id="chart-distritos-modal"></canvas>
+            <div class="chart-wrapper">
+              <canvas id="chart-modal-distritos"></canvas>
             </div>
           </div>
         </div>
@@ -542,11 +610,12 @@
     <div class="loading-desc" id="loading-desc">Inicializando projeções SIRGAS 2000 UTM 22S e camadas prioritárias...</div>
   </div>
 
-  <!-- External Libraries: Proj4js, Turf.js, Chart.js, OpenLayers 10 -->
+  <!-- External Libraries: Proj4js, Turf.js, Chart.js, OpenLayers 10, Lucide Icons -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ol@v10.3.1/dist/ol.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Application Main Entry Script (ES6 Modules) -->
   <script type="module" src="js/app.js"></script>

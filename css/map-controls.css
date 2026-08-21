@@ -45,13 +45,17 @@
   border-bottom: none;
 }
 
-.map-control-btn i {
+.map-control-btn i,
+.map-control-btn svg {
   font-size: 16px;
+  width: 18px;
+  height: 18px;
   color: #ffffff;
+  stroke: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease, color 0.15s ease;
+  transition: transform 0.15s ease, color 0.15s ease, stroke 0.15s ease;
 }
 
 .map-control-btn:hover {
@@ -59,8 +63,10 @@
   color: #ffffff;
 }
 
-.map-control-btn:hover i {
+.map-control-btn:hover i,
+.map-control-btn:hover svg {
   color: #ffffff;
+  stroke: #ffffff;
   transform: scale(1.12);
 }
 
@@ -70,8 +76,10 @@
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4), 0 0 10px rgba(255, 120, 0, 0.5);
 }
 
-.map-control-btn.active i {
+.map-control-btn.active i,
+.map-control-btn.active svg {
   color: #ffffff;
+  stroke: #ffffff;
   transform: scale(1.08);
 }
 
