@@ -798,7 +798,7 @@ export class ExportReportTool {
         </div>
 
         <!-- 11. INFORMAÇÕES DE CONTATO DA DEFESA CIVIL -->
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <strong style="color:#0f172a; font-size:12.5px;">Sede da Defesa Civil Municipal de Passo Fundo:</strong><br>
             <span style="color:#475569;">Av. Brasil Leste, 1528 - Petrópolis, Passo Fundo - RS, 99050-144</span>
@@ -807,6 +807,13 @@ export class ExportReportTool {
             <strong style="color:#0f172a;">Telefone Oficial:</strong> <span style="color:#0284c7; font-weight:700;">+55 54 9194-0449</span><br>
             <span style="color:#dc2626; font-weight:700;">Emergência 24h: 199 / 193 / 192</span>
           </div>
+        </div>
+
+        <!-- 12. IDENTIFICAÇÃO DE AUTORIA TÉCNICA -->
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #ff7800; border-radius: 6px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; color: #334155;">
+          <strong style="color:#0f172a; font-size:12px; display:block; margin-bottom:2px;">Elaboração técnica:</strong>
+          <strong style="color:#0f172a; font-size:12.5px;">Vagner A. Duarte – Geógrafo</strong><br>
+          <span>Secretaria de Planejamento – Prefeitura Municipal de Passo Fundo/RS.</span>
         </div>
 
         <div style="font-size:11px; color:#64748b; margin-bottom:20px;">
@@ -820,8 +827,8 @@ export class ExportReportTool {
             <div class="signature-sub">Município de Passo Fundo / RS</div>
           </div>
           <div>
-            <div class="signature-line">RESPONSÁVEL TÉCNICO / GEOPROCESSAMENTO</div>
-            <div class="signature-sub">Sistema WebGIS de Gestão Territorial de Riscos</div>
+            <div class="signature-line">VAGNER A. DUARTE – GEÓGRAFO</div>
+            <div class="signature-sub">Secretaria de Planejamento &bull; Prefeitura Municipal de Passo Fundo/RS</div>
           </div>
         </div>
 
