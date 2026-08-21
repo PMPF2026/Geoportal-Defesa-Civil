@@ -663,10 +663,13 @@ export const LAYERS_CONFIG = [
   {
     id: 'ortofotos_rio_passo_fundo',
     name: 'Ortofotos Rio Passo Fundo',
-    fileName: 'Ortofotos/Orto_trecho1.tif',
+    fileName: 'tiles/ortofotos-rio-passo-fundo/{z}/{x}/{y}.png',
     group: 'ortofotos',
     isRaster: true,
-    isGeoTIFF: true,
+    isXYZTiles: true,
+    tileUrl: 'tiles/ortofotos-rio-passo-fundo/{z}/{x}/{y}.png',
+    minZoom: 13,
+    maxZoom: 19,
     defaultVisible: false,
     defaultOpacity: 1.0,
     zIndex: 5, // Abaixo de todos os vetores (zIndex 10-75) e acima do mapa-base (zIndex 0)

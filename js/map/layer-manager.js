@@ -74,7 +74,34 @@ export class LayerManager {
     for (const config of LAYERS_CONFIG) {
       this.configs.set(config.id, config);
 
-      // Tratamento para camadas Raster / GeoTIFF (Ortofotos em EPSG:31982)
+      // Tratamento para camadas Raster / Ortofotos (Web XYZ Tiles)
+      if (config.isXYZTiles || config.tileUrl) {
+        const xyzSource = new ol.source.XYZ({
+          url: config.tileUrl,
+          minZoom: config.minZoom || 13,
+          maxZoom: config.maxZoom || 19,
+          crossOrigin: 'anonymous',
+          wrapX: false
+        });
+
+        const rasterLayer = new ol.layer.Tile({
+          source: xyzSource,
+          visible: config.defaultVisible,
+          opacity: config.defaultOpacity || 1,
+          zIndex: config.zIndex || 5 // Acima do mapa-base (0) e estritamente abaixo de todos os vetores (10-75)
+        });
+
+        rasterLayer.set('layerId', config.id);
+        rasterLayer.set('layerConfig', config);
+        rasterLayer.set('isThematicLayer', true);
+        rasterLayer.set('isRaster', true);
+
+        this.map.addLayer(rasterLayer);
+        this.layers.set(config.id, rasterLayer);
+        continue;
+      }
+
+      // Tratamento legado para GeoTIFFs individuais diretos
       if (config.isGeoTIFF) {
         let rasterLayer;
         try {
@@ -92,7 +119,7 @@ export class LayerManager {
               source: geotiffSource,
               visible: config.defaultVisible,
               opacity: config.defaultOpacity || 1,
-              zIndex: config.zIndex || 5 // Acima do mapa-base (0) e estritamente abaixo dos vetores (10-75)
+              zIndex: config.zIndex || 5
             });
           }
         } catch (err) {
