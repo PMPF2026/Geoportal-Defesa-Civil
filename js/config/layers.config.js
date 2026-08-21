@@ -48,15 +48,8 @@ export const LAYER_GROUPS = [
     description: 'Distribuição, densidade demográfica setorial e domicílios (Censo IBGE 2022)'
   },
   {
-    id: 'topografia',
-    title: '7. Topografia & Altimetria',
-    iconClass: 'topography',
-    iconName: 'mountain',
-    description: 'Curvas de nível altimétricas do relevo municipal com intervalo vertical de 10 metros'
-  },
-  {
     id: 'ortofotos',
-    title: '8. Ortofotos & Imagens Aéreas',
+    title: '7. Ortofotos & Imagens Aéreas',
     iconClass: 'ortho',
     iconName: 'camera',
     description: 'Levantamento aerofotogramétrico de alta resolução do Rio Passo Fundo (Julho/2026 - SIRGAS 2000 UTM 22S)'
@@ -630,36 +623,7 @@ export const LAYERS_CONFIG = [
     searchFields: ['CD_SETOR', 'NM_DIST']
   },
 
-  // ================= 7. TOPOGRAFIA =================
-  {
-    id: 'curvas_nivel_10m',
-    name: 'Curvas de Nível (10 Metros)',
-    fileName: 'Curva de Nível 10 metros.geojson',
-    group: 'topografia',
-    geometryType: 'MultiLineString',
-    defaultVisible: false,
-    defaultOpacity: 0.8,
-    zIndex: 18,
-    isLazy: true,
-    minZoom: 13,
-    style: {
-      strokeColor: '#b45309',
-      strokeWidth: 1.0,
-      previewColor: '#b45309'
-    },
-    popupConfig: {
-      titleField: 'ELEV',
-      titlePrefix: 'Curva de Nível — Cota ',
-      fields: [
-        { key: 'ELEV', label: 'Altitude / Cota (m)', format: 'number' },
-        { key: 'ID', label: 'Identificador Cartográfico' }
-      ]
-    },
-    searchable: true,
-    searchFields: ['ELEV']
-  },
-
-  // ================= 8. ORTOFOTOS =================
+  // ================= 7. ORTOFOTOS =================
   {
     id: 'ortofotos_rio_passo_fundo',
     name: 'Ortofotos Rio Passo Fundo',

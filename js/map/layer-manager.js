@@ -391,21 +391,6 @@ export class LayerManager {
       };
     }
 
-    // 6. Curvas de Nível Altimétricas (Topografia com cotas mestras e intermediárias)
-    if (config.id === 'curvas_nivel_10m') {
-      return (feature, resolution) => {
-        // Exibir somente em escalas de aproximação detalhadas para alta performance
-        if (resolution > 35) return null;
-        const elev = parseFloat(feature.get('ELEV')) || 0;
-        const isMestra = (elev % 50 === 0);
-        return new ol.style.Style({
-          stroke: new ol.style.Stroke({
-            color: isMestra ? 'rgba(180, 83, 9, 0.85)' : 'rgba(217, 119, 6, 0.45)',
-            width: isMestra ? 1.6 : 0.8
-          })
-        });
-      };
-    }
 
     // 6. Bairros e Regiões Urbanas (com rótulos dinâmicos a partir de zoom 12)
     if (config.id === 'bairros') {

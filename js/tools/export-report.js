@@ -674,11 +674,6 @@ export class ExportReportTool {
               <td><strong>${formatNumber(stats.hidroKm - stats.rioPassoFundoKm, 2)} km</strong></td>
               <td>Arroio Miranda, Arroio Santo Antônio, Arroio Jerônimo Coelho e tributários</td>
             </tr>
-            <tr>
-              <td><strong>Curvas de Nível Altimétricas</strong></td>
-              <td>${formatNumber(stats.curvasCount, 0)} curvas de nível (equidistância de 10m)</td>
-              <td>Modelo digital de relevo com cotas de 580m a 780m</td>
-            </tr>
           </tbody>
         </table>
 

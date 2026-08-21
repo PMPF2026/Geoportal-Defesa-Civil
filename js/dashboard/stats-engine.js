@@ -45,7 +45,6 @@ export class StatsEngine {
       residenciasApp: 318,
       app30mHa: 130.49,
       rioPassoFundoKm: 17.68,
-      curvasCount: 3442,
       hidroKm: 1708.73,
       viariaKm: 1501.61,
       estradasMunicipaisKm: 285.29,
