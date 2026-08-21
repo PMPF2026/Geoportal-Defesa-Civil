@@ -127,7 +127,22 @@ export class LegendUI {
       `;
     }
 
-    // 5. Polygon Symbology
+    // 5. Ortofotos e Camadas Raster
+    if (layerConfig.isRaster || layerConfig.isGeoTIFF) {
+      return `
+        <div class="legend-item" style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 16px; border-radius: 3px; background: linear-gradient(135deg, #0891b2, #065f46); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 10px;">
+            <i class="lucide-camera" style="font-size: 11px;"></i>
+          </span>
+          <div>
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Mosaico Aerofotogramétrico (Jul/2026 - EPSG:31982)</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 6. Polygon Symbology
     const s = layerConfig.style || {};
     const borderStyle = s.strokeDash ? 'dashed' : 'solid';
     return `

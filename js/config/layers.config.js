@@ -53,6 +53,13 @@ export const LAYER_GROUPS = [
     iconClass: 'topography',
     iconName: 'mountain',
     description: 'Curvas de nível altimétricas do relevo municipal com intervalo vertical de 10 metros'
+  },
+  {
+    id: 'ortofotos',
+    title: '8. Ortofotos & Imagens Aéreas',
+    iconClass: 'ortho',
+    iconName: 'camera',
+    description: 'Levantamento aerofotogramétrico de alta resolução do Rio Passo Fundo (Julho/2026 - SIRGAS 2000 UTM 22S)'
   }
 ];
 
@@ -650,6 +657,45 @@ export const LAYERS_CONFIG = [
     },
     searchable: true,
     searchFields: ['ELEV']
+  },
+
+  // ================= 8. ORTOFOTOS =================
+  {
+    id: 'ortofotos_rio_passo_fundo',
+    name: 'Ortofotos Rio Passo Fundo',
+    fileName: 'Ortofotos/Orto_trecho1.tif',
+    group: 'ortofotos',
+    isRaster: true,
+    isGeoTIFF: true,
+    defaultVisible: false,
+    defaultOpacity: 1.0,
+    zIndex: 5, // Abaixo de todos os vetores (zIndex 10-75) e acima do mapa-base (zIndex 0)
+    isLazy: true,
+    extent: [358912.81, 6873444.83, 364489.62, 6877987.06],
+    crs: 'EPSG:31982',
+    date: 'Julho de 2026',
+    files: [
+      'Ortofotos/Orto_trecho1.tif',
+      'Ortofotos/orto_trecho2.tif',
+      'Ortofotos/orto_trecho3-0-0.tif',
+      'Ortofotos/orto_rio passo fundo.tif',
+      'Ortofotos/orto_riopf.tif'
+    ],
+    style: {
+      previewColor: '#0891b2'
+    },
+    popupConfig: {
+      titleField: 'name',
+      defaultTitle: 'Ortofotos Rio Passo Fundo',
+      fields: [
+        { key: 'name', label: 'Camada', defaultValue: 'Ortofoto Aerofotogramétrica' },
+        { key: 'data', label: 'Data do Levantamento', defaultValue: 'Julho de 2026' },
+        { key: 'crs', label: 'Sistema de Referência', defaultValue: 'SIRGAS 2000 / UTM 22S (EPSG:31982)' },
+        { key: 'gsd', label: 'Resolução Espacial (GSD)', defaultValue: '5 a 10 cm/pixel' },
+        { key: 'area', label: 'Abrangência', defaultValue: 'Calha e Planície Aluvial do Rio Passo Fundo' }
+      ]
+    },
+    searchable: false
   }
 ];
 
@@ -657,6 +703,12 @@ export const LAYERS_CONFIG = [
  * Predefined Quick Operational Map Scenarios / Presets
  */
 export const OPERATIONAL_PRESETS = [
+  {
+    id: 'preset_ortofoto',
+    name: '🛰️ Ortofotos & Rio Passo Fundo',
+    description: 'Ortofotos de alta resolução combinadas com o curso do Rio Passo Fundo, APP de 30m e 318 residências',
+    activeLayers: ['ortofotos_rio_passo_fundo', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'areas_enchente_2024', 'limite_territorial']
+  },
   {
     id: 'preset_app_risco',
     name: '🌊 APP & Rio Passo Fundo',

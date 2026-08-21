@@ -69,10 +69,53 @@ export class LayerManager {
    * Initialize all registered thematic layers
    */
   async initLayers() {
-    console.log('[LayerManager] Registrando 16 camadas temáticas institucionais...');
+    console.log('[LayerManager] Registrando camadas temáticas institucionais...');
 
     for (const config of LAYERS_CONFIG) {
       this.configs.set(config.id, config);
+
+      // Tratamento para camadas Raster / GeoTIFF (Ortofotos em EPSG:31982)
+      if (config.isGeoTIFF) {
+        let rasterLayer;
+        try {
+          if (ol.source && ol.source.GeoTIFF && ol.layer && ol.layer.WebGLTile) {
+            const geotiffSource = new ol.source.GeoTIFF({
+              sources: config.files.map(f => ({
+                url: f,
+                bands: [1, 2, 3]
+              })),
+              convertToRGB: true,
+              normalize: false
+            });
+
+            rasterLayer = new ol.layer.WebGLTile({
+              source: geotiffSource,
+              visible: config.defaultVisible,
+              opacity: config.defaultOpacity || 1,
+              zIndex: config.zIndex || 5 // Acima do mapa-base (0) e estritamente abaixo dos vetores (10-75)
+            });
+          }
+        } catch (err) {
+          console.warn('[LayerManager] WebGLTile GeoTIFF fallback:', err);
+        }
+
+        if (!rasterLayer) {
+          rasterLayer = new ol.layer.Group({
+            visible: config.defaultVisible,
+            opacity: config.defaultOpacity || 1,
+            zIndex: config.zIndex || 5
+          });
+        }
+
+        rasterLayer.set('layerId', config.id);
+        rasterLayer.set('layerConfig', config);
+        rasterLayer.set('isThematicLayer', true);
+        rasterLayer.set('isRaster', true);
+
+        this.map.addLayer(rasterLayer);
+        this.layers.set(config.id, rasterLayer);
+        continue;
+      }
 
       const vectorSource = new ol.source.Vector();
       const styleFunction = this.createLayerStyle(config);
@@ -148,7 +191,8 @@ export class LayerManager {
     const layer = this.layers.get(layerId);
     if (!layer) return;
 
-    if (visible) {
+    const config = this.configs.get(layerId);
+    if (visible && config && !config.isRaster) {
       await this.loadLayerData(layerId);
     }
     layer.setVisible(visible);
@@ -182,14 +226,22 @@ export class LayerManager {
    */
   async zoomToLayer(layerId) {
     const layer = this.layers.get(layerId);
-    if (!layer) return;
+    const config = this.configs.get(layerId);
+    if (!layer || !config) return;
+
+    if (config.isRaster && config.extent) {
+      const extent3857 = ol.proj.transformExtent(config.extent, 'EPSG:31982', 'EPSG:3857');
+      this.mapEngine.zoomTo(extent3857);
+      return;
+    }
 
     await this.loadLayerData(layerId);
     const source = layer.getSource();
-    const extent = source.getExtent();
-
-    if (extent && !ol.extent.isEmpty(extent)) {
-      this.mapEngine.zoomTo(extent);
+    if (source && source.getExtent) {
+      const extent = source.getExtent();
+      if (extent && !ol.extent.isEmpty(extent)) {
+        this.mapEngine.zoomTo(extent);
+      }
     }
   }
 
