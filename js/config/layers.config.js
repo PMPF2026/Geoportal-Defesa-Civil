@@ -167,7 +167,7 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       strokeColor: '#0284c7',
-      strokeWidth: 3.5,
+      strokeWidth: 2.2,
       previewColor: '#0284c7'
     },
     popupConfig: {
@@ -195,7 +195,7 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       strokeColor: '#0284c7',
-      strokeWidth: 1.8,
+      strokeWidth: 1.2,
       isHierarchicalHydro: true, // Dynamic line width based on hydrologic stream order
       previewColor: '#0284c7'
     },
@@ -225,7 +225,7 @@ export const LAYERS_CONFIG = [
     isLazy: true,
     style: {
       strokeColor: '#7c3aed',
-      strokeWidth: 2.2,
+      strokeWidth: 1.6,
       strokeDash: [8, 5],
       previewColor: '#7c3aed'
     },
@@ -255,9 +255,9 @@ export const LAYERS_CONFIG = [
     highwayType: 'BR',
     style: {
       strokeColor: '#dc2626',
-      strokeWidth: 3.5,
+      strokeWidth: 2.2,
       casingColor: '#ffffff',
-      casingWidth: 5.5,
+      casingWidth: 3.6,
       previewColor: '#dc2626'
     },
     popupConfig: {
@@ -289,9 +289,9 @@ export const LAYERS_CONFIG = [
     highwayType: 'ERS',
     style: {
       strokeColor: '#ea580c',
-      strokeWidth: 3.0,
+      strokeWidth: 1.8,
       casingColor: '#ffffff',
-      casingWidth: 4.8,
+      casingWidth: 3.0,
       previewColor: '#ea580c'
     },
     popupConfig: {
@@ -319,7 +319,7 @@ export const LAYERS_CONFIG = [
     zIndex: 44,
     style: {
       strokeColor: '#d97706',
-      strokeWidth: 2.2,
+      strokeWidth: 1.5,
       previewColor: '#d97706'
     },
     popupConfig: {
@@ -346,7 +346,7 @@ export const LAYERS_CONFIG = [
     isRailway: true,
     style: {
       strokeColor: '#0f172a',
-      strokeWidth: 3,
+      strokeWidth: 2.2,
       previewColor: '#0f172a'
     },
     popupConfig: {

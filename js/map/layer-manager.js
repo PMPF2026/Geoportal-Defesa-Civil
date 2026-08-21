@@ -295,7 +295,7 @@ export class LayerManager {
     if (config.id === 'malha_hidrica') {
       return (feature) => {
         const ordem = parseInt(feature.get('ordem'), 10) || 1;
-        const width = ordem >= 3 ? 3.0 : (ordem === 2 ? 2.0 : 1.2);
+        const width = ordem >= 3 ? 1.8 : (ordem === 2 ? 1.2 : 0.8);
         const color = ordem >= 3 ? '#0284c7' : (ordem === 2 ? '#38bdf8' : '#7dd3fc');
 
         return new ol.style.Style({
@@ -311,14 +311,15 @@ export class LayerManager {
     if (config.isHighway) {
       const isFederal = config.highwayType === 'BR';
       const mainColor = isFederal ? '#dc2626' : '#ea580c';
-      const mainWidth = isFederal ? 3.6 : 3.0;
+      const mainWidth = isFederal ? 2.2 : 1.8;
+      const casingWidth = isFederal ? 3.6 : 3.0;
 
       return [
         // Linha externa (casing branco de contraste)
         new ol.style.Style({
           stroke: new ol.style.Stroke({
             color: '#ffffff',
-            width: mainWidth + 2.5
+            width: casingWidth
           })
         }),
         // Linha interna principal
@@ -335,10 +336,10 @@ export class LayerManager {
     if (config.isRailway) {
       return [
         new ol.style.Style({
-          stroke: new ol.style.Stroke({ color: '#1e293b', width: 4.5 })
+          stroke: new ol.style.Stroke({ color: '#1e293b', width: 2.6 })
         }),
         new ol.style.Style({
-          stroke: new ol.style.Stroke({ color: '#ffffff', width: 2.2, lineDash: [8, 8] })
+          stroke: new ol.style.Stroke({ color: '#ffffff', width: 1.2, lineDash: [6, 6] })
         })
       ];
     }
