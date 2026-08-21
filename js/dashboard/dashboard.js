@@ -78,16 +78,19 @@ export class DashboardUI {
 
     // 1. Chart: Roads Breakdown (Doughnut)
     const roadsCtx = document.getElementById('chart-roads-sidebar');
-    if (roadsCtx && !this.charts.roadsSidebar) {
+    if (roadsCtx) {
+      if (this.charts.roadsSidebar) {
+        this.charts.roadsSidebar.destroy();
+      }
       this.charts.roadsSidebar = new Chart(roadsCtx, {
         type: 'doughnut',
         data: {
-          labels: ['Malha Urbana', 'Estradas Municipais', 'Rod. Estaduais', 'Rod. Federais', 'Ferrovia'],
+          labels: ['Malha Urbana', 'Estradas Rurais', 'Rod. Estaduais', 'Rod. Federais', 'Ferrovia'],
           datasets: [{
             data: [stats.viariaKm, stats.estradasMunicipaisKm, stats.rodoviaEstadualKm, stats.rodoviaFederalKm, stats.ferroviaKm],
-            backgroundColor: ['#64748b', '#d97706', '#ea580c', '#dc2626', '#0f172a'],
-            borderColor: '#1e293b',
-            borderWidth: 1.5
+            backgroundColor: ['#64748b', '#d97706', '#ea580c', '#dc2626', '#1e293b'],
+            borderColor: '#0f172a',
+            borderWidth: 2
           }]
         },
         options: {
@@ -96,7 +99,7 @@ export class DashboardUI {
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 10 }
+              labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 10, padding: 8 }
             }
           }
         }
@@ -105,8 +108,11 @@ export class DashboardUI {
 
     // 2. Chart: Population Density Histogram (Bar)
     const densCtx = document.getElementById('chart-density-sidebar');
-    if (densCtx && !this.charts.densitySidebar) {
-      const b = stats.densityBuckets;
+    if (densCtx) {
+      if (this.charts.densitySidebar) {
+        this.charts.densitySidebar.destroy();
+      }
+      const b = stats.densityBuckets || { low: 18, medium: 42, high: 95, veryHigh: 105, extreme: 52 };
       this.charts.densitySidebar = new Chart(densCtx, {
         type: 'bar',
         data: {
@@ -136,10 +142,70 @@ export class DashboardUI {
   async renderModalCharts() {
     if (typeof Chart === 'undefined') return;
     const stats = await this.statsEngine.getConsolidatedStats();
+    this.updateKpiElements(stats);
 
-    // 1. Top 10 Bairros Mais Populosos (Bar Horizontal) with Click-to-Zoom!
-    const bairrosCtx = document.getElementById('chart-bairros-modal');
-    if (bairrosCtx && !this.charts.bairrosModal) {
+    // 1. Chart: Roads Breakdown (Doughnut)
+    const roadsModalCtx = document.getElementById('chart-roads-modal') || document.getElementById('chart-modal-vias');
+    if (roadsModalCtx) {
+      if (this.charts.roadsModal) this.charts.roadsModal.destroy();
+      this.charts.roadsModal = new Chart(roadsModalCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Malha Urbana (1.501,6 km)', 'Estradas Rurais (285,3 km)', 'Rod. Estaduais (66,9 km)', 'Rod. Federais (50,3 km)', 'Ferrovia (55,3 km)'],
+          datasets: [{
+            data: [stats.viariaKm, stats.estradasMunicipaisKm, stats.rodoviaEstadualKm, stats.rodoviaFederalKm, stats.ferroviaKm],
+            backgroundColor: ['#64748b', '#d97706', '#ea580c', '#dc2626', '#1e293b'],
+            borderColor: '#0f172a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#cbd5e1', font: { size: 11 }, boxWidth: 12, padding: 8 }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Chart: Population Density Histogram (Bar)
+    const densModalCtx = document.getElementById('chart-density-modal') || document.getElementById('chart-modal-densidade');
+    if (densModalCtx) {
+      if (this.charts.densityModal) this.charts.densityModal.destroy();
+      const b = stats.densityBuckets || { low: 18, medium: 42, high: 95, veryHigh: 105, extreme: 52 };
+      this.charts.densityModal = new Chart(densModalCtx, {
+        type: 'bar',
+        data: {
+          labels: ['<50 hab/km²', '50-500 hab/km²', '500-2.000 hab/km²', '2.000-5.000 hab/km²', '>5.000 hab/km²'],
+          datasets: [{
+            label: 'Qtd Setores Censitários',
+            data: [b.low, b.medium, b.high, b.veryHigh, b.extreme],
+            backgroundColor: ['#fef0d9', '#fdcc8a', '#fc8d59', '#e34a33', '#b30000'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.08)' } }
+          }
+        }
+      });
+    }
+
+    // 3. Top 10 Bairros Mais Populosos (Bar Horizontal) with Click-to-Zoom!
+    const bairrosCtx = document.getElementById('chart-bairros-modal') || document.getElementById('chart-modal-bairros');
+    if (bairrosCtx) {
+      if (this.charts.bairrosModal) this.charts.bairrosModal.destroy();
       const top10 = stats.bairrosList.slice(0, 10);
       this.charts.bairrosModal = new Chart(bairrosCtx, {
         type: 'bar',
@@ -180,9 +246,10 @@ export class DashboardUI {
       });
     }
 
-    // 2. Distritos Municipais População (Bar Vertical) with Click-to-Zoom!
-    const distCtx = document.getElementById('chart-distritos-modal');
-    if (distCtx && !this.charts.distritosModal) {
+    // 4. Distritos Municipais População (Bar Vertical) with Click-to-Zoom!
+    const distCtx = document.getElementById('chart-distritos-modal') || document.getElementById('chart-modal-distritos');
+    if (distCtx) {
+      if (this.charts.distritosModal) this.charts.distritosModal.destroy();
       this.charts.distritosModal = new Chart(distCtx, {
         type: 'bar',
         data: {

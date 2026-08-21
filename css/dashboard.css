@@ -322,13 +322,27 @@
   flex: 1;
 }
 
+.modal-body .kpi-grid {
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 20px;
+}
+
+.modal-body .chart-wrapper {
+  height: 230px;
+  position: relative;
+  width: 100%;
+}
+
 .modal-grid-2col {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .modal-body .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .modal-grid-2col {
     grid-template-columns: 1fr;
   }

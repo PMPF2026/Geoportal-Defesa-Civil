@@ -75,6 +75,8 @@ export class SidebarUI {
 
     if (tabId === 'legenda') {
       this.legendUI.render();
+    } else if (tabId === 'dashboard' && window.webGis && window.webGis.dashboardUI) {
+      window.webGis.dashboardUI.render();
     }
   }
 

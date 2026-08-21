@@ -500,74 +500,66 @@
           <i class="lucide-layout-dashboard" style="color:var(--dc-orange-primary);"></i>
           <span>Painel Estratégico de Indicadores — Defesa Civil Passo Fundo/RS</span>
         </div>
-        <button class="modal-close" id="btn-close-dashboard-modal" title="Fechar Dashboard">&times;</button>
+        <button class="modal-close-btn" id="btn-close-dashboard-modal" title="Fechar Dashboard">&times;</button>
       </div>
 
       <div class="modal-body">
+        <!-- 5 KPI Summary Cards -->
         <div class="kpi-grid">
-          <div class="kpi-card" style="border-left: 4px solid var(--dc-hazard-red);">
-            <div class="kpi-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: var(--dc-hazard-red);">
+          <div class="kpi-card kpi-hazard">
+            <div class="kpi-header">
+              <span class="kpi-title">Mancha Enchente</span>
               <i class="lucide-alert-triangle kpi-icon" style="color:var(--dc-hazard-red);"></i>
             </div>
-            <div class="kpi-body">
-              <span class="kpi-label">Área Enchente 2024 (ADA)</span>
-              <span class="kpi-value" id="modal-kpi-flood-area">4,91 km²</span>
-              <span class="kpi-sub">490,9 ha (Decreto Emergencial)</span>
-            </div>
+            <div class="kpi-value"><span data-kpi="floodAreaKm2">4.91</span><span class="kpi-unit">km²</span></div>
+            <div class="kpi-subtitle"><span data-kpi="floodAreaHa">490.9</span> ha atingidos</div>
           </div>
 
-          <div class="kpi-card" style="border-left: 4px solid var(--dc-orange-primary);">
-            <div class="kpi-icon-wrap" style="background: rgba(255, 120, 0, 0.15); color: var(--dc-orange-primary);">
+          <div class="kpi-card kpi-hazard" style="border-left-color: var(--dc-orange-primary);">
+            <div class="kpi-header">
+              <span class="kpi-title">Residências em APP</span>
               <i class="lucide-home kpi-icon" style="color:var(--dc-orange-primary);"></i>
             </div>
-            <div class="kpi-body">
-              <span class="kpi-label">Residências em APP (30m)</span>
-              <span class="kpi-value" id="modal-kpi-residencias">318 un</span>
-              <span class="kpi-sub">Rio Passo Fundo</span>
-            </div>
+            <div class="kpi-value"><span data-kpi="residenciasApp">318</span><span class="kpi-unit">unid</span></div>
+            <div class="kpi-subtitle">Faixa 30m Rio Passo Fundo</div>
           </div>
 
-          <div class="kpi-card" style="border-left: 4px solid var(--dc-safe-green);">
-            <div class="kpi-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: var(--dc-safe-green);">
+          <div class="kpi-card kpi-people">
+            <div class="kpi-header">
+              <span class="kpi-title">População Total</span>
               <i class="lucide-users kpi-icon" style="color:var(--dc-safe-green);"></i>
             </div>
-            <div class="kpi-body">
-              <span class="kpi-label">População Municipal</span>
-              <span class="kpi-value" id="modal-kpi-population">206.215</span>
-              <span class="kpi-sub">Censo Demográfico IBGE 2022</span>
-            </div>
+            <div class="kpi-value"><span data-kpi="totalPop">206.215</span><span class="kpi-unit">hab</span></div>
+            <div class="kpi-subtitle">Censo IBGE 2022</div>
           </div>
 
-          <div class="kpi-card" style="border-left: 4px solid var(--dc-info-cyan);">
-            <div class="kpi-icon-wrap" style="background: rgba(14, 165, 233, 0.15); color: var(--dc-info-cyan);">
+          <div class="kpi-card kpi-water">
+            <div class="kpi-header">
+              <span class="kpi-title">Malha Hídrica</span>
               <i class="lucide-droplet kpi-icon" style="color:var(--dc-info-cyan);"></i>
             </div>
-            <div class="kpi-body">
-              <span class="kpi-label">Malha Hidrográfica</span>
-              <span class="kpi-value" id="modal-kpi-hidro">1.708,7 km</span>
-              <span class="kpi-sub">3.739 trechos fluviais</span>
-            </div>
+            <div class="kpi-value"><span data-kpi="hidroKm">1.708,73</span><span class="kpi-unit">km</span></div>
+            <div class="kpi-subtitle">3.739 trechos fluviais</div>
           </div>
 
-          <div class="kpi-card" style="border-left: 4px solid var(--dc-warning-amber);">
-            <div class="kpi-icon-wrap" style="background: rgba(245, 158, 11, 0.15); color: var(--dc-warning-amber);">
+          <div class="kpi-card kpi-roads">
+            <div class="kpi-header">
+              <span class="kpi-title">Malha Viária</span>
               <i class="lucide-navigation kpi-icon" style="color:var(--dc-warning-amber);"></i>
             </div>
-            <div class="kpi-body">
-              <span class="kpi-label">Malha Viária Urbana</span>
-              <span class="kpi-value" id="modal-kpi-roads">1.501,6 km</span>
-              <span class="kpi-sub">11.595 vias cadastradas</span>
-            </div>
+            <div class="kpi-value"><span data-kpi="totalViasKm">1.959,34</span><span class="kpi-unit">km</span></div>
+            <div class="kpi-subtitle">Total de vias e rodovias</div>
           </div>
         </div>
 
-        <div class="dashboard-grid">
+        <!-- 4 Interactive Charts Grid (2x2) -->
+        <div class="modal-grid-2col">
           <div class="chart-card">
             <div class="chart-card-header">
               <span class="chart-card-title"><i class="lucide-pie-chart"></i> Extensão da Infraestrutura Viária</span>
             </div>
             <div class="chart-wrapper">
-              <canvas id="chart-modal-vias"></canvas>
+              <canvas id="chart-roads-modal"></canvas>
             </div>
           </div>
 
@@ -576,7 +568,7 @@
               <span class="chart-card-title"><i class="lucide-bar-chart"></i> Densidade Setorial (hab/km²)</span>
             </div>
             <div class="chart-wrapper">
-              <canvas id="chart-modal-densidade"></canvas>
+              <canvas id="chart-density-modal"></canvas>
             </div>
           </div>
 
@@ -585,7 +577,7 @@
               <span class="chart-card-title"><i class="lucide-users"></i> Top 10 Bairros Mais Populosos (Clique para aproximar)</span>
             </div>
             <div class="chart-wrapper">
-              <canvas id="chart-modal-bairros"></canvas>
+              <canvas id="chart-bairros-modal"></canvas>
             </div>
           </div>
 
@@ -594,7 +586,7 @@
               <span class="chart-card-title"><i class="lucide-map-pin"></i> População por Distrito (Clique para aproximar)</span>
             </div>
             <div class="chart-wrapper">
-              <canvas id="chart-modal-distritos"></canvas>
+              <canvas id="chart-distritos-modal"></canvas>
             </div>
           </div>
         </div>
