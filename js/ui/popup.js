@@ -108,6 +108,32 @@ export class PopupUI {
       let val = props[field.key];
       if (val === undefined || val === null || val === '') return;
 
+      // Destaque visual prioritário para Distância até a calha do Rio Passo Fundo
+      if (field.key === 'dist_rio_m' || field.format === 'distance_m') {
+        const num = parseFloat(val);
+        const distStr = !isNaN(num) ? `${formatNumber(num, 2)} m` : escapeHtml(String(val));
+        rowsHtml += `
+          <tr style="background: rgba(234, 88, 12, 0.15); border-left: 3px solid #ea580c;">
+            <th style="color: #fdba74; font-weight: 700;">${escapeHtml(field.label)}</th>
+            <td style="font-weight: 800; color: #ffffff; font-size: 13px;">
+              <span style="background: #ea580c; color: #ffffff; padding: 2px 8px; border-radius: 4px; display: inline-block;">${distStr}</span>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Destaque para Faixa de Risco
+      if (field.key === 'faixa_dist') {
+        rowsHtml += `
+          <tr style="background: rgba(245, 158, 11, 0.10);">
+            <th style="color: #fcd34d; font-weight: 700;">${escapeHtml(field.label)}</th>
+            <td style="font-weight: 700; color: #fef08a;">${escapeHtml(String(val))}</td>
+          </tr>
+        `;
+        return;
+      }
+
       let formattedVal = escapeHtml(String(val));
 
       if (field.format === 'number') {

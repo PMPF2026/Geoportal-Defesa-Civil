@@ -136,23 +136,23 @@ export const LAYERS_CONFIG = [
     geometryType: 'Point',
     defaultVisible: true,
     defaultOpacity: 1.0,
-    zIndex: 72,
+    zIndex: 85,
     isCore: true,
     isLazy: false,
     style: {
       pointColor: '#ea580c',
-      pointRadius: 5.5,
+      pointRadius: 6,
       strokeColor: '#ffffff',
-      strokeWidth: 1.8,
+      strokeWidth: 2.0,
       previewColor: '#ea580c'
     },
     popupConfig: {
-      titleField: 'Edificacoe',
+      titleField: 'id',
       titlePrefix: 'Residência na APP — ID: ',
       fields: [
         { key: 'id', label: 'Identificador (ID)' },
         { key: 'Edificacoe', label: 'Tipo de Edificação' },
-        { key: 'dist_rio_m', label: 'Distância até o Rio Passo Fundo (m)', format: 'number' },
+        { key: 'dist_rio_m', label: 'Distância até o Rio Passo Fundo', format: 'distance_m' },
         { key: 'faixa_dist', label: 'Faixa de Proximidade / Risco' }
       ]
     },

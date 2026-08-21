@@ -24,13 +24,13 @@ export class IdentifyTool {
       const pixel = evt.pixel;
       const clickedFeatures = [];
 
-      // Query all features intersecting the pixel with a 6px hit tolerance
+      // Query all features intersecting the pixel with an 8px hit tolerance
       this.map.forEachFeatureAtPixel(pixel, (feature, layer) => {
         if (!layer || !layer.get('isThematicLayer')) return;
         const layerConfig = layer.get('layerConfig') || { name: layer.get('layerName') || 'Camada Customizada' };
         clickedFeatures.push({ feature, layerConfig, layer });
       }, {
-        hitTolerance: 6
+        hitTolerance: 8
       });
 
       if (clickedFeatures.length > 0) {
@@ -47,7 +47,7 @@ export class IdentifyTool {
       if (e.dragging || this.map.get('measuringActive')) return;
       const hit = this.map.hasFeatureAtPixel(e.pixel, {
         layerFilter: (l) => l.get('isThematicLayer') === true,
-        hitTolerance: 4
+        hitTolerance: 6
       });
       this.map.getTargetElement().style.cursor = hit ? 'pointer' : '';
     });
