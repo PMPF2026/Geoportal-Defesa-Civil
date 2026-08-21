@@ -363,6 +363,36 @@ export const LAYERS_CONFIG = [
     searchFields: ['nome']
   },
   {
+    id: 'pontes',
+    name: 'Pontes',
+    fileName: 'Pontes.geojson',
+    group: 'sistema_viario',
+    geometryType: 'MultiPolygon',
+    defaultVisible: true,
+    defaultOpacity: 1,
+    zIndex: 58,
+    isCore: true,
+    isLazy: false,
+    style: {
+      fillColor: 'rgba(217, 119, 6, 0.50)',
+      strokeColor: '#b45309',
+      strokeWidth: 2.0,
+      previewColor: '#d97706'
+    },
+    popupConfig: {
+      titleField: 'id',
+      defaultTitle: 'Ponte',
+      titlePrefix: 'Ponte — ID: ',
+      fields: [
+        { key: 'id', label: 'Identificador (ID)' },
+        { key: 'Pontes', label: 'Tipo de Estrutura' },
+        { key: 'AREA', label: 'Área da Estrutura (m²)', format: 'number' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['id', 'Pontes']
+  },
+  {
     id: 'malha_viaria',
     name: 'Malha Viária Urbana (Ruas)',
     fileName: 'Malha Viária.geojson',
@@ -691,8 +721,8 @@ export const OPERATIONAL_PRESETS = [
   {
     id: 'preset_logistica',
     name: '🚚 Cenário de Acessos & Logística Viária',
-    description: 'Foco em rodovias federais/estaduais, estradas municipais, ferrovia e limites',
-    activeLayers: ['rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'limite_territorial', 'distritos']
+    description: 'Foco em rodovias federais/estaduais, estradas municipais, ferrovia, pontes e limites',
+    activeLayers: ['rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'distritos']
   },
   {
     id: 'preset_demografico',
@@ -704,6 +734,6 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_geral',
     name: '🏛️ Visão Geral Padrão',
     description: 'Configuração institucional inicial com camadas territoriais e de risco',
-    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'limite_territorial', 'bairros', 'distritos']
+    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
   }
 ];
