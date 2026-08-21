@@ -1,0 +1,335 @@
+﻿{
+    "type":  "FeatureCollection",
+    "name":  "Abrigos da Defesa Civil",
+    "crs":  {
+                "type":  "name",
+                "properties":  {
+                                   "name":  "urn:ogc:def:crs:EPSG::31982"
+                               }
+            },
+    "features":  [
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 1",
+                                            "Nome":  "Associação de Moradores do Loteamento Berthier",
+                                            "Tipo":  "CENTRO SOCIAL",
+                                            "Área de Alojamento":  "600 m²",
+                                            "Endereço":  "General Osório, 207 Loteamentos Berthier",
+                                            "Coord_X":  359666.99,
+                                            "Coord_Y":  6871802.69
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              359666.99363817,
+                                                              6871802.6868336
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 2",
+                                            "Nome":  "EMEF Eloi Pinheiro Machado",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "Telmo Ilha, 478, Loteamento Leonardo Ilha",
+                                            "Coord_X":  365188.62,
+                                            "Coord_Y":  6876426.59
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              365188.61914918,
+                                                              6876426.5936048
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 3",
+                                            "Nome":  "Ginásio da UAMPAF",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "735 m²",
+                                            "Endereço":  "Rua Manuel Portela, 163",
+                                            "Coord_X":  363024.62,
+                                            "Coord_Y":  6874336.30
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              363024.62403533,
+                                                              6874336.2985718
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 4",
+                                            "Nome":  "Casa de Passagem Madre Teresa de Calcutá",
+                                            "Tipo":  "PAVILHÃO",
+                                            "Área de Alojamento":  "40 m²",
+                                            "Endereço":  "Uruguai 266 Bairro Petrópolis",
+                                            "Coord_X":  363006.39,
+                                            "Coord_Y":  6874269.06
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              363006.38737015,
+                                                              6874269.0623855
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 5",
+                                            "Nome":  "Ginásio da EMEF Helena Salton",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "Francisco Bianchini, 444 Lot Cesar Santos",
+                                            "Coord_X":  366102.84,
+                                            "Coord_Y":  6870549.50
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              366102.84445193,
+                                                              6870549.4973191
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 6",
+                                            "Nome":  "Ginásio da EMEF Antonino Xavier",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "Oscar Pinto, 903, Vila Jardim",
+                                            "Coord_X":  361020.55,
+                                            "Coord_Y":  6871068.94
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              361020.54911672,
+                                                              6871068.9430385
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 7",
+                                            "Nome":  "Ginásio da EMEF Daniel Dipp",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "São Sebastião, 1941 Bairro Hípica",
+                                            "Coord_X":  358517.65,
+                                            "Coord_Y":  6875048.00
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              358517.65071606,
+                                                              6875048.0009051
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 8",
+                                            "Nome":  "Ginásio da EMEF Wolmar Salton",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "Claudino Toldo, 155 bairro São Cristóvão",
+                                            "Coord_X":  365443.63,
+                                            "Coord_Y":  6870803.77
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              365443.62686826,
+                                                              6870803.7708245
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 9",
+                                            "Nome":  "Associação dos Moradores da Vila Nova",
+                                            "Tipo":  "CENTRO SOCIAL",
+                                            "Área de Alojamento":  "250 m²",
+                                            "Endereço":  "Manoel Beckman, 42 Vila Nova",
+                                            "Coord_X":  364786.55,
+                                            "Coord_Y":  6872867.37
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              364786.55219425,
+                                                              6872867.3655937
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 10",
+                                            "Nome":  "Associação de Moradores do Loteamento Canaã",
+                                            "Tipo":  "CENTRO SOCIAL",
+                                            "Área de Alojamento":  "120 m²",
+                                            "Endereço":  "Lucindo Oliveira, 100 Loteamento Canaã",
+                                            "Coord_X":  365492.81,
+                                            "Coord_Y":  6877632.82
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              365492.80968084,
+                                                              6877632.8179015
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 11",
+                                            "Nome":  "Associação de Moradores do Loteamento Pampa",
+                                            "Tipo":  "CENTRO SOCIAL",
+                                            "Área de Alojamento":  "80 m²",
+                                            "Endereço":  "General Osório, 55 Loteamento Pampa",
+                                            "Coord_X":  359764.12,
+                                            "Coord_Y":  6871774.65
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              359764.12144934,
+                                                              6871774.6482782
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 12",
+                                            "Nome":  "Associação do Moradores da Vila Isabel",
+                                            "Tipo":  "CENTRO SOCIAL",
+                                            "Área de Alojamento":  "300 m²",
+                                            "Endereço":  "Gustavo Barroso, 143 - Vila Isabel",
+                                            "Coord_X":  364683.05,
+                                            "Coord_Y":  6873479.96
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              364683.05038374,
+                                                              6873479.9582727
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 13",
+                                            "Nome":  "Ginásio do Bairro Jaboticabal - PPV",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "600 m²",
+                                            "Endereço":  "Rua Valter Vargas, 208 bairro Jaboticabal",
+                                            "Coord_X":  356662.45,
+                                            "Coord_Y":  6872024.48
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              356662.45228893,
+                                                              6872024.478249
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 14",
+                                            "Nome":  "Ginásio da Paróquia Santo Antônio",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "1200 m²",
+                                            "Endereço":  "Almirante Barroso, 175, Bairro Petrópolis",
+                                            "Coord_X":  363759.41,
+                                            "Coord_Y":  6874170.35
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              363759.41234046,
+                                                              6874170.3498637
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 15",
+                                            "Nome":  "Ginásio da EMEF Diógenes Martins Pinto",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "Dona Sirlei, 363 bairro Integração",
+                                            "Coord_X":  357318.80,
+                                            "Coord_Y":  6873129.81
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              357318.79796336,
+                                                              6873129.8144182
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 16",
+                                            "Nome":  "Ginásio da EMEF Guaraci Barroso Marinho",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "Rua Francisco Dal Conte, 200 Bairro José Alexandre Zachia",
+                                            "Coord_X":  358821.55,
+                                            "Coord_Y":  6876702.51
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              358821.55374382,
+                                                              6876702.5117476
+                                                          ]
+                                      }
+                     },
+                     {
+                         "type":  "Feature",
+                         "properties":  {
+                                            "ID":  "Abrigo 17",
+                                            "Nome":  "Ginásio Poliesportivo do Bairro Zachia",
+                                            "Tipo":  "GINÁSIO",
+                                            "Área de Alojamento":  "650 m²",
+                                            "Endereço":  "Hugo Antônio Busato, 30, Bairro José Alexandre Zachia",
+                                            "Coord_X":  358629.60,
+                                            "Coord_Y":  6877073.15
+                                        },
+                         "geometry":  {
+                                          "type":  "Point",
+                                          "coordinates":  [
+                                                              358629.59880221,
+                                                              6877073.1496241
+                                                          ]
+                                      }
+                     }
+                 ]
+}

@@ -344,13 +344,23 @@ export class LayerManager {
       ];
     }
 
-    // 5. Distritos e Pontos Especializados (Residências em APP)
+    // 5. Distritos e Pontos Especializados (Residências em APP e Abrigos da Defesa Civil)
     if (config.id === 'edificacoes_app') {
       return new ol.style.Style({
         image: new ol.style.Circle({
           radius: s.pointRadius || 6,
           fill: new ol.style.Fill({ color: s.pointColor || '#ea580c' }),
           stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.0 })
+        })
+      });
+    }
+
+    if (config.id === 'abrigos_defesa_civil') {
+      return new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: s.pointRadius || 7,
+          fill: new ol.style.Fill({ color: s.pointColor || '#2563eb' }),
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.2 })
         })
       });
     }

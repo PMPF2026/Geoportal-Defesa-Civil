@@ -152,6 +152,41 @@ export const LAYERS_CONFIG = [
     searchable: true,
     searchFields: ['id', 'Edificacoe']
   },
+  {
+    id: 'abrigos_defesa_civil',
+    name: 'Abrigos da Defesa Civil (17 Locais)',
+    fileName: 'Abrigos da Defesa Civil.geojson',
+    group: 'defesa_civil',
+    geometryType: 'Point',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 87,
+    isCore: true,
+    isLazy: false,
+    style: {
+      pointColor: '#2563eb',
+      pointRadius: 7,
+      strokeColor: '#ffffff',
+      strokeWidth: 2.2,
+      previewColor: '#2563eb'
+    },
+    popupConfig: {
+      titleField: 'Nome',
+      defaultTitle: 'Abrigo da Defesa Civil',
+      titlePrefix: '',
+      fields: [
+        { key: 'ID', label: 'Identificação' },
+        { key: 'Nome', label: 'Nome do Local' },
+        { key: 'Tipo', label: 'Tipo de Estrutura' },
+        { key: 'Área de Alojamento', label: 'Área de Alojamento' },
+        { key: 'Endereço', label: 'Endereço' },
+        { key: 'Coord_X', label: 'Coordenada UTM Este (X)', format: 'number' },
+        { key: 'Coord_Y', label: 'Coordenada UTM Norte (Y)', format: 'number' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['ID', 'Nome', 'Tipo', 'Endereço']
+  },
 
   // ================= 2. HIDROGRAFIA =================
   {
@@ -715,8 +750,8 @@ export const OPERATIONAL_PRESETS = [
   {
     id: 'preset_defesa_civil',
     name: '🚨 Cenário de Risco & Enchentes',
-    description: 'Foco em mancha de inundação 2024, faixa de APP, malha hídrica e bairros',
-    activeLayers: ['areas_enchente_2024', 'app_30metros', 'edificacoes_app', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
+    description: 'Foco em mancha de inundação 2024, faixa de APP, abrigos de emergência, malha hídrica e bairros',
+    activeLayers: ['areas_enchente_2024', 'app_30metros', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
   },
   {
     id: 'preset_logistica',
@@ -734,6 +769,6 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_geral',
     name: '🏛️ Visão Geral Padrão',
     description: 'Configuração institucional inicial com camadas territoriais e de risco',
-    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
+    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
   }
 ];
