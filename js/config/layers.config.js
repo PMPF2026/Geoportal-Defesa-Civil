@@ -82,7 +82,7 @@ export const LAYERS_CONFIG = [
     style: {
       fillColor: 'rgba(239, 68, 68, 0.45)',
       strokeColor: '#dc2626',
-      strokeWidth: 2.8,
+      strokeWidth: 2.4,
       hasPattern: true, // Custom canvas hazard hatching pattern
       patternColor: 'rgba(185, 28, 28, 0.65)',
       previewColor: '#dc2626'
@@ -116,9 +116,9 @@ export const LAYERS_CONFIG = [
     isCore: true,
     isLazy: false,
     style: {
-      fillColor: 'rgba(16, 185, 129, 0.30)',
+      fillColor: 'rgba(16, 185, 129, 0.22)',
       strokeColor: '#059669',
-      strokeWidth: 2.0,
+      strokeWidth: 1.8,
       strokeDash: [4, 4],
       previewColor: '#059669'
     },
@@ -148,9 +148,9 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       pointColor: '#ea580c',
-      pointRadius: 6,
+      pointRadius: 5.5,
       strokeColor: '#ffffff',
-      strokeWidth: 2.0,
+      strokeWidth: 1.8,
       previewColor: '#ea580c'
     },
     popupConfig: {
@@ -183,9 +183,9 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       pointColor: '#1d4ed8',
-      pointRadius: 7.5,
+      pointRadius: 7.0,
       strokeColor: '#ffffff',
-      strokeWidth: 2.5,
+      strokeWidth: 2.2,
       previewColor: '#1d4ed8'
     },
     popupConfig: {
@@ -219,9 +219,9 @@ export const LAYERS_CONFIG = [
     isCore: true,
     isLazy: false,
     style: {
-      fillColor: 'rgba(37, 99, 235, 0.32)',
+      fillColor: 'rgba(37, 99, 235, 0.22)',
       strokeColor: '#1d4ed8',
-      strokeWidth: 2.4,
+      strokeWidth: 1.8,
       previewColor: '#1d4ed8'
     },
     popupConfig: {
@@ -250,7 +250,7 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       strokeColor: '#0284c7',
-      strokeWidth: 2.2,
+      strokeWidth: 1.8,
       previewColor: '#0284c7'
     },
     popupConfig: {
@@ -280,7 +280,7 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       strokeColor: '#0284c7',
-      strokeWidth: 1.2,
+      strokeWidth: 0.8,
       isHierarchicalHydro: true, // Dynamic line width based on hydrologic stream order
       previewColor: '#0284c7'
     },
@@ -312,8 +312,8 @@ export const LAYERS_CONFIG = [
     isLazy: true,
     style: {
       strokeColor: '#7c3aed',
-      strokeWidth: 1.6,
-      strokeDash: [8, 5],
+      strokeWidth: 1.0,
+      strokeDash: [6, 5],
       previewColor: '#7c3aed'
     },
     popupConfig: {
@@ -344,9 +344,9 @@ export const LAYERS_CONFIG = [
     highwayType: 'BR',
     style: {
       strokeColor: '#dc2626',
-      strokeWidth: 2.2,
+      strokeWidth: 1.8,
       casingColor: '#ffffff',
-      casingWidth: 3.6,
+      casingWidth: 2.8,
       previewColor: '#dc2626'
     },
     popupConfig: {
@@ -380,9 +380,9 @@ export const LAYERS_CONFIG = [
     highwayType: 'ERS',
     style: {
       strokeColor: '#ea580c',
-      strokeWidth: 1.8,
+      strokeWidth: 1.4,
       casingColor: '#ffffff',
-      casingWidth: 3.0,
+      casingWidth: 2.2,
       previewColor: '#ea580c'
     },
     popupConfig: {
@@ -412,7 +412,7 @@ export const LAYERS_CONFIG = [
     zIndex: 44,
     style: {
       strokeColor: '#d97706',
-      strokeWidth: 1.5,
+      strokeWidth: 1.0,
       previewColor: '#d97706'
     },
     popupConfig: {
@@ -441,7 +441,7 @@ export const LAYERS_CONFIG = [
     isRailway: true,
     style: {
       strokeColor: '#0f172a',
-      strokeWidth: 2.2,
+      strokeWidth: 1.6,
       previewColor: '#0f172a'
     },
     popupConfig: {
@@ -473,7 +473,7 @@ export const LAYERS_CONFIG = [
     style: {
       fillColor: 'rgba(217, 119, 6, 0.50)',
       strokeColor: '#b45309',
-      strokeWidth: 2.0,
+      strokeWidth: 1.8,
       previewColor: '#d97706'
     },
     popupConfig: {
@@ -498,13 +498,13 @@ export const LAYERS_CONFIG = [
     group: 'sistema_viario',
     geometryType: 'MultiLineString',
     defaultVisible: false,
-    defaultOpacity: 0.75,
+    defaultOpacity: 0.65,
     zIndex: 35,
     isLazy: true,
     minZoom: 14, // Scale-dependent visibility to prevent viewport clogging
     style: {
       strokeColor: '#64748b',
-      strokeWidth: 1.3,
+      strokeWidth: 0.9,
       previewColor: '#64748b'
     },
     popupConfig: {
@@ -540,8 +540,8 @@ export const LAYERS_CONFIG = [
     style: {
       fillColor: 'rgba(0, 0, 0, 0)',
       strokeColor: '#0f172a',
-      strokeWidth: 3.2,
-      strokeDash: [10, 6],
+      strokeWidth: 1.8,
+      strokeDash: [8, 5],
       previewColor: '#0f172a'
     },
     popupConfig: {
@@ -572,9 +572,9 @@ export const LAYERS_CONFIG = [
     isCore: true,
     isLazy: false,
     style: {
-      fillColor: 'rgba(16, 185, 129, 0.15)',
+      fillColor: 'rgba(16, 185, 129, 0.08)',
       strokeColor: '#059669',
-      strokeWidth: 1.6,
+      strokeWidth: 1.0,
       showCentroidLabels: true,
       minLabelZoom: 12,
       previewColor: '#059669'
@@ -608,9 +608,9 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       pointColor: '#dc2626',
-      pointRadius: 8,
+      pointRadius: 7,
       strokeColor: '#ffffff',
-      strokeWidth: 2.5,
+      strokeWidth: 2.0,
       previewColor: '#dc2626'
     },
     popupConfig: {
@@ -640,7 +640,7 @@ export const LAYERS_CONFIG = [
     style: {
       fillColor: 'rgba(100, 116, 139, 0.1)',
       strokeColor: '#475569',
-      strokeWidth: 1.0,
+      strokeWidth: 0.6,
       previewColor: '#475569'
     },
     popupConfig: {
@@ -674,7 +674,7 @@ export const LAYERS_CONFIG = [
     style: {
       fillColor: 'rgba(71, 85, 105, 0.05)',
       strokeColor: '#64748b',
-      strokeWidth: 0.9,
+      strokeWidth: 0.6,
       previewColor: '#64748b'
     },
     popupConfig: {
@@ -708,7 +708,7 @@ export const LAYERS_CONFIG = [
     style: {
       fillColor: 'rgba(147, 51, 234, 0.12)',
       strokeColor: '#9333ea',
-      strokeWidth: 2.2,
+      strokeWidth: 1.4,
       strokeDash: [6, 6],
       previewColor: '#9333ea'
     },

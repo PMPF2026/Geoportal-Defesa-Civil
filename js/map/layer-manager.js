@@ -286,17 +286,17 @@ export class LayerManager {
         }),
         stroke: new ol.style.Stroke({
           color: '#dc2626',
-          width: 3
+          width: 2.4
         })
       });
     }
 
-    // 2. Hidrografia: Espessura hierárquica por ordem de Strahler
+    // 2. Hidrografia: Espessura hierárquica calibrada e não invasiva
     if (config.id === 'malha_hidrica') {
       return (feature) => {
         const ordem = parseInt(feature.get('ordem'), 10) || 1;
-        const width = ordem >= 3 ? 1.8 : (ordem === 2 ? 1.2 : 0.8);
-        const color = ordem >= 3 ? '#0284c7' : (ordem === 2 ? '#38bdf8' : '#7dd3fc');
+        const width = ordem >= 4 ? 1.3 : (ordem === 3 ? 0.95 : (ordem === 2 ? 0.7 : 0.5));
+        const color = ordem >= 4 ? '#0284c7' : (ordem === 3 ? '#0ea5e9' : (ordem === 2 ? '#38bdf8' : '#7dd3fc'));
 
         return new ol.style.Style({
           stroke: new ol.style.Stroke({
@@ -307,15 +307,15 @@ export class LayerManager {
       };
     }
 
-    // 3. Rodovias (Federal / Estadual): Dual Casing Style (Padrão Cartográfico Oficial)
+    // 3. Rodovias (Federal / Estadual): Dual Casing Style (Padrão Cartográfico Oficial Limpo)
     if (config.isHighway) {
       const isFederal = config.highwayType === 'BR';
       const mainColor = isFederal ? '#dc2626' : '#ea580c';
-      const mainWidth = isFederal ? 2.2 : 1.8;
-      const casingWidth = isFederal ? 3.6 : 3.0;
+      const mainWidth = isFederal ? 1.8 : 1.4;
+      const casingWidth = isFederal ? 2.8 : 2.2;
 
       return [
-        // Linha externa (casing branco de contraste)
+        // Linha externa (casing branco de contraste sutil)
         new ol.style.Style({
           stroke: new ol.style.Stroke({
             color: '#ffffff',
@@ -336,10 +336,10 @@ export class LayerManager {
     if (config.isRailway) {
       return [
         new ol.style.Style({
-          stroke: new ol.style.Stroke({ color: '#1e293b', width: 2.6 })
+          stroke: new ol.style.Stroke({ color: '#1e293b', width: 2.0 })
         }),
         new ol.style.Style({
-          stroke: new ol.style.Stroke({ color: '#ffffff', width: 1.2, lineDash: [6, 6] })
+          stroke: new ol.style.Stroke({ color: '#ffffff', width: 1.0, lineDash: [5, 5] })
         })
       ];
     }
@@ -348,9 +348,9 @@ export class LayerManager {
     if (config.id === 'edificacoes_app') {
       return new ol.style.Style({
         image: new ol.style.Circle({
-          radius: s.pointRadius || 6,
+          radius: s.pointRadius || 5.5,
           fill: new ol.style.Fill({ color: s.pointColor || '#ea580c' }),
-          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.0 })
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: s.strokeWidth || 1.8 })
         })
       });
     }
@@ -358,9 +358,9 @@ export class LayerManager {
     if (config.id === 'abrigos_defesa_civil') {
       return new ol.style.Style({
         image: new ol.style.Circle({
-          radius: s.pointRadius || 7.5,
+          radius: s.pointRadius || 7.0,
           fill: new ol.style.Fill({ color: s.pointColor || '#1d4ed8' }),
-          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: s.strokeWidth || 2.5 })
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: s.strokeWidth || 2.2 })
         })
       });
     }
@@ -370,18 +370,18 @@ export class LayerManager {
         const name = feature.get('nome') || '';
         return new ol.style.Style({
           image: new ol.style.Circle({
-            radius: s.pointRadius || 8,
+            radius: s.pointRadius || 7,
             fill: new ol.style.Fill({ color: s.pointColor || '#dc2626' }),
-            stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.5 })
+            stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.0 })
           }),
           text: new ol.style.Text({
             text: name,
-            offsetY: -16,
-            font: 'bold 12px "Inter", sans-serif',
+            offsetY: -15,
+            font: 'bold 11.5px "Inter", sans-serif',
             fill: new ol.style.Fill({ color: '#ffffff' }),
-            stroke: new ol.style.Stroke({ color: '#0f172a', width: 3.5 }),
+            stroke: new ol.style.Stroke({ color: '#0f172a', width: 3.0 }),
             backgroundFill: new ol.style.Fill({ color: 'rgba(15, 23, 42, 0.85)' }),
-            padding: [3, 7, 3, 7]
+            padding: [2, 6, 2, 6]
           })
         });
       };
@@ -403,14 +403,14 @@ export class LayerManager {
             text: cleanName,
             font: 'bold 11px "Inter", sans-serif',
             fill: new ol.style.Fill({ color: '#ffffff' }),
-            stroke: new ol.style.Stroke({ color: '#064e3b', width: 3 }),
+            stroke: new ol.style.Stroke({ color: '#064e3b', width: 2.8 }),
             overflow: false
           });
         }
 
         return new ol.style.Style({
-          fill: new ol.style.Fill({ color: s.fillColor || 'rgba(16, 185, 129, 0.15)' }),
-          stroke: new ol.style.Stroke({ color: s.strokeColor || '#059669', width: 1.6 }),
+          fill: new ol.style.Fill({ color: s.fillColor || 'rgba(16, 185, 129, 0.08)' }),
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#059669', width: s.strokeWidth || 1.0 }),
           text: textStyle
         });
       };

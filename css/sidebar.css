@@ -346,11 +346,22 @@
   border: 1px solid var(--dc-blue-border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .layer-group:hover {
   border-color: rgba(255, 120, 0, 0.4);
+}
+
+/* Destaque sutil para os grupos prioritários operacionais da Defesa Civil */
+.layer-group[data-group-id="defesa_civil"] {
+  border-left: 3.5px solid var(--dc-orange-primary);
+  background: linear-gradient(90deg, rgba(234, 88, 12, 0.05) 0%, var(--dc-blue-card) 100%);
+}
+
+.layer-group[data-group-id="abrigos_cobertura"] {
+  border-left: 3.5px solid #2563eb;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.05) 0%, var(--dc-blue-card) 100%);
 }
 
 .layer-group-header {
