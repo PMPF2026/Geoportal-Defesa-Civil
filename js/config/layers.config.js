@@ -187,6 +187,33 @@ export const LAYERS_CONFIG = [
     searchable: true,
     searchFields: ['ID', 'Nome', 'Tipo', 'Endereço']
   },
+  {
+    id: 'cobertura_abrigos_1km',
+    name: 'Cobertura de Abrigos — 1 km',
+    fileName: 'Cobertura de Abrigos em 1km.geojson',
+    group: 'defesa_civil',
+    geometryType: 'MultiPolygon',
+    defaultVisible: true,
+    defaultOpacity: 0.75,
+    zIndex: 40,
+    isCore: true,
+    isLazy: false,
+    style: {
+      fillColor: 'rgba(37, 99, 235, 0.18)',
+      strokeColor: '#2563eb',
+      strokeWidth: 1.8,
+      strokeDash: [6, 4],
+      previewColor: '#2563eb'
+    },
+    popupConfig: {
+      defaultTitle: 'Cobertura de Abrigos — 1 km',
+      fields: [
+        { key: 'cobertura', label: 'Área de Cobertura', defaultValue: 'Raio territorial de 1 km (1.000 m)' },
+        { key: 'finalidade', label: 'Finalidade Operacional', defaultValue: 'Área de influência e atendimento prioritário dos Abrigos da Defesa Civil' }
+      ]
+    },
+    searchable: false
+  },
 
   // ================= 2. HIDROGRAFIA =================
   {
@@ -750,8 +777,8 @@ export const OPERATIONAL_PRESETS = [
   {
     id: 'preset_defesa_civil',
     name: '🚨 Cenário de Risco & Enchentes',
-    description: 'Foco em mancha de inundação 2024, faixa de APP, abrigos de emergência, malha hídrica e bairros',
-    activeLayers: ['areas_enchente_2024', 'app_30metros', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
+    description: 'Foco em mancha de inundação 2024, faixa de APP, abrigos de emergência e sua cobertura de 1 km, malha hídrica e bairros',
+    activeLayers: ['areas_enchente_2024', 'app_30metros', 'cobertura_abrigos_1km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
   },
   {
     id: 'preset_logistica',
@@ -769,6 +796,6 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_geral',
     name: '🏛️ Visão Geral Padrão',
     description: 'Configuração institucional inicial com camadas territoriais e de risco',
-    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
+    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'cobertura_abrigos_1km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
   }
 ];
