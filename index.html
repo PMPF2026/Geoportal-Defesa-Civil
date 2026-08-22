@@ -478,6 +478,18 @@
 
         <!-- Floating Map Controls (Top Right) -->
         <div class="map-floating-toolbar" role="toolbar" aria-label="Ferramentas e Controles do Mapa">
+          <!-- North Indicator / Orientação Cartográfica -->
+          <div class="map-btn-group" role="group" aria-label="Orientação Cartográfica Norte">
+            <button class="map-control-btn north-indicator-btn" id="btn-north-indicator" data-tooltip="Norte Cartográfico (N)" title="Norte Cartográfico (N)" aria-label="Indicador de Orientação Norte Cartográfico">
+              <div class="north-indicator-wrapper">
+                <span class="north-indicator-label">N</span>
+                <svg id="north-arrow-svg" class="north-arrow-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2L18.5 20.5L12 16.5L5.5 20.5L12 2Z" fill="#ff7800" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
+              </div>
+            </button>
+          </div>
+
           <!-- Navigation Controls -->
           <div class="map-btn-group" role="group" aria-label="Controles de Navegação e Zoom">
             <button class="map-control-btn" id="btn-zoom-in" data-tooltip="Aproximar Zoom (+)" title="Aproximar Zoom (+)" aria-label="Aproximar Zoom no Mapa">

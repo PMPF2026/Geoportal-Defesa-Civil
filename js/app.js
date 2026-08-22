@@ -126,6 +126,32 @@ class WebGisApp {
   }
 
   bindFloatingControls() {
+    // 0. North Indicator / Cartographic Compass Control
+    const northBtn = document.getElementById('btn-north-indicator');
+    const northArrow = document.getElementById('north-arrow-svg');
+    if (northBtn) {
+      northBtn.addEventListener('click', () => {
+        const view = this.mapEngine.getOlMap().getView();
+        if (view.getRotation() !== 0) {
+          view.animate({
+            rotation: 0,
+            duration: 350
+          });
+          Notification.info('Orientação redefinida para o Norte.');
+        } else {
+          Notification.info('Mapa orientado para o Norte (0°).');
+        }
+      });
+
+      // Keep north arrow aligned with map rotation dynamically
+      this.mapEngine.getOlMap().getView().on('change:rotation', (e) => {
+        const rotation = e.target.getRotation();
+        if (northArrow) {
+          northArrow.style.transform = `rotate(${rotation}rad)`;
+        }
+      });
+    }
+
     const zoomInBtn = document.getElementById('btn-zoom-in');
     if (zoomInBtn) zoomInBtn.addEventListener('click', () => this.mapEngine.zoomIn());
 
