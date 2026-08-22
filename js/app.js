@@ -14,6 +14,7 @@ import { Notification } from './ui/notification.js';
 import { IdentifyTool } from './tools/identify.js';
 import { MeasureTool } from './tools/measure.js';
 import { SpatialAnalysisTool } from './tools/spatial-analysis.js';
+import { ShelterAnalysisTool } from './tools/shelter-analysis.js';
 import { ExportReportTool } from './tools/export-report.js';
 import { LayerImporter } from './tools/layer-importer.js';
 import { StatsEngine } from './dashboard/stats-engine.js';
@@ -31,6 +32,7 @@ class WebGisApp {
     this.identifyTool = null;
     this.measureTool = null;
     this.spatialAnalysisTool = null;
+    this.shelterAnalysisTool = null;
     this.exportReportTool = null;
     this.layerImporter = null;
     this.statsEngine = null;
@@ -71,6 +73,9 @@ class WebGisApp {
 
       // 10. Initialize Spatial Analysis Tool
       this.spatialAnalysisTool = new SpatialAnalysisTool(this.mapEngine, this.layerManager);
+
+      // 10.1. Initialize Shelter Spatial & Demographic Analysis Tool
+      this.shelterAnalysisTool = new ShelterAnalysisTool(this.mapEngine, this.layerManager, this.popupUI);
 
       // 11. Initialize Stats Engine & Dashboard UI (with Map Zoom Linking)
       this.statsEngine = new StatsEngine(this.layerManager);
