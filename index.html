@@ -326,6 +326,15 @@
                   <div class="kpi-value"><span data-kpi="totalViasKm">1.959,34</span><span class="kpi-unit">km</span></div>
                   <div class="kpi-subtitle">Total de vias e rodovias</div>
                 </div>
+
+                <div class="kpi-card" style="border-left: 3px solid #2563eb; background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, var(--dc-blue-card) 100%);">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Abrigos Defesa Civil</span>
+                    <i class="lucide-home kpi-icon" style="color:#2563eb;"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="totalAbrigos">17</span><span class="kpi-unit">unid</span></div>
+                  <div class="kpi-subtitle"><span data-kpi="abrigosAreaM2">8.875</span> m² de acolhimento</div>
+                </div>
               </div>
 
               <!-- Charts in Sidebar -->
@@ -633,6 +642,15 @@
             <div class="kpi-value"><span data-kpi="totalViasKm">1.959,34</span><span class="kpi-unit">km</span></div>
             <div class="kpi-subtitle">Total de vias e rodovias</div>
           </div>
+
+          <div class="kpi-card" style="border-left: 3px solid #2563eb; background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, var(--dc-blue-card) 100%);">
+            <div class="kpi-header">
+              <span class="kpi-title">Abrigos Defesa Civil</span>
+              <i class="lucide-home kpi-icon" style="color:#2563eb;"></i>
+            </div>
+            <div class="kpi-value"><span data-kpi="totalAbrigos">17</span><span class="kpi-unit">unid</span></div>
+            <div class="kpi-subtitle"><span data-kpi="abrigosAreaM2">8.875</span> m² de acolhimento</div>
+          </div>
         </div>
 
         <!-- 4 Interactive Charts Grid (2x2) -->
@@ -671,6 +689,48 @@
             <div class="chart-wrapper">
               <canvas id="chart-distritos-modal"></canvas>
             </div>
+          </div>
+        </div>
+
+        <!-- ================= SEÇÃO DEDICADA: ABRIGOS DA DEFESA CIVIL ================= -->
+        <div class="dashboard-shelters-section" style="margin-top:20px; border-top:1px solid var(--dc-blue-border); padding-top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="font-size:13.5px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                <i class="lucide-home" style="color:#2563eb;"></i>
+                <span>ABRIGOS DA DEFESA CIVIL EM CASO DE DESASTRE</span>
+                <span class="badge-blue" style="font-size:10.5px;">17 Locais Oficiais</span>
+              </div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">
+                Estrutura municipal de acolhimento e resposta a desastres climáticos &bull; Área total de alojamento: <strong>8.875 m²</strong>
+              </div>
+            </div>
+            <div style="position:relative; width:260px;">
+              <input type="text" id="dash-shelters-search" class="layer-filter-input" placeholder="Filtrar abrigo, bairro ou rua..." style="padding-left:10px;" />
+            </div>
+          </div>
+
+          <div class="shelter-table-wrapper" style="max-height: 280px; overflow-y:auto; border:1px solid var(--dc-blue-border); border-radius:var(--radius-md);">
+            <table class="shelter-data-table" style="width:100%; border-collapse:collapse; font-size:12px;">
+              <thead>
+                <tr style="background:rgba(255,255,255,0.04); text-align:left; border-bottom:1px solid var(--dc-blue-border);">
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px;">ID</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px;">Nome do Local</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px;">Tipo de Estrutura</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px;">Endereço Cadastrado</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:right;">Área de Alojamento</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;">Mapa</th>
+                </tr>
+              </thead>
+              <tbody id="dash-shelters-table-body">
+                <!-- Populated dynamically via dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:11px; color:var(--text-subtle); flex-wrap:wrap; gap:6px;">
+            <span><strong>Fonte:</strong> Defesa Civil Municipal de Passo Fundo &bull; Base Oficial 2026</span>
+            <span><em>Nota: Capacidade em pessoas não discriminada na planilha original (utilizada área em m²). Clique no botão do mapa para aproximar no local.</em></span>
           </div>
         </div>
       </div>

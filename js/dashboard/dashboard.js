@@ -51,6 +51,7 @@ export class DashboardUI {
     if (this.modalEl) {
       this.modalEl.classList.add('active');
       this.renderModalCharts();
+      this.renderSheltersTable();
     }
   }
 
@@ -327,5 +328,107 @@ export class DashboardUI {
       const cfg = this.layerManager.getConfig('distritos');
       this.popupUI.showPopupForFeature(matched, cfg, geom.getCoordinates());
     }
+  }
+
+  /**
+   * Renders the interactive shelters table in the expanded dashboard modal
+   */
+  async renderSheltersTable() {
+    const tbody = document.getElementById('dash-shelters-table-body');
+    if (!tbody) return;
+
+    await this.layerManager.loadLayerData('abrigos_defesa_civil');
+    const layer = this.layerManager.getLayer('abrigos_defesa_civil');
+    if (!layer) return;
+
+    const features = layer.getSource().getFeatures();
+    if (!features || features.length === 0) return;
+
+    this.shelterFeatures = features;
+
+    const renderRows = (list) => {
+      tbody.innerHTML = '';
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Nenhum abrigo localizado com o filtro informado.</td></tr>`;
+        return;
+      }
+
+      list.forEach(f => {
+        const props = f.getProperties();
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; cursor:pointer;';
+        tr.onmouseenter = () => tr.style.background = 'rgba(255,255,255,0.04)';
+        tr.onmouseleave = () => tr.style.background = 'transparent';
+
+        tr.innerHTML = `
+          <td style="padding:7px 10px; font-weight:700; color:#38bdf8;">${props['ID'] || ''}</td>
+          <td style="padding:7px 10px; font-weight:600; color:var(--text-main);">${props['Nome'] || ''}</td>
+          <td style="padding:7px 10px;"><span class="badge-blue" style="font-size:10px;">${props['Tipo'] || 'ABRIGO'}</span></td>
+          <td style="padding:7px 10px; color:var(--text-muted);">${props['Endereço'] || '-'}</td>
+          <td style="padding:7px 10px; text-align:right; font-weight:700; color:var(--text-main);">${props['Área de Alojamento'] || '-'}</td>
+          <td style="padding:7px 10px; text-align:center;">
+            <button class="mini-btn btn-view-shelter-map" style="padding:3px 8px; font-size:11px;" title="Aproximar no Mapa">
+              <i class="lucide-map-pin"></i> Ver
+            </button>
+          </td>
+        `;
+
+        const onSelect = () => {
+          this.closeModal();
+          this.zoomToShelterFeature(f);
+        };
+
+        tr.addEventListener('click', onSelect);
+        tbody.appendChild(tr);
+      });
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    renderRows(features);
+
+    const searchInput = document.getElementById('dash-shelters-search');
+    if (searchInput && !this.shelterSearchBound) {
+      this.shelterSearchBound = true;
+      searchInput.addEventListener('input', (e) => {
+        const q = (e.target.value || '').toLowerCase().trim();
+        if (!q) {
+          renderRows(this.shelterFeatures);
+        } else {
+          const filtered = this.shelterFeatures.filter(f => {
+            const p = f.getProperties();
+            const str = `${p['ID']} ${p['Nome']} ${p['Tipo']} ${p['Endereço']}`.toLowerCase();
+            return str.includes(q);
+          });
+          renderRows(filtered);
+        }
+      });
+    }
+  }
+
+  /**
+   * Zooms to the selected shelter on the map, highlights it and opens popup
+   */
+  async zoomToShelterFeature(feature) {
+    const geom = feature.getGeometry();
+    if (!geom) return;
+
+    // Ensure layer is visible
+    this.layerManager.setLayerVisibility('abrigos_defesa_civil', true);
+    const checkbox = document.querySelector(`input[data-layer-id="abrigos_defesa_civil"]`);
+    if (checkbox) checkbox.checked = true;
+
+    const coords = geom.getCoordinates();
+    this.mapEngine.setHighlight(feature);
+    this.mapEngine.getOlMap().getView().animate({
+      center: coords,
+      zoom: 16.5,
+      duration: 700
+    });
+
+    const cfg = this.layerManager.getConfig('abrigos_defesa_civil');
+    this.popupUI.showPopupForFeature(feature, cfg, coords);
   }
 }

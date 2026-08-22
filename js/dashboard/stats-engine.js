@@ -51,7 +51,9 @@ export class StatsEngine {
       rodoviaEstadualKm: 66.86,
       rodoviaFederalKm: 50.29,
       ferroviaKm: 55.29,
-      totalViasKm: 1959.34
+      totalViasKm: 1959.34,
+      totalAbrigos: 17,
+      abrigosAreaM2: 8875
     };
   }
 
