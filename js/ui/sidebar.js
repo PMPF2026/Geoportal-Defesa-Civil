@@ -206,9 +206,10 @@ export class SidebarUI {
             <input type="range" min="0" max="100" value="${(layer.defaultOpacity || 1) * 100}" class="opacity-slider" data-layer-id="${layer.id}" />
             <span class="opacity-val">${Math.round((layer.defaultOpacity || 1) * 100)}%</span>
           </div>
-          <div class="layer-meta-badge">
-            <i class="lucide-file-text" style="font-size:10px;"></i>
-            <span>${layer.fileName}</span>
+          <div class="layer-meta-badge" style="display:flex; flex-direction:column; gap:3px; font-size:10.5px; margin-top:6px; line-height:1.4;">
+            <div><i class="lucide-database" style="font-size:10px; color:var(--dc-orange-primary);"></i> <strong>Fonte:</strong> ${layer.source || 'Prefeitura Municipal de Passo Fundo'}</div>
+            ${layer.refDate ? `<div><i class="lucide-calendar" style="font-size:10px; color:#38bdf8;"></i> <strong>Referência:</strong> ${layer.refDate}</div>` : ''}
+            <div><i class="lucide-file-text" style="font-size:10px; color:var(--text-muted);"></i> <span>${layer.fileName}</span></div>
           </div>
         </div>
       </div>

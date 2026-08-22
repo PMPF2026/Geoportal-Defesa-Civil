@@ -813,7 +813,33 @@ export class ExportReportTool {
         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #ff7800; border-radius: 6px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; color: #334155;">
           <strong style="color:#0f172a; font-size:12px; display:block; margin-bottom:2px;">Elaboração técnica:</strong>
           <strong style="color:#0f172a; font-size:12.5px;">Vagner A. Duarte – Geógrafo</strong><br>
-          <span>Secretaria de Planejamento – Prefeitura Municipal de Passo Fundo/RS.</span>
+        <!-- 13. FONTES DOS DADOS -->
+        <h3 class="section-title">
+          <span><span class="badge-num">10</span> FONTES DOS DADOS E METADADOS</span>
+          <span class="badge-blue">TRANSPARÊNCIA PÚBLICA</span>
+        </h3>
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 11.5px; color: #334155; line-height: 1.5;">
+          <div style="margin-bottom: 8px;">
+            <strong style="color: #0f172a;">• IBGE — Censo Demográfico 2022:</strong>
+            Malhas territoriais e informações censitárias utilizadas nas análises, quando aplicável.
+          </div>
+          <div style="margin-bottom: 8px;">
+            <strong style="color: #0f172a;">• Defesa Civil de Passo Fundo:</strong>
+            Informações e dados temáticos relacionados à Defesa Civil, áreas de risco, abrigos e demais informações institucionais disponibilizadas pelo órgão.
+          </div>
+          <div style="margin-bottom: 8px;">
+            <strong style="color: #0f172a;">• Prefeitura Municipal de Passo Fundo:</strong>
+            Bases cartográficas, levantamentos, mapeamentos e informações geoespaciais municipais utilizadas no portal, conforme cada camada.
+          </div>
+          <div>
+            <strong style="color: #0f172a;">• Outras fontes:</strong>
+            Quando uma camada utilizar fonte diferente, indicar sua origem especificamente nos metadados ou na descrição da respectiva camada.
+          </div>
+        </div>
+
+        <!-- 14. AVISO INSTITUCIONAL -->
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; border-radius: 6px; padding: 10px 14px; margin-bottom: 20px; font-size: 11px; color: #1e3a8a; line-height: 1.5;">
+          <strong>Aviso:</strong> Este relatório possui caráter exclusivamente informativo e institucional. As informações apresentadas são baseadas nas fontes e bases de dados disponíveis no momento da elaboração e podem estar sujeitas a atualizações. A utilização das informações deve considerar sua fonte, escala, data de atualização e finalidade.
         </div>
 
         <div style="font-size:11px; color:#64748b; margin-bottom:20px;">

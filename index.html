@@ -364,13 +364,61 @@
             </div>
 
             <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6; display:flex; flex-direction:column; gap:12px;">
-              <p>
-                O <strong>Portal Geoespacial da Defesa Civil de Passo Fundo/RS</strong> é uma plataforma de inteligência territorial e apoio à tomada de decisão operacional em situações de emergência, desastres hidrológicos e planejamento preventivo de risco.
-              </p>
               
+              <!-- 1. FINALIDADE DO PORTAL -->
+              <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); padding:12px 14px; border-radius:var(--radius-md);">
+                <strong style="color:var(--text-main); display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:6px;">
+                  <i class="lucide-target" style="color:var(--dc-orange-primary);"></i> Finalidade do Portal:
+                </strong>
+                <p style="color:var(--text-main); font-size:12px; margin-bottom:8px; line-height:1.5;">
+                  O <strong>Portal Geoespacial / WebGIS da Defesa Civil de Passo Fundo/RS</strong> tem finalidade exclusivamente <strong>informativa, institucional e de apoio à gestão territorial e à Defesa Civil</strong>.
+                </p>
+                <p style="color:var(--text-muted); font-size:11.5px; margin-bottom:8px; line-height:1.5;">
+                  O sistema permite a visualização, consulta e análise de informações geoespaciais relacionadas ao território municipal, infraestrutura, recursos naturais, áreas de risco, abrigos e demais informações relevantes à prevenção e preparação para situações de emergência e desastre.
+                </p>
+                <p style="color:var(--text-muted); font-size:11px; line-height:1.4; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+                  ⚠️ <em>As informações disponibilizadas no portal não substituem comunicados oficiais, alertas, determinações ou orientações emitidas pela Defesa Civil e pelos demais órgãos públicos competentes.</em>
+                </p>
+              </div>
+
+              <!-- 2. FONTES DOS DADOS E INFORMAÇÕES -->
+              <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); padding:12px 14px; border-radius:var(--radius-md);">
+                <strong style="color:var(--text-main); display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:6px;">
+                  <i class="lucide-database" style="color:var(--dc-orange-primary);"></i> Fontes dos Dados e Informações:
+                </strong>
+                <p style="color:var(--text-muted); font-size:11.5px; margin-bottom:8px; line-height:1.5;">
+                  O Portal Geoespacial / WebGIS da Defesa Civil de Passo Fundo/RS reúne informações geoespaciais e temáticas destinadas ao apoio à visualização, consulta e interpretação do território municipal sob a perspectiva da prevenção e gestão de riscos e desastres. As informações apresentadas no portal são provenientes de diferentes fontes institucionais e bases públicas, conforme a natureza de cada camada:
+                </p>
+                <ul style="margin-left: 16px; font-size: 11.5px; display:flex; flex-direction:column; gap:6px; color:var(--text-muted);">
+                  <li><strong>Dados censitários e malhas territoriais:</strong> informações provenientes do <strong>Instituto Brasileiro de Geografia e Estatística — IBGE</strong>, especialmente dados e malhas relacionados ao <strong>Censo Demográfico 2022</strong>, quando aplicável.</li>
+                  <li><strong>Informações de Defesa Civil:</strong> dados e informações disponibilizados pela <strong>Defesa Civil</strong>, incluindo informações relacionadas a áreas de risco, abrigos, ocorrências, estruturas e demais informações temáticas produzidas ou disponibilizadas pelo órgão.</li>
+                  <li><strong>Dados geoespaciais municipais:</strong> informações provenientes de bases, levantamentos, mapeamentos e produtos geoespaciais produzidos ou disponibilizados pela <strong>Prefeitura Municipal de Passo Fundo</strong>, conforme a disponibilidade e finalidade de cada informação.</li>
+                </ul>
+                <p style="color:var(--text-subtle); font-size:10.5px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+                  Outras fontes poderão ser indicadas individualmente na descrição ou nos metadados das respectivas camadas.
+                </p>
+              </div>
+
+              <!-- 3. PRIVACIDADE E NATUREZA DAS INFORMAÇÕES -->
+              <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); padding:12px 14px; border-radius:var(--radius-md);">
+                <strong style="color:var(--text-main); display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:6px;">
+                  <i class="lucide-shield-check" style="color:var(--dc-safe-green);"></i> Privacidade e Natureza das Informações:
+                </strong>
+                <p style="color:var(--text-muted); font-size:11.5px; margin-bottom:8px; line-height:1.5;">
+                  O Portal Geoespacial / WebGIS da Defesa Civil possui finalidade exclusivamente informativa, institucional e de apoio à visualização e análise territorial.
+                </p>
+                <p style="color:var(--text-muted); font-size:11.5px; margin-bottom:8px; line-height:1.5;">
+                  O portal <strong>não tem como finalidade a divulgação de informações pessoais ou privadas e não disponibiliza publicamente dados pessoais, dados sensíveis ou informações de caráter privado</strong>. As informações apresentadas são organizadas para fins de consulta, visualização cartográfica, análise territorial, prevenção e apoio à gestão de riscos e desastres.
+                </p>
+                <p style="color:var(--text-subtle); font-size:10.5px; line-height:1.4; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+                  As informações disponibilizadas devem ser interpretadas de acordo com sua fonte, escala, data de atualização e finalidade, não substituindo documentos oficiais, levantamentos técnicos específicos ou orientações emitidas pelos órgãos competentes.
+                </p>
+              </div>
+
+              <!-- 4. PARÂMETROS CARTOGRÁFICOS -->
               <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); padding:10px 12px; border-radius:var(--radius-md);">
-                <strong style="color:var(--text-main); display:block; margin-bottom:4px;">Parâmetros Cartográficos Oficiais:</strong>
-                <ul style="margin-left: 16px;">
+                <strong style="color:var(--text-main); display:block; margin-bottom:4px; font-size:12.5px;">Parâmetros Cartográficos Oficiais:</strong>
+                <ul style="margin-left: 16px; font-size:11.5px;">
                   <li><strong>Datum Geodésico:</strong> SIRGAS 2000</li>
                   <li><strong>Projeção Cartográfica:</strong> UTM Fuso 22S (EPSG:31982)</li>
                   <li><strong>Unidade de Medida:</strong> Metro (m)</li>
@@ -379,36 +427,36 @@
                 </ul>
               </div>
 
-              <!-- Contatos Oficiais & Atendimento Defesa Civil -->
+              <!-- 5. CONTATOS OFICIAIS -->
               <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); padding:10px 12px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:8px;">
                 <strong style="color:var(--text-main); display:flex; align-items:center; gap:6px; font-size:12.5px;">
                   <i class="lucide-building" style="color:var(--dc-orange-primary);"></i> Defesa Civil de Passo Fundo:
                 </strong>
                 
-                <div style="color:var(--text-main); font-size:12px; display:flex; align-items:flex-start; gap:6px; line-height:1.4;">
+                <div style="color:var(--text-main); font-size:11.5px; display:flex; align-items:flex-start; gap:6px; line-height:1.4;">
                   <i class="lucide-map-pin" style="color:var(--dc-orange-primary); flex-shrink:0; margin-top:2px;"></i>
                   <span><strong>Endereço:</strong> Av. Brasil Leste, 1528 - Petrópolis, Passo Fundo - RS, 99050-144</span>
                 </div>
                 
-                <div style="color:var(--text-main); font-size:12px; display:flex; align-items:center; gap:6px;">
+                <div style="color:var(--text-main); font-size:11.5px; display:flex; align-items:center; gap:6px;">
                   <i class="lucide-phone" style="color:var(--dc-orange-primary); flex-shrink:0;"></i>
                   <span><strong>Telefone:</strong> <a href="tel:+555491940449" style="color:#38bdf8; text-decoration:none; font-weight:700;">+55 54 9194-0449</a></span>
                 </div>
               </div>
 
-              <!-- Desenvolvimento e autoria técnica -->
+              <!-- 6. AUTORIA TÉCNICA -->
               <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); padding:10px 12px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:6px;">
                 <strong style="color:var(--text-main); display:flex; align-items:center; gap:6px; font-size:12.5px;">
                   <i class="lucide-user-check" style="color:var(--dc-orange-primary);"></i> Desenvolvimento e autoria técnica:
                 </strong>
-                <p style="color:var(--text-muted); font-size:12px; line-height:1.5;">
+                <p style="color:var(--text-muted); font-size:11.5px; line-height:1.5;">
                   O Geoportal Defesa Civil foi concebido e elaborado por <strong style="color:var(--text-main);">Vagner A. Duarte, Geógrafo da Secretaria de Planejamento da Prefeitura Municipal de Passo Fundo/RS</strong>, como ferramenta de apoio à gestão territorial, análise espacial e planejamento de ações de proteção e defesa civil.
                 </p>
               </div>
 
-              <!-- Telefones de Emergência 24h -->
-              <div style="background:rgba(239, 68, 68, 0.1); border:1px solid var(--dc-hazard-red); padding:10px 12px; border-radius:var(--radius-md); color:#fca5a5;">
-                <strong style="color:#fecaca; display:block; margin-bottom:4px;">Telefones de Emergência 24 Horas:</strong>
+              <!-- 7. TELEFONES DE EMERGÊNCIA -->
+              <div style="background:rgba(239, 68, 68, 0.1); border:1px solid var(--dc-hazard-red); padding:10px 12px; border-radius:var(--radius-md); color:#fca5a5; font-size:11.5px;">
+                <strong style="color:#fecaca; display:block; margin-bottom:4px; font-size:12px;">Telefones de Emergência 24 Horas:</strong>
                 📞 Emergência Municipal: <strong>199</strong><br>
                 🚒 Corpo de Bombeiros Militar: <strong>193</strong><br>
                 🚑 SAMU: <strong>192</strong>
