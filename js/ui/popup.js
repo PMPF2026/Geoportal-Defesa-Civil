@@ -80,6 +80,7 @@ export class PopupUI {
 
     // 2. Tag Class
     let tagClass = 'tag-defesa-civil';
+    if (layerConfig.group === 'abrigos_cobertura') tagClass = 'tag-abrigos';
     if (layerConfig.group === 'hidrografia') tagClass = 'tag-hidrografia';
     if (layerConfig.group === 'sistema_viario') tagClass = 'tag-viario';
     if (layerConfig.group === 'divisao_territorial') tagClass = 'tag-territorial';

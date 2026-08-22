@@ -13,43 +13,51 @@ export const LAYER_GROUPS = [
     badge: 'Prioritário'
   },
   {
+    id: 'abrigos_cobertura',
+    title: '2. Abrigos e Cobertura',
+    iconClass: 'shelter',
+    iconName: 'home',
+    description: 'Abrigos municipais da Defesa Civil e raio territorial de 1 km para resposta a emergências',
+    badge: 'Operacional'
+  },
+  {
     id: 'hidrografia',
-    title: '2. Hidrografia & Recursos Hídricos',
+    title: '3. Hidrografia & Recursos Hídricos',
     iconClass: 'hydro',
     iconName: 'droplet',
     description: 'Cursos d’água, rios, arroios e divisores de bacias hidrográficas municipais'
   },
   {
     id: 'sistema_viario',
-    title: '3. Sistema Viário & Transporte',
+    title: '4. Sistema Viário & Transporte',
     iconClass: 'roads',
     iconName: 'navigation',
-    description: 'Malha viária urbana, rodovias federais/estaduais, estradas municipais e ferrovia'
+    description: 'Malha viária urbana, rodovias federais/estaduais, estradas municipais, pontes e ferrovia'
   },
   {
     id: 'divisao_territorial',
-    title: '4. Divisão Territorial & Limites',
+    title: '5. Divisão Territorial & Limites',
     iconClass: 'territory',
     iconName: 'map-pin',
     description: 'Limite municipal, distritos, bairros, setores censitários do IBGE e RS'
   },
   {
     id: 'planejamento_urbano',
-    title: '5. Planejamento & Ordenamento Urbano',
+    title: '6. Planejamento & Ordenamento Urbano',
     iconClass: 'urban',
     iconName: 'building-2',
     description: 'Perímetro do plano diretor e macrozoneamento municipal'
   },
   {
     id: 'populacao',
-    title: '6. População & Vulnerabilidade Social',
+    title: '7. População & Vulnerabilidade Social',
     iconClass: 'population',
     iconName: 'users',
     description: 'Distribuição, densidade demográfica setorial e domicílios (Censo IBGE 2022)'
   },
   {
     id: 'ortofotos',
-    title: '7. Ortofotos & Imagens Aéreas',
+    title: '8. Ortofotos & Imagens Aéreas',
     iconClass: 'ortho',
     iconName: 'camera',
     description: 'Levantamento aerofotogramétrico de alta resolução do Rio Passo Fundo (Julho/2026 - SIRGAS 2000 UTM 22S)'
@@ -152,23 +160,25 @@ export const LAYERS_CONFIG = [
     searchable: true,
     searchFields: ['id', 'Edificacoe']
   },
+
+  // ================= 2. ABRIGOS E COBERTURA =================
   {
     id: 'abrigos_defesa_civil',
     name: 'Abrigos da Defesa Civil (17 Locais)',
     fileName: 'Abrigos da Defesa Civil.geojson',
-    group: 'defesa_civil',
+    group: 'abrigos_cobertura',
     geometryType: 'Point',
     defaultVisible: true,
     defaultOpacity: 1.0,
-    zIndex: 87,
+    zIndex: 90,
     isCore: true,
     isLazy: false,
     style: {
-      pointColor: '#2563eb',
-      pointRadius: 7,
+      pointColor: '#1d4ed8',
+      pointRadius: 7.5,
       strokeColor: '#ffffff',
-      strokeWidth: 2.2,
-      previewColor: '#2563eb'
+      strokeWidth: 2.5,
+      previewColor: '#1d4ed8'
     },
     popupConfig: {
       titleField: 'Nome',
@@ -191,19 +201,18 @@ export const LAYERS_CONFIG = [
     id: 'cobertura_abrigos_1km',
     name: 'Cobertura de Abrigos — 1 km',
     fileName: 'Cobertura de Abrigos em 1km.geojson',
-    group: 'defesa_civil',
+    group: 'abrigos_cobertura',
     geometryType: 'MultiPolygon',
     defaultVisible: true,
-    defaultOpacity: 0.75,
-    zIndex: 40,
+    defaultOpacity: 0.85,
+    zIndex: 46,
     isCore: true,
     isLazy: false,
     style: {
-      fillColor: 'rgba(37, 99, 235, 0.18)',
-      strokeColor: '#2563eb',
-      strokeWidth: 1.8,
-      strokeDash: [6, 4],
-      previewColor: '#2563eb'
+      fillColor: 'rgba(37, 99, 235, 0.32)',
+      strokeColor: '#1d4ed8',
+      strokeWidth: 2.4,
+      previewColor: '#1d4ed8'
     },
     popupConfig: {
       defaultTitle: 'Cobertura de Abrigos — 1 km',
@@ -215,7 +224,7 @@ export const LAYERS_CONFIG = [
     searchable: false
   },
 
-  // ================= 2. HIDROGRAFIA =================
+  // ================= 3. HIDROGRAFIA =================
   {
     id: 'rio_passo_fundo',
     name: 'Rio Passo Fundo (Curso Principal)',

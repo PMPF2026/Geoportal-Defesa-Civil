@@ -358,9 +358,9 @@ export class LayerManager {
     if (config.id === 'abrigos_defesa_civil') {
       return new ol.style.Style({
         image: new ol.style.Circle({
-          radius: s.pointRadius || 7,
-          fill: new ol.style.Fill({ color: s.pointColor || '#2563eb' }),
-          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: 2.2 })
+          radius: s.pointRadius || 7.5,
+          fill: new ol.style.Fill({ color: s.pointColor || '#1d4ed8' }),
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: s.strokeWidth || 2.5 })
         })
       });
     }
