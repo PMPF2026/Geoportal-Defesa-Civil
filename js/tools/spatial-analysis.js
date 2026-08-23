@@ -67,7 +67,7 @@ export class SpatialAnalysisTool {
   }
 
   /**
-   * Generates a spatial buffer on selected layer features
+   * Generates a spatial buffer on all valid selected layer features across their full extent
    */
   async executeBufferAnalysis() {
     const layerSelect = document.getElementById('analysis-buffer-layer');
@@ -79,11 +79,16 @@ export class SpatialAnalysisTool {
     const layerId = layerSelect.value;
     const radiusMeters = parseFloat(radiusInput.value) || 100;
 
-    Notification.info(`Processando buffer espacial de ${radiusMeters}m...`);
+    Notification.info(`Processando buffer espacial de ${radiusMeters}m em toda a extensão da camada...`);
 
     try {
       await this.layerManager.loadLayerData(layerId);
       const layer = this.layerManager.getLayer(layerId);
+      if (!layer) {
+        Notification.warning('Camada não encontrada.');
+        return;
+      }
+
       const features = layer.getSource().getFeatures();
 
       if (features.length === 0) {
@@ -95,37 +100,62 @@ export class SpatialAnalysisTool {
 
       const geoJsonFormat = new ol.format.GeoJSON();
       let totalBufferArea = 0;
+      let processedCount = 0;
 
       if (typeof turf !== 'undefined') {
         const radiusKm = radiusMeters / 1000;
-        const subset = features.slice(0, 150); // limit to 150 features for smooth rendering
+        const bufferedFeatures = [];
 
-        subset.forEach(f => {
-          const turfFeature = geoJsonFormat.writeFeatureObject(f, {
-            featureProjection: 'EPSG:3857',
-            dataProjection: 'EPSG:4326'
-          });
+        // Process ALL features without subset truncation
+        for (let i = 0; i < features.length; i++) {
+          const f = features[i];
+          const geom = f.getGeometry();
+          if (!geom) continue;
 
-          const buffered = turf.buffer(turfFeature, radiusKm, { units: 'kilometers' });
-          if (buffered) {
-            const olBuffered = geoJsonFormat.readFeature(buffered, {
-              dataProjection: 'EPSG:4326',
-              featureProjection: 'EPSG:3857'
+          try {
+            const turfFeature = geoJsonFormat.writeFeatureObject(f, {
+              featureProjection: 'EPSG:3857',
+              dataProjection: 'EPSG:4326'
             });
-            this.analysisSource.addFeature(olBuffered);
-            totalBufferArea += ol.sphere.getArea(olBuffered.getGeometry());
+
+            if (!turfFeature || !turfFeature.geometry) continue;
+
+            const buffered = turf.buffer(turfFeature, radiusKm, { units: 'kilometers' });
+            if (buffered && buffered.geometry) {
+              const olBuffered = geoJsonFormat.readFeature(buffered, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+              });
+              bufferedFeatures.push(olBuffered);
+              totalBufferArea += ol.sphere.getArea(olBuffered.getGeometry());
+              processedCount++;
+            }
+          } catch (featureErr) {
+            console.warn('[SpatialAnalysis] Aviso ao processar feição para buffer:', featureErr);
           }
-        });
+        }
+
+        if (bufferedFeatures.length > 0) {
+          this.analysisSource.addFeatures(bufferedFeatures);
+        }
       } else {
-        const extent = layer.getSource().getExtent();
-        const bufferedExtent = ol.extent.buffer(extent, radiusMeters * 1.5);
-        const polygon = ol.geom.Polygon.fromExtent(bufferedExtent);
-        const f = new ol.Feature(polygon);
-        this.analysisSource.addFeature(f);
-        totalBufferArea = ol.sphere.getArea(polygon);
+        for (let i = 0; i < features.length; i++) {
+          const f = features[i];
+          const geom = f.getGeometry();
+          if (!geom) continue;
+          const ext = geom.getExtent();
+          const bufferedExt = ol.extent.buffer(ext, radiusMeters);
+          const poly = ol.geom.Polygon.fromExtent(bufferedExt);
+          const feat = new ol.Feature(poly);
+          this.analysisSource.addFeature(feat);
+          totalBufferArea += ol.sphere.getArea(poly);
+          processedCount++;
+        }
       }
 
-      this.mapEngine.zoomTo(this.analysisSource.getExtent());
+      if (this.analysisSource.getFeatures().length > 0) {
+        this.mapEngine.zoomTo(this.analysisSource.getExtent());
+      }
 
       if (resultsBox) {
         resultsBox.innerHTML = `
@@ -138,7 +168,7 @@ export class SpatialAnalysisTool {
           </div>
           <div class="results-metric-row">
             <span>Feições Abrangidas:</span>
-            <strong>${Math.min(features.length, 150)} trechos</strong>
+            <strong>${formatNumber(processedCount, 0)} trechos</strong>
           </div>
           <div class="results-metric-row">
             <span>Área da Faixa de Segurança:</span>
@@ -148,7 +178,7 @@ export class SpatialAnalysisTool {
         resultsBox.classList.add('active');
       }
 
-      Notification.success(`Buffer de ${radiusMeters}m gerado com sucesso!`);
+      Notification.success(`Buffer de ${radiusMeters}m gerado com sucesso para ${formatNumber(processedCount, 0)} trechos!`);
     } catch (err) {
       console.error('[SpatialAnalysis] Erro no cálculo de buffer:', err);
       Notification.error('Erro ao calcular o buffer espacial.');
