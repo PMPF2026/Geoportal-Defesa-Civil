@@ -1,8 +1,5 @@
 # .gitignore - Portal WebGIS Defesa Civil Passo Fundo
 
-# Arquivo de municípios grande demais para o GitHub (34.7 MB)
-Municípios do RS.geojson
-
 # Arquivos de configuração QGIS (não relevantes para o WebGIS)
 *.qmd
 
