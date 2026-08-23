@@ -124,6 +124,10 @@
             <i class="lucide-bar-chart-2"></i>
             <span>Métricas</span>
           </button>
+          <button class="sidebar-tab-btn" data-tab="downloads" title="Download de Dados Geográficos Públicos">
+            <i class="lucide-download"></i>
+            <span>Downloads</span>
+          </button>
           <button class="sidebar-tab-btn" data-tab="sobre" title="Informações e Metadados">
             <i class="lucide-info"></i>
             <span>Sobre</span>
@@ -359,7 +363,44 @@
             </div>
           </div>
 
-          <!-- TAB 6: SOBRE / METADADOS -->
+          <!-- TAB 6: DOWNLOADS / DADOS PÚBLICOS -->
+          <div class="tab-panel" id="tab-downloads">
+            <div class="layer-toolbar">
+              <span class="layer-toolbar-title">Catálogo de Dados Públicos</span>
+              <span class="badge-blue" id="download-layers-count">21 Camadas</span>
+            </div>
+
+            <!-- Search Filter for Downloads -->
+            <div class="download-search-container" style="margin-bottom: 12px;">
+              <div class="search-input-wrapper">
+                <i class="lucide-search search-icon"></i>
+                <input 
+                  type="text" 
+                  id="download-search-input" 
+                  class="search-input" 
+                  placeholder="Buscar camada para download (ex: abrigos, pontes, rios)..." 
+                  autocomplete="off"
+                />
+                <button class="search-clear-btn" id="download-search-clear" title="Limpar busca">&times;</button>
+              </div>
+            </div>
+
+            <!-- Downloads Cards Container -->
+            <div class="downloads-list" id="downloads-list-container">
+              <!-- Populated dynamically by downloads.js -->
+            </div>
+
+            <!-- Footer info of the downloads tab -->
+            <div class="downloads-footer-info" style="margin-top: 16px; padding: 10px 12px; background: var(--dc-blue-card); border: 1px solid var(--dc-blue-border); border-radius: var(--radius-md); font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+              <strong style="color: var(--text-main); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <i class="lucide-info" style="color: var(--dc-orange-primary);"></i> Informações sobre os Dados
+              </strong>
+              Todos os arquivos disponibilizados são públicos e integrados ao Sistema de Referência Geocêntrico para as Américas <strong>SIRGAS 2000 (EPSG:31982 / UTM Zona 22S)</strong>.
+              Compatíveis com <strong>QGIS, ArcGIS, Google Earth, CAD e bibliotecas GIS (Python/R)</strong>.
+            </div>
+          </div>
+
+          <!-- TAB 7: SOBRE / METADADOS -->
           <div class="tab-panel" id="tab-sobre">
             <div class="layer-toolbar">
               <span class="layer-toolbar-title">Sobre o Sistema WebGIS</span>

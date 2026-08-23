@@ -19,6 +19,7 @@ import { ExportReportTool } from './tools/export-report.js';
 import { LayerImporter } from './tools/layer-importer.js';
 import { StatsEngine } from './dashboard/stats-engine.js';
 import { DashboardUI } from './dashboard/dashboard.js';
+import { DownloadsUI } from './ui/downloads.js';
 
 class WebGisApp {
   constructor() {
@@ -83,6 +84,9 @@ class WebGisApp {
 
       // 12. Initialize Export & Report Tool
       this.exportReportTool = new ExportReportTool(this.mapEngine, this.layerManager, this.statsEngine);
+
+      // 12.1. Initialize Downloads UI Catalog
+      this.downloadsUI = new DownloadsUI(this.layerManager);
 
       // 13. Initialize Dynamic Layer Importer (Drag & Drop)
       this.layerImporter = new LayerImporter(this.mapEngine, this.layerManager, this.sidebarUI);
