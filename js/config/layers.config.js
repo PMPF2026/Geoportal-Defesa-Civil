@@ -104,7 +104,7 @@ export const LAYERS_CONFIG = [
   },
   {
     id: 'app_30metros',
-    name: 'APP — 30 Metros (Rio Passo Fundo)',
+    name: 'Faixa de 30 metros - Rio Passo Fundo',
     fileName: 'APP_30metros.geojson',
     source: 'Prefeitura Municipal de Passo Fundo / Lei 12.651',
     refDate: '2026',
@@ -135,7 +135,7 @@ export const LAYERS_CONFIG = [
   },
   {
     id: 'edificacoes_app',
-    name: 'Residências na APP (318 Pontos)',
+    name: 'Residências na Faixa de 30 metros',
     fileName: 'Edificações em APP.geojson',
     source: 'Defesa Civil de Passo Fundo',
     refDate: '2026',
