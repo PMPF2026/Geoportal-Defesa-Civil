@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Portal Defesa Civil Passo Fundo - WebGIS Institucional
  * Downloads UI Controller: Public Geospatial Data Catalog with GeoJSON, CSV & KML Exports
  */
@@ -32,9 +32,10 @@ export class DownloadsUI {
       'areas_enchente_2024': 'Mancha oficial de inundaÃ§Ã£o do evento hidrolÃ³gico extremo de Maio/2024 (Decreto Estadual 57.600/2024 - ADA).',
       'app_30metros': 'Faixa marginal de PreservaÃ§Ã£o Permanente de 30 metros ao longo do Rio Passo Fundo (Lei Federal 12.651/2012).',
       'edificacoes_app': '318 edificaÃ§Ãµes residenciais e comerciais localizadas dentro da faixa de 30 metros de APP com distÃ¢ncias mÃ©tricas ao rio.',
-      'abrigos_defesa_civil': '17 locais e ginÃ¡sios pÃºblicos cadastrados pela Defesa Civil para acolhimento de emergÃªncia em desastres climÃ¡ticos.',
-      'cobertura_abrigos_1km': 'Ãrea de influÃªncia e cobertura territorial de 1 km ao redor dos 17 abrigos da Defesa Civil.',
-      'rio_passo_fundo': 'TraÃ§ado vetorial do curso dâ€™Ã¡gua principal do Rio Passo Fundo em sua travessia pelo perÃ­metro urbano e rural.',
+      'abrigos_defesa_civil': '17 locais e ginásios públicos cadastrados pela Defesa Civil para acolhimento de emergência em desastres climáticos.',
+      'cobertura_abrigos_1km': 'Área de influência e cobertura territorial de 1 km ao redor dos 17 abrigos da Defesa Civil.',
+      'zph_helicoptero': '9 Zonas de Pouso de Helicóptero (ZPH) cadastradas para pouso de emergência e resgate aéreo da Defesa Civil.',
+      'rio_passo_fundo': 'Traçado vetorial do curso d’água principal do Rio Passo Fundo em sua travessia pelo perímetro urbano e rural.',
       'malha_hidrica': 'Rede hidrogrÃ¡fica com mais de 3.600 trechos de rios, arroios e cÃ³rregos de Passo Fundo com ordem de Strahler.',
       'bacias_hidrograficas': 'Divisores topogrÃ¡ficos e delimitaÃ§Ã£o das microbacias hidrogrÃ¡ficas do municÃ­pio.',
       'rodovia_federal': 'Eixos e trechos das rodovias federais (BR-285 e BR-153) que cruzam o territÃ³rio municipal (DNIT).',

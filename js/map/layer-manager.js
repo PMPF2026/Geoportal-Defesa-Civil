@@ -365,6 +365,50 @@ export class LayerManager {
       });
     }
 
+    // Zonas de Pouso de Helicóptero (ZPH): Ícone de helicóptero vetorial de alta visibilidade
+    if (config.id === 'zph_helicoptero') {
+      const svgHelicopter = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 38" width="38" height="38">
+          <circle cx="19" cy="19" r="17" fill="#0284c7" stroke="#ffffff" stroke-width="2.4"/>
+          <!-- Rotor superior -->
+          <line x1="7" y1="8" x2="31" y2="8" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="19" y1="8" x2="19" y2="12" stroke="#ffffff" stroke-width="2.2"/>
+          <!-- Fuselagem / Cabine -->
+          <ellipse cx="17" cy="17.5" rx="7.5" ry="5.2" fill="#ffffff"/>
+          <circle cx="14" cy="16.5" r="2.4" fill="#0284c7"/>
+          <!-- Cauda e rotor traseiro -->
+          <path d="M24 17 L32 15 L32 19 Z" fill="#ffffff"/>
+          <line x1="32" y1="12" x2="32" y2="21" stroke="#ffffff" stroke-width="2.0" stroke-linecap="round"/>
+          <!-- Trem de pouso / Esquis -->
+          <line x1="9" y1="26" x2="25" y2="26" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="13" y1="22" x2="13" y2="26" stroke="#ffffff" stroke-width="1.8"/>
+          <line x1="21" y1="22" x2="21" y2="26" stroke="#ffffff" stroke-width="1.8"/>
+        </svg>
+      `);
+
+      return (feature, resolution) => {
+        const showText = resolution < 35;
+        const name = feature.get('Nome') || '';
+
+        return new ol.style.Style({
+          image: new ol.style.Icon({
+            src: svgHelicopter,
+            anchor: [0.5, 0.5],
+            scale: 0.95
+          }),
+          text: showText ? new ol.style.Text({
+            text: name,
+            offsetY: 24,
+            font: 'bold 11px "Inter", sans-serif',
+            fill: new ol.style.Fill({ color: '#ffffff' }),
+            stroke: new ol.style.Stroke({ color: '#0369a1', width: 3.0 }),
+            backgroundFill: new ol.style.Fill({ color: 'rgba(3, 105, 161, 0.92)' }),
+            padding: [2, 6, 2, 6]
+          }) : null
+        });
+      };
+    }
+
     if (config.geometryType === 'Point') {
       return (feature, resolution) => {
         const name = feature.get('nome') || '';

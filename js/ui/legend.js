@@ -104,6 +104,23 @@ export class LegendUI {
       `;
     }
 
+    // 2.1. Zonas de Pouso de Helicóptero (ZPH)
+    if (layerConfig.id === 'zph_helicoptero') {
+      return `
+        <div class="legend-item" style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #0284c7; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.3);">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3h18M12 3v3M6 14h12a4 4 0 0 0 0-8H6a4 4 0 0 0 0 8zm14 0 2 3M4 17l2-3M4 21h16M7 17v4M17 17v4"/>
+            </svg>
+          </span>
+          <div>
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Áreas Estratégicas de Resgate Aéreo</span>
+          </div>
+        </div>
+      `;
+    }
+
     // 3. Point Symbology (Distritos)
     if (layerConfig.geometryType === 'Point') {
       const s = layerConfig.style || {};

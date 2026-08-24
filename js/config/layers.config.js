@@ -233,6 +233,43 @@ export const LAYERS_CONFIG = [
     },
     searchable: false
   },
+  {
+    id: 'zph_helicoptero',
+    name: 'Zonas de Pouso de Helicóptero (ZPH)',
+    fileName: 'Zonas de Pouso de Helicóptero.geojson',
+    source: 'Defesa Civil de Passo Fundo',
+    refDate: '2026',
+    group: 'abrigos_cobertura',
+    geometryType: 'Point',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 95,
+    isCore: true,
+    isLazy: false,
+    style: {
+      pointColor: '#0284c7',
+      pointRadius: 8.0,
+      strokeColor: '#ffffff',
+      strokeWidth: 2.2,
+      previewColor: '#0284c7'
+    },
+    popupConfig: {
+      titleField: 'Nome',
+      titlePrefix: 'ZPH — ',
+      defaultTitle: 'Zona de Pouso de Helicóptero',
+      fields: [
+        { key: 'Nome', label: 'Local / Denominação' },
+        { key: 'Bairro', label: 'Bairro / Região' },
+        { key: 'Endereço', label: 'Endereço Completo' },
+        { key: 'Tipo', label: 'Classificação Operacional' },
+        { key: 'Finalidade', label: 'Finalidade Estratégica' },
+        { key: 'Coord_x', label: 'Coordenada UTM Leste (X)', format: 'number' },
+        { key: 'Coord_y', label: 'Coordenada UTM Norte (Y)', format: 'number' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['Nome', 'Bairro', 'Endereço']
+  },
 
   // ================= 3. HIDROGRAFIA =================
   {

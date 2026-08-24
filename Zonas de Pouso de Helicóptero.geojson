@@ -1,0 +1,192 @@
+{
+  "type": "FeatureCollection",
+  "name": "Zonas de Pouso de Helicóptero (ZPH)",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:EPSG::31982"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          364945.70007015,
+          6870766.6344467
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "Nome": "Estádio Vermelhão da Serra",
+        "Bairro": "São Cristovão",
+        "Endereço": "Av. Pres. Vargas, 3495 - São Cristovao",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 364945.70007015,
+        "Coord_y": 6870766.6344467
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          363922.25218105,
+          6871902.5004967
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "Nome": "Campo da Brigada Militar",
+        "Bairro": "São Cristóvão",
+        "Endereço": "R. da Brigada Militar - São Cristovao",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 363922.25218105,
+        "Coord_y": 6871902.5004967
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          357343.25736985,
+          6869811.4927995
+        ]
+      },
+      "properties": {
+        "id": 3,
+        "Nome": "Santuário Nossa Senhora Aparecida",
+        "Bairro": "Boqueirão",
+        "Endereço": "RS-153 - Jardim America",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 357343.25736985,
+        "Coord_y": 6869811.4927995
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          358760.1830115,
+          6871416.3053956
+        ]
+      },
+      "properties": {
+        "id": 4,
+        "Nome": "Estádio Wolmar Salton",
+        "Bairro": "Boqueirão",
+        "Endereço": "Avenida, Estr. Perimetral Sul (Deputado Guaraci Marinho) - Boqueirão",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 358760.1830115,
+        "Coord_y": 6871416.3053956
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          360355.1036316,
+          6873351.34893
+        ]
+      },
+      "properties": {
+        "id": 5,
+        "Nome": "Estádio Delmar Sitoni",
+        "Bairro": "Operária/ Nonoai",
+        "Endereço": "R. dos Andradas, 8-186 - Boqueirão",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 360355.1036316,
+        "Coord_y": 6873351.34893
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          359470.71123192,
+          6874782.8032512
+        ]
+      },
+      "properties": {
+        "id": 6,
+        "Nome": "Campo ao lado da UBS - Hípica",
+        "Bairro": "Vera Cruz/ Hípica",
+        "Endereço": "R. Tv. Osvaldo Motta Fortes, 30 - Hípica",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 359470.71123192,
+        "Coord_y": 6874782.8032512
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          363331.77172222,
+          6876193.1919529
+        ]
+      },
+      "properties": {
+        "id": 7,
+        "Nome": "Campo de Grêmio Petrópolis",
+        "Bairro": "Petrópolis",
+        "Endereço": "R. Neri Gosch, 241-345 - Petrópolis",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 363331.77172222,
+        "Coord_y": 6876193.1919529
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          364744.82857462,
+          6876068.4633663
+        ]
+      },
+      "properties": {
+        "id": 8,
+        "Nome": "Campo da UPF",
+        "Bairro": "Petrópolis",
+        "Endereço": "São José, Passo Fundo - RS, 99051-150",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 364744.82857462,
+        "Coord_y": 6876068.4633663
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          365520.06530475,
+          6875108.8593466
+        ]
+      },
+      "properties": {
+        "id": 9,
+        "Nome": "Campo do Farroupilha",
+        "Bairro": "Parque Farroupilha",
+        "Endereço": "Av. Sinimbú, 82 - São Luiz Gonzaga",
+        "Tipo": "Zona de Pouso de Helicóptero (ZPH)",
+        "Finalidade": "Operações de Emergência e Resgate Aéreo - Defesa Civil",
+        "Coord_x": 365520.06530475,
+        "Coord_y": 6875108.8593466
+      }
+    }
+  ]
+}
