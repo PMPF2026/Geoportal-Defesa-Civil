@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Portal Defesa Civil Passo Fundo - WebGIS Institucional
  * Central Layer Registry & Advanced Cartographic Symbology Configuration
  */
@@ -808,6 +808,44 @@ export const LAYERS_CONFIG = [
       ]
     },
     searchable: false
+  },
+  {
+    id: 'ortofoto_central',
+    name: 'Ortofoto Central',
+    fileName: 'tiles/orto-central/{z}/{x}/{y}.png',
+    source: 'Prefeitura Municipal de Passo Fundo',
+    refDate: 'Julho/2026',
+    group: 'ortofotos',
+    isRaster: true,
+    isXYZTiles: true,
+    tileUrl: 'tiles/orto-central/{z}/{x}/{y}.png',
+    minZoom: 13,
+    maxZoom: 19,
+    defaultVisible: false,
+    defaultOpacity: 1.0,
+    zIndex: 5,
+    isLazy: true,
+    extent: [362476.98, 6873353.98, 363857.75, 6874781.79],
+    crs: 'EPSG:31982',
+    date: 'Julho de 2026',
+    files: [
+      'Ortofotos/orto_central.tif'
+    ],
+    style: {
+      previewColor: '#0891b2'
+    },
+    popupConfig: {
+      titleField: 'name',
+      defaultTitle: 'Ortofoto Central',
+      fields: [
+        { key: 'name', label: 'Camada', defaultValue: 'Ortofoto Aerofotogramétrica Central' },
+        { key: 'data', label: 'Data do Levantamento', defaultValue: 'Julho de 2026' },
+        { key: 'crs', label: 'Sistema de Referência', defaultValue: 'SIRGAS 2000 / UTM 22S (EPSG:31982)' },
+        { key: 'gsd', label: 'Resolução Espacial (GSD)', defaultValue: '5 cm/pixel' },
+        { key: 'area', label: 'Abrangência', defaultValue: 'Área Central e Entorno Urbano de Passo Fundo' }
+      ]
+    },
+    searchable: false
   }
 ];
 
@@ -819,7 +857,7 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_ortofoto',
     name: '🛰️ Ortofotos & Rio Passo Fundo',
     description: 'Ortofotos de alta resolução combinadas com o curso do Rio Passo Fundo, APP de 30m e 318 residências',
-    activeLayers: ['ortofotos_rio_passo_fundo', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'areas_enchente_2024', 'limite_territorial']
+    activeLayers: ['ortofotos_rio_passo_fundo', 'ortofoto_central', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'areas_enchente_2024', 'limite_territorial']
   },
   {
     id: 'preset_app_risco',
