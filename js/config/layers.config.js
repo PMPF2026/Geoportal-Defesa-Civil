@@ -14,7 +14,7 @@ export const LAYER_GROUPS = [
   },
   {
     id: 'abrigos_cobertura',
-    title: '2. Abrigos e Cobertura',
+    title: '2. Estruturas Estratégicas de Emergência',
     iconClass: 'shelter',
     iconName: 'home',
     description: 'Abrigos municipais da Defesa Civil e raio territorial de 1 km para resposta a emergências',
@@ -167,7 +167,7 @@ export const LAYERS_CONFIG = [
     searchFields: ['id', 'Edificacoe']
   },
 
-  // ================= 2. ABRIGOS E COBERTURA =================
+  // ================= 2. ESTRUTURAS ESTRATÉGICAS DE EMERGÊNCIA =================
   {
     id: 'abrigos_defesa_civil',
     name: 'Abrigos da Defesa Civil (17 Locais)',
