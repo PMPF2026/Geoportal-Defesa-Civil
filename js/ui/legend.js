@@ -121,6 +121,21 @@ export class LegendUI {
       `;
     }
 
+    // 2.2. Domicílios em Área de Risco (SGB, 2025)
+    if (layerConfig.id === 'domicilios_risco_sgb_2025') {
+      return `
+        <div class="legend-item" style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #f97316; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.35);">
+            <i class="lucide-home" style="font-size: 10px; color: #ffffff;"></i>
+          </span>
+          <div>
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Serviço Geológico do Brasil (SGB, 2025)</span>
+          </div>
+        </div>
+      `;
+    }
+
     // 3. Point Symbology (Distritos)
     if (layerConfig.geometryType === 'Point') {
       const s = layerConfig.style || {};

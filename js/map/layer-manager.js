@@ -409,6 +409,17 @@ export class LayerManager {
       };
     }
 
+    // Domicílios em Área de Risco (SGB, 2025): Simbologia própria de risco geológico institucional
+    if (config.id === 'domicilios_risco_sgb_2025') {
+      return new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: s.pointRadius || 4.8,
+          fill: new ol.style.Fill({ color: s.pointColor || '#f97316' }),
+          stroke: new ol.style.Stroke({ color: s.strokeColor || '#ffffff', width: s.strokeWidth || 1.5 })
+        })
+      });
+    }
+
     if (config.geometryType === 'Point') {
       return (feature, resolution) => {
         const name = feature.get('nome') || '';

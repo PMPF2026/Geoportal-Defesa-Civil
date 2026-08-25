@@ -61,6 +61,14 @@ export const LAYER_GROUPS = [
     iconClass: 'ortho',
     iconName: 'camera',
     description: 'Levantamento aerofotogramétrico de alta resolução do Rio Passo Fundo (Julho/2026 - SIRGAS 2000 UTM 22S)'
+  },
+  {
+    id: 'mapeamento_sgb',
+    title: '9. Mapeamento e Diagnóstico SGB',
+    iconClass: 'sgb',
+    iconName: 'mountain',
+    description: 'Mapeamento oficial de domicílios e setores de risco geológico (Serviço Geológico do Brasil - SGB, 2025)',
+    badge: 'SGB 2025'
   }
 ];
 
@@ -883,6 +891,45 @@ export const LAYERS_CONFIG = [
       ]
     },
     searchable: false
+  },
+
+  // ================= 9. MAPEAMENTO E DIAGNÓSTICO SGB =================
+  {
+    id: 'domicilios_risco_sgb_2025',
+    name: 'Domicílios em Área de Risco — Serviço Geológico do Brasil (SGB), 2025',
+    fileName: 'Domicilios em Área de Risco (SGB, 2025).geojson',
+    source: 'Serviço Geológico do Brasil (SGB)',
+    refDate: '2025',
+    group: 'mapeamento_sgb',
+    geometryType: 'Point',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 80,
+    isCore: true,
+    isLazy: false,
+    style: {
+      pointColor: '#f97316',
+      pointRadius: 4.8,
+      strokeColor: '#ffffff',
+      strokeWidth: 1.5,
+      previewColor: '#f97316'
+    },
+    popupConfig: {
+      titleField: 'fid',
+      titlePrefix: 'Domicílio em Área de Risco — ID: ',
+      defaultTitle: 'Domicílio em Área de Risco (SGB 2025)',
+      fields: [
+        { key: 'fid', label: 'Identificador do Domicílio (FID)' },
+        { key: 'COD_MUN', label: 'Código IBGE do Município' },
+        { key: 'COD_ESPECI', label: 'Classificação do Domicílio', defaultValue: '1 (Particular Ocupado)' },
+        { key: 'NV_GEO_COO', label: 'Nível de Precisão Georreferenciada', defaultValue: '1 (Alta Precisão)' },
+        { key: 'UF', label: 'Unidade Federativa (UF)' },
+        { key: 'fonte', label: 'Órgão Responsável', defaultValue: 'Serviço Geológico do Brasil (SGB)' },
+        { key: 'ano', label: 'Ano do Mapeamento', defaultValue: '2025' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['fid', 'COD_MUN', 'UF']
   }
 ];
 

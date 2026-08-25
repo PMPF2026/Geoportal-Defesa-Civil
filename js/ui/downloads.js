@@ -49,8 +49,9 @@ export class DownloadsUI {
       'distritos': 'Pontos sedes dos distritos municipais de Passo Fundo (Sede, SÃ£o Roque, Bom Recreio, Bela Vista, Capinzal, Sede IndependÃªncia e Pulador).',
       'setores_censitarios': 'Malha de 312 setores censitÃ¡rios do IBGE com dados demogrÃ¡ficos, domicÃ­lios e renda (Censo 2022).',
       'municipios_rs': 'Malha territorial dos 7 municÃ­pios limÃ­trofes que fazem fronteira com Passo Fundo (IBGE).',
-      'limite_plano_diretor': 'PerÃ­metro e zoneamento urbano oficial do Plano Diretor Municipal de Passo Fundo.',
-      'densidade_populacional': 'Mapa coroplÃ©tico de densidade demogrÃ¡fica por setor censitÃ¡rio (habitantes por kmÂ²).'
+      'limite_plano_diretor': 'Perímetro e zoneamento urbano oficial do Plano Diretor Municipal de Passo Fundo.',
+      'densidade_populacional': 'Mapa coroplético de densidade demográfica por setor censitário (habitantes por km²).',
+      'domicilios_risco_sgb_2025': 'Mapeamento de 1.115 domicílios em áreas de risco geológico realizado pelo Serviço Geológico do Brasil (SGB, 2025).'
     };
 
     this.downloadableLayers = LAYERS_CONFIG.filter(l => !l.isRaster && l.fileName && l.fileName.endsWith('.geojson')).map(l => {
