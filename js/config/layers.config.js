@@ -64,7 +64,7 @@ export const LAYER_GROUPS = [
   },
   {
     id: 'mapeamento_sgb',
-    title: '9. Mapeamento e Diagnóstico SGB',
+    title: '9. Mapeamento & Diagnóstico SGB',
     iconClass: 'sgb',
     iconName: 'mountain',
     description: 'Mapeamento oficial de domicílios e setores de risco geológico (Serviço Geológico do Brasil - SGB, 2025)',
@@ -893,7 +893,46 @@ export const LAYERS_CONFIG = [
     searchable: false
   },
 
-  // ================= 9. MAPEAMENTO E DIAGNÓSTICO SGB =================
+  // ================= 9. MAPEAMENTO & DIAGNÓSTICO SGB =================
+  {
+    id: 'mapeamento_sgb_2025',
+    name: 'Mapeamento de Áreas de Risco — Serviço Geológico do Brasil (SGB, 2025)',
+    fileName: 'Mapeamento Serviço Geológico do Brasil (SGB, 2025).geojson',
+    source: 'Serviço Geológico do Brasil (SGB)',
+    refDate: '2025',
+    group: 'mapeamento_sgb',
+    geometryType: 'MultiPolygon',
+    defaultVisible: true,
+    defaultOpacity: 0.85,
+    zIndex: 60,
+    isCore: true,
+    isLazy: false,
+    style: {
+      fillColor: 'rgba(234, 88, 12, 0.28)',
+      strokeColor: '#ea580c',
+      strokeWidth: 2.0,
+      previewColor: '#ea580c'
+    },
+    popupConfig: {
+      titleField: 'NUM_SETOR',
+      titlePrefix: 'Setor de Risco: ',
+      defaultTitle: 'Setor de Risco Geológico (SGB 2025)',
+      fields: [
+        { key: 'NUM_SETOR', label: 'Código Oficial do Setor' },
+        { key: 'LOCAL', label: 'Localização / Bairros' },
+        { key: 'GRAU_RISCO', label: 'Grau de Risco Geológico' },
+        { key: 'GRAU_VULNE', label: 'Grau de Vulnerabilidade' },
+        { key: 'NUM_EDIF', label: 'Edificações em Risco', format: 'number' },
+        { key: 'NUM_PESS', label: 'População Estimada em Risco', format: 'number' },
+        { key: 'SITUACAO_01', label: 'Histórico / Situação' },
+        { key: 'DESCRICAO', label: 'Diagnóstico Técnico de Campo' },
+        { key: 'fonte', label: 'Órgão Responsável', defaultValue: 'Serviço Geológico do Brasil (SGB)' },
+        { key: 'ano', label: 'Ano do Mapeamento', defaultValue: '2025' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['NUM_SETOR', 'LOCAL', 'GRAU_RISCO', 'DESCRICAO']
+  },
   {
     id: 'domicilios_risco_sgb_2025',
     name: 'Domicílios em Área de Risco — Serviço Geológico do Brasil (SGB), 2025',

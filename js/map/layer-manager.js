@@ -420,6 +420,32 @@ export class LayerManager {
       });
     }
 
+    // Setores de Risco Geológico e Hidrológico (SGB, 2025): Polígonos temáticos com graduação de risco
+    if (config.id === 'mapeamento_sgb_2025') {
+      return (feature, resolution) => {
+        const risco = (feature.get('GRAU_RISCO') || '').toLowerCase();
+        const isMuitoAlto = risco.includes('muito');
+        const setor = feature.get('NUM_SETOR') || '';
+        const showLabel = resolution < 35;
+
+        const fillColor = isMuitoAlto ? 'rgba(220, 38, 38, 0.38)' : 'rgba(234, 88, 12, 0.30)';
+        const strokeColor = isMuitoAlto ? '#dc2626' : '#ea580c';
+
+        return new ol.style.Style({
+          fill: new ol.style.Fill({ color: fillColor }),
+          stroke: new ol.style.Stroke({ color: strokeColor, width: isMuitoAlto ? 2.4 : 2.0 }),
+          text: showLabel ? new ol.style.Text({
+            text: setor.replace('RS_PASSOFU_', ''),
+            font: 'bold 10.5px "Inter", sans-serif',
+            fill: new ol.style.Fill({ color: '#ffffff' }),
+            stroke: new ol.style.Stroke({ color: strokeColor, width: 2.8 }),
+            backgroundFill: new ol.style.Fill({ color: 'rgba(15, 23, 42, 0.88)' }),
+            padding: [2, 5, 2, 5]
+          }) : null
+        });
+      };
+    }
+
     if (config.geometryType === 'Point') {
       return (feature, resolution) => {
         const name = feature.get('nome') || '';

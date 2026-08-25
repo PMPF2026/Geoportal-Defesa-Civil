@@ -130,7 +130,20 @@ export class LegendUI {
           </span>
           <div>
             <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
-            <span style="font-size: 10px; color: var(--text-muted);">Serviço Geológico do Brasil (SGB, 2025)</span>
+            <span style="font-size: 10px; color: var(--text-muted);">1.115 Domicílios &bull; Serviço Geológico do Brasil (SGB, 2025)</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2.3. Mapeamento de Áreas de Risco (SGB, 2025 - Polígonos)
+    if (layerConfig.id === 'mapeamento_sgb_2025') {
+      return `
+        <div class="legend-item" style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-block; width: 18px; height: 14px; border-radius: 3px; background: rgba(234, 88, 12, 0.35); border: 2px solid #ea580c;"></span>
+          <div>
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">25 Setores de Risco (R3 e R4) &bull; Serviço Geológico do Brasil (SGB, 2025)</span>
           </div>
         </div>
       `;

@@ -51,6 +51,7 @@ export class DownloadsUI {
       'municipios_rs': 'Malha territorial dos 7 municÃ­pios limÃ­trofes que fazem fronteira com Passo Fundo (IBGE).',
       'limite_plano_diretor': 'Perímetro e zoneamento urbano oficial do Plano Diretor Municipal de Passo Fundo.',
       'densidade_populacional': 'Mapa coroplético de densidade demográfica por setor censitário (habitantes por km²).',
+      'mapeamento_sgb_2025': '25 polígonos de setores de risco geológico e hidrológico (R3 e R4) mapeados pelo Serviço Geológico do Brasil (SGB, 2025).',
       'domicilios_risco_sgb_2025': 'Mapeamento de 1.115 domicílios em áreas de risco geológico realizado pelo Serviço Geológico do Brasil (SGB, 2025).'
     };
 
