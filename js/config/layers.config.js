@@ -17,7 +17,7 @@ export const LAYER_GROUPS = [
     title: '2. Estruturas Estratégicas de Emergência',
     iconClass: 'shelter',
     iconName: 'home',
-    description: 'Abrigos municipais da Defesa Civil e raio territorial de 1 km para resposta a emergências',
+    description: 'Abrigos municipais da Defesa Civil e raio territorial de 2 km para resposta a emergências',
     badge: 'Operacional'
   },
   {
@@ -206,9 +206,9 @@ export const LAYERS_CONFIG = [
     searchFields: ['ID', 'Nome', 'Tipo', 'Endereço']
   },
   {
-    id: 'cobertura_abrigos_1km',
-    name: 'Cobertura de Abrigos — 1 km',
-    fileName: 'Cobertura de Abrigos em 1km.geojson',
+    id: 'cobertura_abrigos_2km',
+    name: 'Cobertura de Abrigos — 2 km',
+    fileName: 'Cobertura de Abrigos em 2km.geojson',
     source: 'Defesa Civil de Passo Fundo',
     refDate: '2026',
     group: 'abrigos_cobertura',
@@ -225,9 +225,9 @@ export const LAYERS_CONFIG = [
       previewColor: '#1d4ed8'
     },
     popupConfig: {
-      defaultTitle: 'Cobertura de Abrigos — 1 km',
+      defaultTitle: 'Cobertura de Abrigos — 2 km',
       fields: [
-        { key: 'cobertura', label: 'Área de Cobertura', defaultValue: 'Raio territorial de 1 km (1.000 m)' },
+        { key: 'cobertura', label: 'Área de Cobertura', defaultValue: 'Raio territorial de 2 km (2.000 m)' },
         { key: 'finalidade', label: 'Finalidade Operacional', defaultValue: 'Área de influência e atendimento prioritário dos Abrigos da Defesa Civil' }
       ]
     },
@@ -905,8 +905,8 @@ export const OPERATIONAL_PRESETS = [
   {
     id: 'preset_defesa_civil',
     name: '🚨 Cenário de Risco & Enchentes',
-    description: 'Foco em mancha de inundação 2024, faixa de APP, abrigos de emergência e sua cobertura de 1 km, malha hídrica e bairros',
-    activeLayers: ['areas_enchente_2024', 'app_30metros', 'cobertura_abrigos_1km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
+    description: 'Foco em mancha de inundação 2024, faixa de APP, abrigos de emergência e sua cobertura de 2 km, malha hídrica e bairros',
+    activeLayers: ['areas_enchente_2024', 'app_30metros', 'cobertura_abrigos_2km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
   },
   {
     id: 'preset_logistica',
@@ -924,6 +924,6 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_geral',
     name: '🏛️ Visão Geral Padrão',
     description: 'Configuração institucional inicial com camadas territoriais e de risco',
-    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'cobertura_abrigos_1km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
+    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'cobertura_abrigos_2km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
   }
 ];

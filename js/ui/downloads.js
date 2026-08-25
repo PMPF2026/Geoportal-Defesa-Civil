@@ -33,7 +33,7 @@ export class DownloadsUI {
       'app_30metros': 'Faixa marginal de PreservaÃ§Ã£o Permanente de 30 metros ao longo do Rio Passo Fundo (Lei Federal 12.651/2012).',
       'edificacoes_app': '318 edificaÃ§Ãµes residenciais e comerciais localizadas dentro da faixa de 30 metros de APP com distÃ¢ncias mÃ©tricas ao rio.',
       'abrigos_defesa_civil': '17 locais e ginásios públicos cadastrados pela Defesa Civil para acolhimento de emergência em desastres climáticos.',
-      'cobertura_abrigos_1km': 'Área de influência e cobertura territorial de 1 km ao redor dos 17 abrigos da Defesa Civil.',
+      'cobertura_abrigos_2km': 'Área de influência e cobertura territorial de 2 km ao redor dos 17 abrigos da Defesa Civil.',
       'zph_helicoptero': '9 Zonas de Pouso de Helicóptero (ZPH) cadastradas para pouso de emergência e resgate aéreo da Defesa Civil.',
       'rio_passo_fundo': 'Traçado vetorial do curso d’água principal do Rio Passo Fundo em sua travessia pelo perímetro urbano e rural.',
       'malha_hidrica': 'Rede hidrogrÃ¡fica com mais de 3.600 trechos de rios, arroios e cÃ³rregos de Passo Fundo com ordem de Strahler.',
