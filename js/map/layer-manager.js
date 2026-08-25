@@ -394,11 +394,11 @@ export class LayerManager {
           image: new ol.style.Icon({
             src: svgHelicopter,
             anchor: [0.5, 0.5],
-            scale: 0.95
+            scale: 0.38
           }),
           text: showText ? new ol.style.Text({
             text: name,
-            offsetY: 24,
+            offsetY: 14,
             font: 'bold 11px "Inter", sans-serif',
             fill: new ol.style.Fill({ color: '#ffffff' }),
             stroke: new ol.style.Stroke({ color: '#0369a1', width: 3.0 }),
