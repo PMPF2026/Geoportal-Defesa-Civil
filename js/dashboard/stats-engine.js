@@ -53,7 +53,25 @@ export class StatsEngine {
       ferroviaKm: 55.29,
       totalViasKm: 1959.34,
       totalAbrigos: 17,
-      abrigosAreaM2: 8875
+      abrigosAreaM2: 8875,
+      totalDomiciliosSgb: 1115,
+      domiciliosSgbParticulares: 1011,
+      domiciliosSgbAltaPrecisao: 1108,
+      domiciliosSgbEnchente: 361,
+      domiciliosSgbApp30m: 67,
+      domiciliosSgbCoberturaAbrigos: 1112,
+      sgbTopBairros: [
+        { name: "Petrópolis", count: 316, pct: 28.3 },
+        { name: "São Luiz Gonzaga", count: 273, pct: 24.5 },
+        { name: "Vila Santa Maria", count: 142, pct: 12.7 },
+        { name: "Vera Cruz", count: 93, pct: 8.3 },
+        { name: "Vila Luiza", count: 88, pct: 7.9 },
+        { name: "Victor Issler", count: 64, pct: 5.7 },
+        { name: "Vila Cruzeiro", count: 38, pct: 3.4 },
+        { name: "Outros / Periferia", count: 31, pct: 2.8 },
+        { name: "Vila Mattos", count: 26, pct: 2.3 },
+        { name: "Nenê Graeff", count: 20, pct: 1.8 }
+      ]
     };
   }
 

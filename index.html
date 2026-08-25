@@ -205,6 +205,7 @@
                   <option value="ferrovia">Ferrovia (Linha Férrea)</option>
                   <option value="rodovia_federal">Rodovia Federal (BR)</option>
                   <option value="rodovia_estadual">Rodovia Estadual (ERS)</option>
+                  <option value="domicilios_risco_sgb_2025">Domicílios em Área de Risco (SGB 2025)</option>
                 </select>
               </div>
 
@@ -267,6 +268,22 @@
                   <i class="lucide-trash-2"></i> Limpar
                 </button>
               </div>
+            </div>
+
+            <!-- Tool 4: Diagnóstico Espacial SGB 2025 -->
+            <div class="analysis-tool-card">
+              <div class="analysis-tool-title">
+                <i class="lucide-mountain" style="color:#f97316;"></i>
+                <span>Diagnóstico SGB — Domicílios em Risco (2025)</span>
+              </div>
+              <p class="analysis-tool-desc">
+                Analisa a distribuição territorial dos 1.115 domicílios em áreas de risco mapeados pelo Serviço Geológico do Brasil (SGB, 2025), calculando a exposição a enchentes e a proximidade com a rede de abrigos.
+              </p>
+              <button class="analysis-btn" id="btn-run-sgb-intersect" style="background:#ea580c; border-color:#c2410c;">
+                <i class="lucide-layers"></i> Processar Diagnóstico SGB
+              </button>
+
+              <div class="analysis-results-box" id="analysis-sgb-results"></div>
             </div>
           </div>
 
@@ -334,6 +351,15 @@
                   </div>
                   <div class="kpi-value"><span data-kpi="totalAbrigos">17</span><span class="kpi-unit">unid</span></div>
                   <div class="kpi-subtitle"><span data-kpi="abrigosAreaM2">8.875</span> m² de acolhimento</div>
+                </div>
+
+                <div class="kpi-card" style="border-left: 3px solid #f97316; background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, var(--dc-blue-card) 100%);">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Domicílios em Risco (SGB)</span>
+                    <i class="lucide-mountain kpi-icon" style="color:#f97316;"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="totalDomiciliosSgb">1.115</span><span class="kpi-unit">unid</span></div>
+                  <div class="kpi-subtitle">Serviço Geológico do Brasil (2025)</div>
                 </div>
               </div>
 
@@ -688,6 +714,15 @@
             <div class="kpi-value"><span data-kpi="totalAbrigos">17</span><span class="kpi-unit">unid</span></div>
             <div class="kpi-subtitle"><span data-kpi="abrigosAreaM2">8.875</span> m² de acolhimento</div>
           </div>
+
+          <div class="kpi-card" style="border-left: 3px solid #f97316; background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, var(--dc-blue-card) 100%);">
+            <div class="kpi-header">
+              <span class="kpi-title">Domicílios em Risco (SGB)</span>
+              <i class="lucide-mountain kpi-icon" style="color:#f97316;"></i>
+            </div>
+            <div class="kpi-value"><span data-kpi="totalDomiciliosSgb">1.115</span><span class="kpi-unit">unid</span></div>
+            <div class="kpi-subtitle">Serviço Geológico do Brasil (2025)</div>
+          </div>
         </div>
 
         <!-- 4 Interactive Charts Grid (2x2) -->
@@ -768,6 +803,54 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:11px; color:var(--text-subtle); flex-wrap:wrap; gap:6px;">
             <span><strong>Fonte:</strong> Defesa Civil Municipal de Passo Fundo &bull; Base Oficial 2026</span>
             <span><em>Nota: Capacidade em pessoas não discriminada na planilha original (utilizada área em m²). Clique no botão do mapa para aproximar no local.</em></span>
+          </div>
+        </div>
+
+        <!-- ================= SEÇÃO DEDICADA: MAPEAMENTO E DIAGNÓSTICO SGB (2025) ================= -->
+        <div class="dashboard-sgb-section" style="margin-top:20px; border-top:1px solid var(--dc-blue-border); padding-top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="font-size:13.5px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                <i class="lucide-mountain" style="color:#f97316;"></i>
+                <span>MAPEAMENTO E DIAGNÓSTICO SGB — DOMICÍLIOS EM ÁREAS DE RISCO (2025)</span>
+                <span class="badge-orange" style="font-size:10.5px; background:rgba(249,115,22,0.2); color:#fdba74; border:1px solid #f97316; padding:2px 8px; border-radius:12px; font-weight:700;">1.115 Domicílios</span>
+              </div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">
+                Diagnóstico de risco geológico e vulnerabilidade territorial &bull; <strong>Serviço Geológico do Brasil (SGB, 2025)</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:16px;">
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #f97316;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Total de Domicílios Mapeados</span>
+              <strong style="font-size:18px; color:var(--text-main); font-family:var(--font-mono); display:block; margin:2px 0;">1.115 unid</strong>
+              <span style="font-size:10.5px; color:#fdba74;">1.011 Particulares Ocupados (90,7%)</span>
+            </div>
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #ef4444;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Sobreposição Mancha Enchente 2024</span>
+              <strong style="font-size:18px; color:var(--dc-hazard-red); font-family:var(--font-mono); display:block; margin:2px 0;">361 domicílios</strong>
+              <span style="font-size:10.5px; color:#fca5a5;">32,4% dos domicílios SGB</span>
+            </div>
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #10b981;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Faixa de 30m Rio Passo Fundo</span>
+              <strong style="font-size:18px; color:#34d399; font-family:var(--font-mono); display:block; margin:2px 0;">67 domicílios</strong>
+              <span style="font-size:10.5px; color:#a7f3d0;">6,0% em APP ribeirinha</span>
+            </div>
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #2563eb;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Cobertura Abrigos Defesa Civil (2km)</span>
+              <strong style="font-size:18px; color:#60a5fa; font-family:var(--font-mono); display:block; margin:2px 0;">1.112 domicílios</strong>
+              <span style="font-size:10.5px; color:#93c5fd;">99,7% atendidos pela rede municipal</span>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title"><i class="lucide-bar-chart-2"></i> Distribuição dos Domicílios em Risco por Bairro (SGB 2025 - Clique na barra para aproximar)</span>
+            </div>
+            <div class="chart-wrapper" style="height:220px;">
+              <canvas id="chart-sgb-bairros-modal"></canvas>
+            </div>
           </div>
         </div>
       </div>

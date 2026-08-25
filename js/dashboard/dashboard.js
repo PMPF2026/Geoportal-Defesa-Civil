@@ -288,6 +288,61 @@ export class DashboardUI {
         }
       });
     }
+
+    // 5. SGB 2025 Domicílios em Risco por Bairro (Bar Horizontal) with Click-to-Zoom!
+    const sgbCtx = document.getElementById('chart-sgb-bairros-modal');
+    if (sgbCtx) {
+      if (this.charts.sgbModal) this.charts.sgbModal.destroy();
+      const sgbList = stats.sgbTopBairros || [
+        { name: "Petrópolis", count: 316 },
+        { name: "São Luiz Gonzaga", count: 273 },
+        { name: "Vila Santa Maria", count: 142 },
+        { name: "Vera Cruz", count: 93 },
+        { name: "Vila Luiza", count: 88 },
+        { name: "Victor Issler", count: 64 },
+        { name: "Vila Cruzeiro", count: 38 },
+        { name: "Outros / Periferia", count: 31 },
+        { name: "Vila Mattos", count: 26 },
+        { name: "Nenê Graeff", count: 20 }
+      ];
+      this.charts.sgbModal = new Chart(sgbCtx, {
+        type: 'bar',
+        data: {
+          labels: sgbList.map(b => b.name),
+          datasets: [{
+            label: 'Domicílios em Risco (SGB 2025)',
+            data: sgbList.map(b => b.count),
+            backgroundColor: '#f97316',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: async (evt, elements) => {
+            if (elements && elements.length > 0) {
+              const index = elements[0].index;
+              const selectedBairro = sgbList[index];
+              this.closeModal();
+              this.zoomToBairroByName(selectedBairro.name);
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                afterLabel: () => '👉 Clique para aproximar no mapa'
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { ticks: { color: '#f8fafc', font: { size: 11 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
   }
 
   async zoomToBairroByName(nameQuery) {
