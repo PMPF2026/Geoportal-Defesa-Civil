@@ -584,10 +584,10 @@ export const LAYERS_CONFIG = [
     isLazy: false,
     style: {
       fillColor: 'rgba(0, 0, 0, 0)',
-      strokeColor: '#0f172a',
+      strokeColor: '#B71C1C',
       strokeWidth: 1.8,
       strokeDash: [8, 5],
-      previewColor: '#0f172a'
+      previewColor: '#B71C1C'
     },
     popupConfig: {
       titleField: 'NM_MUN',
