@@ -71,7 +71,20 @@ export class StatsEngine {
         { name: "Outros / Periferia", count: 31, pct: 2.8 },
         { name: "Vila Mattos", count: 26, pct: 2.3 },
         { name: "Nenê Graeff", count: 20, pct: 1.8 }
-      ]
+      ],
+      sgbTotalSetores: 25,
+      sgbTotalEdif: 617,
+      sgbTotalPess: 2468,
+      sgbAreaHa: 32.95,
+      sgbMediaPessEdif: 4.0,
+      sgbRiscoStats: {
+        alto: { setores: 21, edif: 505, pess: 2020, pct: 81.8 },
+        muitoAlto: { setores: 4, edif: 112, pess: 448, pct: 18.2 }
+      },
+      sgbVulneStats: {
+        medio: { setores: 9, edif: 177, pess: 708, pct: 28.7 },
+        alto: { setores: 16, edif: 440, pess: 1760, pct: 71.3 }
+      }
     };
   }
 

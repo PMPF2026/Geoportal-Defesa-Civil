@@ -806,29 +806,53 @@
           </div>
         </div>
 
-        <!-- ================= SEÇÃO DEDICADA: MAPEAMENTO E DIAGNÓSTICO SGB (2025) ================= -->
+        <!-- ================= SEÇÃO DEDICADA: MAPEAMENTO & DIAGNÓSTICO SGB (2025) ================= -->
         <div class="dashboard-sgb-section" style="margin-top:20px; border-top:1px solid var(--dc-blue-border); padding-top:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
             <div>
               <div style="font-size:13.5px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
                 <i class="lucide-mountain" style="color:#f97316;"></i>
-                <span>MAPEAMENTO E DIAGNÓSTICO SGB — DOMICÍLIOS EM ÁREAS DE RISCO (2025)</span>
-                <span class="badge-orange" style="font-size:10.5px; background:rgba(249,115,22,0.2); color:#fdba74; border:1px solid #f97316; padding:2px 8px; border-radius:12px; font-weight:700;">1.115 Domicílios</span>
+                <span>MAPEAMENTO & DIAGNÓSTICO SGB (2025) — SETORIZAÇÃO E DOMICÍLIOS EM ÁREAS DE RISCO</span>
+                <span class="badge-orange" style="font-size:10.5px; background:rgba(249,115,22,0.2); color:#fdba74; border:1px solid #f97316; padding:2px 8px; border-radius:12px; font-weight:700;">25 Setores &bull; 1.115 Domicílios</span>
               </div>
               <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">
-                Diagnóstico de risco geológico e vulnerabilidade territorial &bull; <strong>Serviço Geológico do Brasil (SGB, 2025)</strong>
+                Diagnóstico técnico oficial de risco geológico e hidrológico &bull; <strong>Serviço Geológico do Brasil (SGB, 2025)</strong>
               </div>
+            </div>
+            <div style="position:relative; width:260px;">
+              <input type="text" id="dash-sgb-sectors-search" class="layer-filter-input" placeholder="Filtrar setor SGB, rua ou bairro..." style="padding-left:10px;" />
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:16px;">
+          <!-- 8 KPI Diagnostic Grid (4 Setores + 4 Domicílios) -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:16px;">
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #ea580c;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Setores de Risco Mapeados</span>
+              <strong style="font-size:18px; color:var(--text-main); font-family:var(--font-mono); display:block; margin:2px 0;">25 setores</strong>
+              <span style="font-size:10.5px; color:#fdba74;">21 Alto (R3) | 4 Muito Alto (R4)</span>
+            </div>
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #dc2626;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Edificações nos Setores</span>
+              <strong style="font-size:18px; color:var(--dc-hazard-red); font-family:var(--font-mono); display:block; margin:2px 0;">617 edif.</strong>
+              <span style="font-size:10.5px; color:#fca5a5;">112 em Risco Muito Alto (18,2%)</span>
+            </div>
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #f59e0b;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">População Exposta nos Setores</span>
+              <strong style="font-size:18px; color:#fcd34d; font-family:var(--font-mono); display:block; margin:2px 0;">2.468 pessoas</strong>
+              <span style="font-size:10.5px; color:#fef08a;">Média 4,0 pessoas/edificação</span>
+            </div>
+            <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #06b6d4;">
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Área Total dos 25 Setores</span>
+              <strong style="font-size:18px; color:#67e8f9; font-family:var(--font-mono); display:block; margin:2px 0;">32,95 ha</strong>
+              <span style="font-size:10.5px; color:#a5f3fc;">329.483 m² mapeados em campo</span>
+            </div>
             <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #f97316;">
-              <span style="font-size:11px; color:var(--text-muted); display:block;">Total de Domicílios Mapeados</span>
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Total Domicílios em Risco</span>
               <strong style="font-size:18px; color:var(--text-main); font-family:var(--font-mono); display:block; margin:2px 0;">1.115 unid</strong>
               <span style="font-size:10.5px; color:#fdba74;">1.011 Particulares Ocupados (90,7%)</span>
             </div>
             <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #ef4444;">
-              <span style="font-size:11px; color:var(--text-muted); display:block;">Sobreposição Mancha Enchente 2024</span>
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Sobreposição Enchente 2024</span>
               <strong style="font-size:18px; color:var(--dc-hazard-red); font-family:var(--font-mono); display:block; margin:2px 0;">361 domicílios</strong>
               <span style="font-size:10.5px; color:#fca5a5;">32,4% dos domicílios SGB</span>
             </div>
@@ -838,19 +862,75 @@
               <span style="font-size:10.5px; color:#a7f3d0;">6,0% em APP ribeirinha</span>
             </div>
             <div style="background:var(--dc-blue-card); border:1px solid var(--dc-blue-border); border-radius:var(--radius-md); padding:10px 12px; border-left:3px solid #2563eb;">
-              <span style="font-size:11px; color:var(--text-muted); display:block;">Cobertura Abrigos Defesa Civil (2km)</span>
+              <span style="font-size:11px; color:var(--text-muted); display:block;">Cobertura Abrigos (2 km)</span>
               <strong style="font-size:18px; color:#60a5fa; font-family:var(--font-mono); display:block; margin:2px 0;">1.112 domicílios</strong>
-              <span style="font-size:10.5px; color:#93c5fd;">99,7% atendidos pela rede municipal</span>
+              <span style="font-size:10.5px; color:#93c5fd;">99,7% no raio emergencial</span>
             </div>
           </div>
 
-          <div class="chart-card">
+          <!-- Charts 2-column Grid: Grau de Risco & Grau de Vulnerabilidade -->
+          <div class="modal-grid-2col" style="margin-bottom:16px;">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <span class="chart-card-title"><i class="lucide-alert-triangle"></i> Edificações e População por Grau de Risco (SGB 2025)</span>
+              </div>
+              <div class="chart-wrapper" style="height:200px;">
+                <canvas id="chart-sgb-risco-modal"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <span class="chart-card-title"><i class="lucide-shield-alert"></i> Edificações e População por Grau de Vulnerabilidade (SGB 2025)</span>
+              </div>
+              <div class="chart-wrapper" style="height:200px;">
+                <canvas id="chart-sgb-vulne-modal"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart: Domicílios por Bairro -->
+          <div class="chart-card" style="margin-bottom:16px;">
             <div class="chart-card-header">
               <span class="chart-card-title"><i class="lucide-bar-chart-2"></i> Distribuição dos Domicílios em Risco por Bairro (SGB 2025 - Clique na barra para aproximar)</span>
             </div>
-            <div class="chart-wrapper" style="height:220px;">
+            <div class="chart-wrapper" style="height:200px;">
               <canvas id="chart-sgb-bairros-modal"></canvas>
             </div>
+          </div>
+
+          <!-- Interactive Ranking Table of the 25 SGB Risk Sectors -->
+          <div style="font-size:12.5px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <i class="lucide-list-ordered" style="color:#f97316;"></i>
+              <span>Ranking dos 25 Setores de Risco Mapeados pelo SGB (2025)</span>
+            </div>
+            <span style="font-size:11px; color:var(--text-muted);">Ordenado por População e Criticidade de Risco</span>
+          </div>
+
+          <div class="shelter-table-wrapper" style="max-height: 300px; overflow-y:auto; border:1px solid var(--dc-blue-border); border-radius:var(--radius-md);">
+            <table class="shelter-data-table" style="width:100%; border-collapse:collapse; font-size:12px;">
+              <thead>
+                <tr style="background:rgba(255,255,255,0.04); text-align:left; border-bottom:1px solid var(--dc-blue-border);">
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px;">Código Setor</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px;">Localização / Bairros</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;">Grau de Risco</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;">Vulnerabilidade</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:right;">Edificações</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:right;">População</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:right;">Área (ha)</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;">Mapa</th>
+                </tr>
+              </thead>
+              <tbody id="dash-sgb-sectors-table-body">
+                <!-- Populated dynamically via dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:11px; color:var(--text-subtle); flex-wrap:wrap; gap:6px;">
+            <span><strong>Fonte:</strong> Serviço Geológico do Brasil (SGB) &bull; Mapeamento de Áreas de Risco Geológico e Hidrológico 2025</span>
+            <span><em>Clique no botão "Ver" para navegar até o setor no mapa e visualizar o diagnóstico geotécnico de campo completo.</em></span>
           </div>
         </div>
       </div>

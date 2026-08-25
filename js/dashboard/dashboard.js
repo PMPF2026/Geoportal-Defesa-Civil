@@ -52,6 +52,7 @@ export class DashboardUI {
       this.modalEl.classList.add('active');
       this.renderModalCharts();
       this.renderSheltersTable();
+      this.renderSgbSectorsTable();
     }
   }
 
@@ -343,6 +344,94 @@ export class DashboardUI {
         }
       });
     }
+
+    // 6. SGB 2025 Edificações e População por Grau de Risco (Bar Comparison)
+    const sgbRiscoCtx = document.getElementById('chart-sgb-risco-modal');
+    if (sgbRiscoCtx) {
+      if (this.charts.sgbRiscoModal) this.charts.sgbRiscoModal.destroy();
+      this.charts.sgbRiscoModal = new Chart(sgbRiscoCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Risco Alto (R3)', 'Risco Muito Alto (R4)'],
+          datasets: [
+            {
+              label: 'Edificações em Risco',
+              data: [505, 112],
+              backgroundColor: '#ea580c',
+              borderRadius: 4
+            },
+            {
+              label: 'População Exposta',
+              data: [2020, 448],
+              backgroundColor: '#dc2626',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#e2e8f0', font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} (${ctx.raw === 505 || ctx.raw === 2020 ? '81,8%' : '18,2%'})`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+    }
+
+    // 7. SGB 2025 Edificações e População por Grau de Vulnerabilidade (Bar Comparison)
+    const sgbVulneCtx = document.getElementById('chart-sgb-vulne-modal');
+    if (sgbVulneCtx) {
+      if (this.charts.sgbVulneModal) this.charts.sgbVulneModal.destroy();
+      this.charts.sgbVulneModal = new Chart(sgbVulneCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Vulnerabilidade Média', 'Vulnerabilidade Alta'],
+          datasets: [
+            {
+              label: 'Edificações',
+              data: [177, 440],
+              backgroundColor: '#f59e0b',
+              borderRadius: 4
+            },
+            {
+              label: 'População Exposta',
+              data: [708, 1760],
+              backgroundColor: '#ef4444',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#e2e8f0', font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} (${ctx.raw === 177 || ctx.raw === 708 ? '28,7%' : '71,3%'})`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+    }
   }
 
   async zoomToBairroByName(nameQuery) {
@@ -485,5 +574,127 @@ export class DashboardUI {
 
     const cfg = this.layerManager.getConfig('abrigos_defesa_civil');
     this.popupUI.showPopupForFeature(feature, cfg, coords);
+  }
+
+  /**
+   * Renders the interactive SGB risk sectors ranking table in the expanded dashboard modal
+   */
+  async renderSgbSectorsTable() {
+    const tbody = document.getElementById('dash-sgb-sectors-table-body');
+    if (!tbody) return;
+
+    await this.layerManager.loadLayerData('mapeamento_sgb_2025');
+    const layer = this.layerManager.getLayer('mapeamento_sgb_2025');
+    if (!layer) return;
+
+    const features = layer.getSource().getFeatures();
+    if (!features || features.length === 0) return;
+
+    // Sort features by population descending
+    const sortedFeatures = [...features].sort((a, b) => {
+      const pessA = parseInt(a.get('NUM_PESS') || 0, 10);
+      const pessB = parseInt(b.get('NUM_PESS') || 0, 10);
+      return pessB - pessA;
+    });
+
+    this.sgbSectorFeatures = sortedFeatures;
+
+    const renderRows = (list) => {
+      tbody.innerHTML = '';
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--text-muted);">Nenhum setor de risco SGB localizado com o filtro informado.</td></tr>`;
+        return;
+      }
+
+      list.forEach(f => {
+        const props = f.getProperties();
+        const geom = f.getGeometry();
+        const areaHa = geom ? (geom.getArea() / 10000).toFixed(2) : '-';
+        const risco = props['GRAU_RISCO'] || 'Alto';
+        const vulne = props['GRAU_VULNE'] || 'Alto';
+        const isMuitoAlto = risco.toLowerCase().includes('muito');
+        const isVulneAlta = vulne.toLowerCase().includes('alto');
+
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; cursor:pointer;';
+        tr.onmouseenter = () => tr.style.background = 'rgba(255,255,255,0.04)';
+        tr.onmouseleave = () => tr.style.background = 'transparent';
+
+        tr.innerHTML = `
+          <td style="padding:7px 10px; font-weight:700; color:#fdba74; font-family:var(--font-mono);">${props['NUM_SETOR'] || ''}</td>
+          <td style="padding:7px 10px; font-weight:500; color:var(--text-main); max-width:260px; white-space:normal;">${props['LOCAL'] || '-'}</td>
+          <td style="padding:7px 10px; text-align:center;">
+            <span style="font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:10px; background:${isMuitoAlto ? 'rgba(220,38,38,0.2)' : 'rgba(234,88,12,0.2)'}; color:${isMuitoAlto ? '#fca5a5' : '#fdba74'}; border:1px solid ${isMuitoAlto ? '#dc2626' : '#ea580c'};">
+              ${risco}
+            </span>
+          </td>
+          <td style="padding:7px 10px; text-align:center;">
+            <span style="font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:10px; background:${isVulneAlta ? 'rgba(245,158,11,0.18)' : 'rgba(234,179,8,0.12)'}; color:${isVulneAlta ? '#fcd34d' : '#fef08a'};">
+              ${vulne}
+            </span>
+          </td>
+          <td style="padding:7px 10px; text-align:right; font-weight:700; color:var(--text-main);">${props['NUM_EDIF'] || '0'}</td>
+          <td style="padding:7px 10px; text-align:right; font-weight:700; color:#f87171;">${props['NUM_PESS'] || '0'}</td>
+          <td style="padding:7px 10px; text-align:right; color:var(--text-muted); font-family:var(--font-mono);">${areaHa}</td>
+          <td style="padding:7px 10px; text-align:center;">
+            <button class="mini-btn btn-view-sgb-map" style="padding:3px 8px; font-size:11px; background:#ea580c; border:none; color:#fff;" title="Aproximar no Setor de Risco">
+              <i class="lucide-map-pin"></i> Ver
+            </button>
+          </td>
+        `;
+
+        const onSelect = () => {
+          this.closeModal();
+          this.zoomToSgbSectorFeature(f);
+        };
+
+        tr.addEventListener('click', onSelect);
+        tbody.appendChild(tr);
+      });
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    renderRows(sortedFeatures);
+
+    const searchInput = document.getElementById('dash-sgb-sectors-search');
+    if (searchInput && !this.sgbSearchBound) {
+      this.sgbSearchBound = true;
+      searchInput.addEventListener('input', (e) => {
+        const q = (e.target.value || '').toLowerCase().trim();
+        if (!q) {
+          renderRows(this.sgbSectorFeatures);
+        } else {
+          const filtered = this.sgbSectorFeatures.filter(f => {
+            const p = f.getProperties();
+            const str = `${p['NUM_SETOR']} ${p['LOCAL']} ${p['GRAU_RISCO']} ${p['GRAU_VULNE']} ${p['DESCRICAO']}`.toLowerCase();
+            return str.includes(q);
+          });
+          renderRows(filtered);
+        }
+      });
+    }
+  }
+
+  /**
+   * Zooms to the selected SGB Risk Sector polygon on the map, highlights it and opens popup
+   */
+  async zoomToSgbSectorFeature(feature) {
+    const geom = feature.getGeometry();
+    if (!geom) return;
+
+    // Ensure layer is visible
+    this.layerManager.setLayerVisibility('mapeamento_sgb_2025', true);
+    const checkbox = document.querySelector(`input[data-layer-id="mapeamento_sgb_2025"]`);
+    if (checkbox) checkbox.checked = true;
+
+    this.mapEngine.setHighlight(feature);
+    const extent = geom.getExtent();
+    this.mapEngine.zoomTo(extent);
+
+    const cfg = this.layerManager.getConfig('mapeamento_sgb_2025');
+    this.popupUI.showPopupForFeature(feature, cfg, ol.extent.getCenter(extent));
   }
 }

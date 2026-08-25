@@ -357,52 +357,53 @@ export class SpatialAnalysisTool {
   /**
    * Process SGB 2025 Disaster Risk Domiciles Spatial Diagnostic
    */
+  /**
+   * Process SGB 2025 Disaster Risk Sectors & Domiciles Spatial Diagnostic
+   */
   async executeSgbDiagnosticAnalysis() {
     const resultsBox = document.getElementById('analysis-sgb-results');
-    Notification.info('Cruzando domicílios SGB com dados territoriais, enchentes e abrigos...');
+    Notification.info('Processando diagnóstico espacial integrado dos 25 setores e 1.115 domicílios SGB...');
 
     try {
-      await this.layerManager.loadLayerData('domicilios_risco_sgb_2025');
-      const sgbLayer = this.layerManager.getLayer('domicilios_risco_sgb_2025');
+      await Promise.all([
+        this.layerManager.loadLayerData('mapeamento_sgb_2025'),
+        this.layerManager.loadLayerData('domicilios_risco_sgb_2025')
+      ]);
 
-      if (!sgbLayer) {
-        Notification.warning('Camada SGB não encontrada.');
-        return;
-      }
-
-      const sgbFeatures = sgbLayer.getSource().getFeatures();
-      const totalSgb = sgbFeatures.length || 1115;
+      const sgbSectorsLayer = this.layerManager.getLayer('mapeamento_sgb_2025');
+      const sgbDomLayer = this.layerManager.getLayer('domicilios_risco_sgb_2025');
 
       const stats = {
-        total: totalSgb,
+        totalSetores: 25,
+        totalEdif: 617,
+        totalPess: 2468,
+        areaHa: 32.95,
+        mediaPessEdif: 4.0,
+        riscoAlto: { setores: 21, edif: 505, pess: 2020, pct: 81.8 },
+        riscoMuitoAlto: { setores: 4, edif: 112, pess: 448, pct: 18.2 },
+        vulneMedia: { setores: 9, edif: 177, pess: 708, pct: 28.7 },
+        vulneAlta: { setores: 16, edif: 440, pess: 1760, pct: 71.3 },
+        totalDomicilios: 1115,
         particulares: 1011,
-        altaPrecisao: 1108,
         inFlood: 361,
         inFloodPct: 32.4,
         inApp30m: 67,
         inAppPct: 6.0,
         inShelterCov: 1112,
-        inShelterPct: 99.7,
-        topBairros: [
-          { name: "Petrópolis", count: 316, pct: 28.3 },
-          { name: "São Luiz Gonzaga", count: 273, pct: 24.5 },
-          { name: "Vila Santa Maria", count: 142, pct: 12.7 },
-          { name: "Vera Cruz", count: 93, pct: 8.3 },
-          { name: "Vila Luiza", count: 88, pct: 7.9 },
-          { name: "Victor Issler", count: 64, pct: 5.7 },
-          { name: "Vila Cruzeiro", count: 38, pct: 3.4 },
-          { name: "Outros / Periferia", count: 31, pct: 2.8 }
-        ]
+        inShelterPct: 99.7
       };
 
       this.lastSgbAnalysisData = stats;
 
-      // Ensure SGB layer is visible and zoom to extent
-      sgbLayer.setVisible(true);
-      const extent = sgbLayer.getSource().getExtent();
-      if (extent && !ol.extent.isEmpty(extent)) {
-        this.mapEngine.zoomTo(extent);
+      // Ensure SGB layers are visible and zoom to extent
+      if (sgbSectorsLayer) {
+        sgbSectorsLayer.setVisible(true);
+        const extent = sgbSectorsLayer.getSource().getExtent();
+        if (extent && !ol.extent.isEmpty(extent)) {
+          this.mapEngine.zoomTo(extent);
+        }
       }
+      if (sgbDomLayer) sgbDomLayer.setVisible(true);
 
       if (resultsBox) {
         resultsBox.innerHTML = `
@@ -415,35 +416,48 @@ export class SpatialAnalysisTool {
             </button>
           </div>
 
+          <div style="font-size:11px; font-weight:700; color:#fdba74; margin-bottom:4px;">1. SETORIZAÇÃO DE RISCO GEOLÓGICO:</div>
           <div class="results-metric-row">
-            <span>Total Domicílios em Risco:</span>
-            <strong>${formatNumber(stats.total, 0)} unidades</strong>
+            <span>Setores de Risco Mapeados:</span>
+            <strong>25 setores (${stats.areaHa} ha)</strong>
           </div>
           <div class="results-metric-row">
-            <span>Domicílios Particulares Ocupados:</span>
-            <strong>${formatNumber(stats.particulares, 0)} (90,7%)</strong>
+            <span>Edificações Mapeadas em Risco:</span>
+            <strong style="color:var(--dc-hazard-red);">${stats.totalEdif} unidades</strong>
+          </div>
+          <div class="results-metric-row">
+            <span>População Exposta nos Setores:</span>
+            <strong style="color:#fcd34d;">${formatNumber(stats.totalPess, 0)} pessoas</strong>
+          </div>
+          <div class="results-metric-row">
+            <span>Classificação Grau de Risco:</span>
+            <span><strong>21 Alto</strong> (81,8%) | <strong>4 Muito Alto</strong> (18,2%)</span>
+          </div>
+          <div class="results-metric-row">
+            <span>Grau de Vulnerabilidade:</span>
+            <span><strong>9 Média</strong> (28,7%) | <strong>16 Alta</strong> (71,3%)</span>
+          </div>
+
+          <div style="font-size:11px; font-weight:700; color:#fdba74; margin:8px 0 4px 0; border-top:1px dashed var(--dc-blue-border); padding-top:6px;">2. DOMICÍLIOS & CRUZAMENTOS ESPACIAIS:</div>
+          <div class="results-metric-row">
+            <span>Total Domicílios em Risco:</span>
+            <strong>${formatNumber(stats.totalDomicilios, 0)} unidades</strong>
           </div>
           <div class="results-metric-row">
             <span>Exposição à Enchente 2024:</span>
             <strong style="color:var(--dc-hazard-red);">${stats.inFlood} domicílios (${stats.inFloodPct}%)</strong>
           </div>
           <div class="results-metric-row">
-            <span>Faixa de 30m do Rio Passo Fundo:</span>
+            <span>Faixa de 30m Rio Passo Fundo:</span>
             <strong style="color:#34d399;">${stats.inApp30m} domicílios (${stats.inAppPct}%)</strong>
           </div>
           <div class="results-metric-row">
-            <span>Cobertura por Abrigos (Raio 2km):</span>
+            <span>Cobertura Abrigos (Raio 2km):</span>
             <strong style="color:#60a5fa;">${stats.inShelterCov} domicílios (${stats.inShelterPct}%)</strong>
           </div>
 
-          <div style="margin-top:8px; padding-top:6px; border-top:1px dashed var(--dc-blue-border); font-size:11px; color:var(--text-muted);">
-            <strong>Distribuição nos Principais Bairros:</strong>
-            <ul style="margin:4px 0 0 16px; list-style-type:square;">
-              ${stats.topBairros.slice(0, 5).map(b => `<li>${b.name}: <strong>${b.count} domicílios</strong> (${b.pct}%)</li>`).join('')}
-            </ul>
-          </div>
           <div style="margin-top:6px; font-size:10px; color:var(--text-subtle);">
-            Fonte: Serviço Geológico do Brasil (SGB, 2025) &bull; Cruzamento com bases oficiais municipais
+            Fonte: Serviço Geológico do Brasil (SGB, 2025) &bull; Mapeamento Oficial
           </div>
         `;
         resultsBox.classList.add('active');
@@ -457,7 +471,7 @@ export class SpatialAnalysisTool {
         }
       }
 
-      Notification.success('Diagnóstico SGB processado com sucesso!');
+      Notification.success('Diagnóstico espacial SGB 2025 processado com sucesso!');
     } catch (err) {
       console.error('[SpatialAnalysis] Erro no diagnóstico SGB:', err);
       Notification.error('Erro ao executar diagnóstico SGB.');
@@ -471,17 +485,19 @@ export class SpatialAnalysisTool {
     if (!this.lastSgbAnalysisData) return;
 
     let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'FONTE,ANO,INDICADOR,VALOR,PERCENTUAL,OBSERVACAO\n';
-    csvContent += 'SGB,2025,"Total Domicilios em Area de Risco",1115,100%,"Mapeamento Geologico Oficial"\n';
-    csvContent += 'SGB,2025,"Domicilios Particulares Ocupados",1011,90.7%,"Classificacao COD_ESPECI 1"\n';
-    csvContent += 'SGB,2025,"Georreferenciamento Alta Precisao",1108,99.4%,"Classificacao NV_GEO_COO 1"\n';
-    csvContent += 'SGB,2025,"Exposicao Mancha Enchente 2024",361,32.4%,"Sobreposicao com mancha hidrologica maio/2024"\n';
-    csvContent += 'SGB,2025,"Exposicao Faixa 30m Rio Passo Fundo",67,6.0%,"APP ribeirinha"\n';
-    csvContent += 'SGB,2025,"Cobertura Rede de Abrigos 2km",1112,99.7%,"Raio de atendimento emergencial"\n';
-
-    this.lastSgbAnalysisData.topBairros.forEach(b => {
-      csvContent += `SGB,2025,"Bairro ${b.name}",${b.count},${b.pct}%,"Distribuicao territorial"\n`;
-    });
+    csvContent += 'FONTE,ANO,CATEGORIA,INDICADOR,QUANTIDADE,PERCENTUAL,OBSERVACAO\n';
+    csvContent += 'SGB,2025,"Setorizacao de Risco","Total de Setores Mapeados",25,100%,"Area total de 32.95 ha"\n';
+    csvContent += 'SGB,2025,"Setorizacao de Risco","Total de Edificacoes nos Setores",617,100%,"Mapeamento em campo"\n';
+    csvContent += 'SGB,2025,"Setorizacao de Risco","Total de Pessoas nos Setores",2468,100%,"Media 4.0 hab/edif"\n';
+    csvContent += 'SGB,2025,"Grau de Risco","Risco Alto (R3)",505,81.8%,"21 setores de risco"\n';
+    csvContent += 'SGB,2025,"Grau de Risco","Risco Muito Alto (R4)",112,18.2%,"4 setores de risco"\n';
+    csvContent += 'SGB,2025,"Vulnerabilidade","Vulnerabilidade Alta",440,71.3%,"16 setores"\n';
+    csvContent += 'SGB,2025,"Vulnerabilidade","Vulnerabilidade Media",177,28.7%,"9 setores"\n';
+    csvContent += 'SGB,2025,"Domicilios","Total Domicilios em Area de Risco",1115,100%,"Mapeamento Geologico Oficial"\n';
+    csvContent += 'SGB,2025,"Domicilios","Domicilios Particulares Ocupados",1011,90.7%,"Classificacao COD_ESPECI 1"\n';
+    csvContent += 'SGB,2025,"Cruzamento","Exposicao Mancha Enchente 2024",361,32.4%,"Sobreposicao maio/2024"\n';
+    csvContent += 'SGB,2025,"Cruzamento","Exposicao Faixa 30m Rio Passo Fundo",67,6.0%,"APP ribeirinha"\n';
+    csvContent += 'SGB,2025,"Cruzamento","Cobertura Rede de Abrigos 2km",1112,99.7%,"Raio de atendimento emergencial"\n';
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
