@@ -583,37 +583,84 @@ export class DashboardUI {
     const tbody = document.getElementById('dash-sgb-sectors-table-body');
     if (!tbody) return;
 
-    await this.layerManager.loadLayerData('mapeamento_sgb_2025');
+    await Promise.all([
+      this.layerManager.loadLayerData('mapeamento_sgb_2025'),
+      this.layerManager.loadLayerData('abrigos_defesa_civil')
+    ]);
     const layer = this.layerManager.getLayer('mapeamento_sgb_2025');
+    const shelterLayer = this.layerManager.getLayer('abrigos_defesa_civil');
     if (!layer) return;
 
     const features = layer.getSource().getFeatures();
     if (!features || features.length === 0) return;
 
-    // Sort features by population descending
-    const sortedFeatures = [...features].sort((a, b) => {
-      const pessA = parseInt(a.get('NUM_PESS') || 0, 10);
-      const pessB = parseInt(b.get('NUM_PESS') || 0, 10);
-      return pessB - pessA;
+    const shelterFeatures = shelterLayer ? shelterLayer.getSource().getFeatures() : [];
+
+    // Pre-calculate nearest shelters and IPP for each SGB sector
+    const processedFeatures = features.map(f => {
+      const props = f.getProperties();
+      const geom = f.getGeometry();
+      const edif = parseInt(props['NUM_EDIF'] || 0, 10);
+      const pess = parseInt(props['NUM_PESS'] || 0, 10);
+      const risco = props['GRAU_RISCO'] || 'Alto';
+      const vulne = props['GRAU_VULNE'] || 'Alto';
+
+      let nearestShelterName = 'Ginásio Municipal';
+      let minDistance = 9999;
+
+      if (geom && shelterFeatures.length > 0) {
+        const center = ol.extent.getCenter(geom.getExtent());
+        shelterFeatures.forEach(sf => {
+          const sGeom = sf.getGeometry();
+          if (sGeom) {
+            const sCoords = sGeom.getCoordinates();
+            const dx = center[0] - sCoords[0];
+            const dy = center[1] - sCoords[1];
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minDistance) {
+              minDistance = dist;
+              nearestShelterName = sf.get('Nome') || 'Abrigo';
+            }
+          }
+        });
+      }
+
+      const riskWeight = risco.toLowerCase().includes('muito') ? 40 : 25;
+      const vulnWeight = vulne.toLowerCase().includes('alto') ? 25 : 15;
+      const popWeight = Math.min(25, (pess / 352.0) * 25);
+      const distWeight = Math.min(10, (minDistance / 2000.0) * 10);
+      const ippScore = +(riskWeight + vulnWeight + popWeight + distWeight).toFixed(1);
+
+      return {
+        feature: f,
+        props,
+        geom,
+        edif,
+        pess,
+        risco,
+        vulne,
+        nearestShelterName,
+        minDistance: Math.round(minDistance),
+        ippScore
+      };
     });
 
-    this.sgbSectorFeatures = sortedFeatures;
+    // Sort features by IPP priority score descending
+    processedFeatures.sort((a, b) => b.ippScore - a.ippScore);
+    this.sgbSectorFeatures = processedFeatures;
 
     const renderRows = (list) => {
       tbody.innerHTML = '';
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--text-muted);">Nenhum setor de risco SGB localizado com o filtro informado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:16px; color:var(--text-muted);">Nenhum setor de risco SGB localizado com o filtro informado.</td></tr>`;
         return;
       }
 
-      list.forEach(f => {
-        const props = f.getProperties();
-        const geom = f.getGeometry();
-        const areaHa = geom ? (geom.getArea() / 10000).toFixed(2) : '-';
-        const risco = props['GRAU_RISCO'] || 'Alto';
-        const vulne = props['GRAU_VULNE'] || 'Alto';
+      list.forEach(item => {
+        const { feature, props, edif, pess, risco, vulne, nearestShelterName, minDistance, ippScore } = item;
         const isMuitoAlto = risco.toLowerCase().includes('muito');
         const isVulneAlta = vulne.toLowerCase().includes('alto');
+        const distColor = minDistance <= 1000 ? '#34d399' : (minDistance <= 2000 ? '#60a5fa' : '#f59e0b');
 
         const tr = document.createElement('tr');
         tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; cursor:pointer;';
@@ -622,7 +669,7 @@ export class DashboardUI {
 
         tr.innerHTML = `
           <td style="padding:7px 10px; font-weight:700; color:#fdba74; font-family:var(--font-mono);">${props['NUM_SETOR'] || ''}</td>
-          <td style="padding:7px 10px; font-weight:500; color:var(--text-main); max-width:260px; white-space:normal;">${props['LOCAL'] || '-'}</td>
+          <td style="padding:7px 10px; font-weight:500; color:var(--text-main); max-width:220px; white-space:normal;">${props['LOCAL'] || '-'}</td>
           <td style="padding:7px 10px; text-align:center;">
             <span style="font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:10px; background:${isMuitoAlto ? 'rgba(220,38,38,0.2)' : 'rgba(234,88,12,0.2)'}; color:${isMuitoAlto ? '#fca5a5' : '#fdba74'}; border:1px solid ${isMuitoAlto ? '#dc2626' : '#ea580c'};">
               ${risco}
@@ -633,9 +680,13 @@ export class DashboardUI {
               ${vulne}
             </span>
           </td>
-          <td style="padding:7px 10px; text-align:right; font-weight:700; color:var(--text-main);">${props['NUM_EDIF'] || '0'}</td>
-          <td style="padding:7px 10px; text-align:right; font-weight:700; color:#f87171;">${props['NUM_PESS'] || '0'}</td>
-          <td style="padding:7px 10px; text-align:right; color:var(--text-muted); font-family:var(--font-mono);">${areaHa}</td>
+          <td style="padding:7px 10px; text-align:right; font-weight:700; color:var(--text-main);">${edif}</td>
+          <td style="padding:7px 10px; text-align:right; font-weight:700; color:#f87171;">${pess}</td>
+          <td style="padding:7px 10px; font-size:11px; color:var(--text-muted); max-width:180px; white-space:normal;">${nearestShelterName}</td>
+          <td style="padding:7px 10px; text-align:center; font-weight:700; font-family:var(--font-mono); color:${distColor};">${minDistance}m</td>
+          <td style="padding:7px 10px; text-align:center;">
+            <span class="badge-blue" style="font-size:11px; font-weight:800; background:rgba(37,99,235,0.2); border:1px solid #2563eb; color:#93c5fd;" title="Índice de Prioridade de Proteção">${ippScore}</span>
+          </td>
           <td style="padding:7px 10px; text-align:center;">
             <button class="mini-btn btn-view-sgb-map" style="padding:3px 8px; font-size:11px; background:#ea580c; border:none; color:#fff;" title="Aproximar no Setor de Risco">
               <i class="lucide-map-pin"></i> Ver
@@ -645,7 +696,7 @@ export class DashboardUI {
 
         const onSelect = () => {
           this.closeModal();
-          this.zoomToSgbSectorFeature(f);
+          this.zoomToSgbSectorFeature(feature);
         };
 
         tr.addEventListener('click', onSelect);

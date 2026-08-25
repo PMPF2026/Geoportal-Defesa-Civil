@@ -285,6 +285,22 @@
 
               <div class="analysis-results-box" id="analysis-sgb-results"></div>
             </div>
+
+            <!-- Tool 5: Exposição e Cobertura de Proteção -->
+            <div class="analysis-tool-card">
+              <div class="analysis-tool-title">
+                <i class="lucide-shield-check" style="color:#3b82f6;"></i>
+                <span>Exposição e Cobertura de Proteção</span>
+              </div>
+              <p class="analysis-tool-desc">
+                Cruza a população e edificações em áreas de risco (SGB 2025) com a rede de abrigos da Defesa Civil (1km e 2km), identificando o nível de atendimento e áreas prioritárias de proteção.
+              </p>
+              <button class="analysis-btn" id="btn-run-exposure-coverage" style="background:#2563eb; border-color:#1d4ed8;">
+                <i class="lucide-activity"></i> Processar Exposição & Cobertura
+              </button>
+
+              <div class="analysis-results-box" id="analysis-exposure-results"></div>
+            </div>
           </div>
 
           <!-- TAB 5: DASHBOARD / MÉTRICAS -->
@@ -360,6 +376,24 @@
                   </div>
                   <div class="kpi-value"><span data-kpi="totalDomiciliosSgb">1.115</span><span class="kpi-unit">unid</span></div>
                   <div class="kpi-subtitle">Serviço Geológico do Brasil (2025)</div>
+                </div>
+
+                <div class="kpi-card" style="border-left: 3px solid #dc2626; background: linear-gradient(135deg, rgba(220,38,38,0.08) 0%, var(--dc-blue-card) 100%);">
+                  <div class="kpi-header">
+                    <span class="kpi-title">População em Risco (SGB)</span>
+                    <i class="lucide-users kpi-icon" style="color:var(--dc-hazard-red);"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="sgbTotalPess">2.468</span><span class="kpi-unit">hab</span></div>
+                  <div class="kpi-subtitle">617 edificações em 25 setores</div>
+                </div>
+
+                <div class="kpi-card" style="border-left: 3px solid #10b981; background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, var(--dc-blue-card) 100%);">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Cobertura de Proteção</span>
+                    <i class="lucide-shield-check kpi-icon" style="color:#10b981;"></i>
+                  </div>
+                  <div class="kpi-value"><span>99,8</span><span class="kpi-unit">%</span></div>
+                  <div class="kpi-subtitle">2.464 hab no raio de 2km dos abrigos</div>
                 </div>
               </div>
 
@@ -900,15 +934,15 @@
           </div>
 
           <!-- Interactive Ranking Table of the 25 SGB Risk Sectors -->
-          <div style="font-size:12.5px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-size:12.5px; font-weight:700; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:6px;">
               <i class="lucide-list-ordered" style="color:#f97316;"></i>
-              <span>Ranking dos 25 Setores de Risco Mapeados pelo SGB (2025)</span>
+              <span>Ranking de Exposição, Risco e Cobertura dos 25 Setores SGB (2025)</span>
             </div>
-            <span style="font-size:11px; color:var(--text-muted);">Ordenado por População e Criticidade de Risco</span>
+            <span style="font-size:11px; color:var(--text-muted);">Classificado pelo <strong>Índice de Prioridade de Proteção (IPP)*</strong></span>
           </div>
 
-          <div class="shelter-table-wrapper" style="max-height: 300px; overflow-y:auto; border:1px solid var(--dc-blue-border); border-radius:var(--radius-md);">
+          <div class="shelter-table-wrapper" style="max-height: 320px; overflow-y:auto; border:1px solid var(--dc-blue-border); border-radius:var(--radius-md);">
             <table class="shelter-data-table" style="width:100%; border-collapse:collapse; font-size:12px;">
               <thead>
                 <tr style="background:rgba(255,255,255,0.04); text-align:left; border-bottom:1px solid var(--dc-blue-border);">
@@ -918,7 +952,9 @@
                   <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;">Vulnerabilidade</th>
                   <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:right;">Edificações</th>
                   <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:right;">População</th>
-                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:right;">Área (ha)</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px;">Abrigo Mais Próximo</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;">Distância</th>
+                  <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;" title="Índice de Prioridade de Proteção: Indicador analítico do Portal Defesa Civil">IPP*</th>
                   <th style="padding:8px 10px; color:var(--text-muted); font-size:11px; text-align:center;">Mapa</th>
                 </tr>
               </thead>
@@ -929,8 +965,8 @@
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:11px; color:var(--text-subtle); flex-wrap:wrap; gap:6px;">
-            <span><strong>Fonte:</strong> Serviço Geológico do Brasil (SGB) &bull; Mapeamento de Áreas de Risco Geológico e Hidrológico 2025</span>
-            <span><em>Clique no botão "Ver" para navegar até o setor no mapa e visualizar o diagnóstico geotécnico de campo completo.</em></span>
+            <span><strong>Fonte:</strong> Serviço Geológico do Brasil (SGB), 2025; Defesa Civil de Passo Fundo e bases oficiais.</span>
+            <span><em>*IPP (Índice de Prioridade de Proteção): Indicador analítico do Portal Defesa Civil que combina população, edificações, grau de risco e proximidade da rede de abrigos. Não substitui a classificação oficial do SGB.</em></span>
           </div>
         </div>
       </div>

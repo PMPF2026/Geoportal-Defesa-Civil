@@ -765,10 +765,70 @@ export class ExportReportTool {
           </table>
         </div>
 
+        <!-- 8. EXPOSIÇÃO E COBERTURA DE PROTEÇÃO (SGB x REDE DE ABRIGOS) -->
+        <h3 class="section-title">
+          <span><span class="badge-num">8</span> EXPOSIÇÃO E COBERTURA DE PROTEÇÃO</span>
+          <span class="badge-orange">DIAGNÓSTICO SGB 2025 x REDE DE ABRIGOS</span>
+        </h3>
+        <table class="kpi-table">
+          <thead>
+            <tr>
+              <th>Dimensão Analítica</th>
+              <th>Total / Percentual</th>
+              <th>Detalhamento Geotécnico e Operacional</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="alert-row">
+              <td><strong>População Total em Áreas de Risco</strong></td>
+              <td><strong>2.468 habitantes</strong></td>
+              <td>Mapeamento oficial do Serviço Geológico do Brasil (SGB, 2025)</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Edificações Mapeadas em Risco</strong></td>
+              <td><strong>617 unidades</strong> (25 setores)</td>
+              <td>Área territorial delimitada de 32,95 ha (Média: 4,0 hab/edif)</td>
+            </tr>
+            <tr>
+              <td><strong>Distribuição por Grau de Risco</strong></td>
+              <td><strong>21 Alto (81,8%) | 4 Muito Alto (18,2%)</strong></td>
+              <td>505 edif. em Risco Alto (R3) e 112 edif. em Risco Muito Alto (R4)</td>
+            </tr>
+            <tr>
+              <td><strong>Distribuição por Vulnerabilidade</strong></td>
+              <td><strong>16 Alta (71,3%) | 9 Média (28,7%)</strong></td>
+              <td>440 edif. com vulnerabilidade construtiva e ambiental alta</td>
+            </tr>
+            <tr>
+              <td><strong>Cobertura Geral de Abrigos (Raio de 2 km)</strong></td>
+              <td><strong style="color:#16a34a;">99,8% de atendimento</strong></td>
+              <td>2.464 moradores (616 edif.) contemplados no raio de 2.000m dos 17 abrigos</td>
+            </tr>
+            <tr>
+              <td><strong>Cobertura Imediata a Pé (Raio de 1 km)</strong></td>
+              <td><strong>66,3% de atendimento direto</strong></td>
+              <td>1.636 moradores (409 edif.) a menos de 1.000m de um abrigo municipal</td>
+            </tr>
+            <tr>
+              <td><strong>População Fora do Raio Imediato de 1 km</strong></td>
+              <td><strong>832 moradores (33,7%)</strong></td>
+              <td>208 edif. situadas entre 1 km e 2 km de deslocamento até a estrutura de acolhimento</td>
+            </tr>
+            <tr>
+              <td><strong>Top 3 Setores Mais Críticos (IPP*)</strong></td>
+              <td><strong>Ocupação Floresta, Beco Manoel Portela e Entrerios</strong></td>
+              <td>Setores prioritários identificados pelo Índice de Prioridade de Proteção (IPP)</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size:11px; color:#64748b; margin-top:-6px; margin-bottom:16px;">
+          *Fonte dos dados: Serviço Geológico do Brasil (SGB), 2025; Defesa Civil de Passo Fundo e demais fontes oficiais do portal.
+        </div>
+
         <!-- 9. COMPOSIÇÃO CARTOGRÁFICA -->
         ${mapSnapshot ? `
           <h3 class="section-title">
-            <span><span class="badge-num">8</span> COMPOSIÇÃO CARTOGRÁFICA DA SITUAÇÃO OPERACIONAL</span>
+            <span><span class="badge-num">9</span> COMPOSIÇÃO CARTOGRÁFICA DA SITUAÇÃO OPERACIONAL</span>
             <span class="badge-blue">MAPA GERADO NO MOMENTO DA EMISSÃO</span>
           </h3>
           <div class="map-report-card">
@@ -782,7 +842,7 @@ export class ExportReportTool {
 
         <!-- 10. SÍNTESE TÉCNICA OPERACIONAL DINÂMICA -->
         <h3 class="section-title">
-          <span><span class="badge-num">9</span> SÍNTESE TÉCNICA E RECOMENDAÇÕES OPERACIONAIS</span>
+          <span><span class="badge-num">10</span> SÍNTESE TÉCNICA E RECOMENDAÇÕES OPERACIONAIS</span>
           <span class="badge-orange">PARECER TÉCNICO</span>
         </h3>
         <div class="synthesis-card">
@@ -794,6 +854,9 @@ export class ExportReportTool {
           </p>
           <p style="margin-top:8px;">
             A mancha de inundação do evento extremo de 2024 totalizou <strong>${formatNumber(stats.floodAreaKm2, 2)} km² (${formatNumber(stats.floodAreaHa, 2)} hectares)</strong>, demonstrando a necessidade de manter o monitoramento contínuo das réguas hidrológicas ao longo dos <strong>${formatNumber(stats.rioPassoFundoKm, 2)} km</strong> do curso principal e dos <strong>${formatNumber(stats.hidroKm, 2)} km</strong> de malha hídrica municipal.
+          </p>
+          <p style="margin-top:8px;">
+            A análise integrada de <strong>Exposição e Cobertura de Proteção</strong> demonstra que os <strong>25 setores de risco mapeados pelo SGB (2025)</strong>, englobando <strong>617 edificações e 2.468 moradores</strong>, contam com <strong>99,8% de cobertura da rede municipal de abrigos no raio de 2 km (2.464 moradores)</strong> e <strong>66,3% de cobertura imediata no raio de 1 km (1.636 moradores)</strong>, permitindo resposta célere em situações de contingência e evacuação.
           </p>
         </div>
 
@@ -813,19 +876,25 @@ export class ExportReportTool {
         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #ff7800; border-radius: 6px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; color: #334155;">
           <strong style="color:#0f172a; font-size:12px; display:block; margin-bottom:2px;">Elaboração técnica:</strong>
           <strong style="color:#0f172a; font-size:12.5px;">Vagner A. Duarte – Geógrafo</strong><br>
+        </div>
+
         <!-- 13. FONTES DOS DADOS -->
         <h3 class="section-title">
-          <span><span class="badge-num">10</span> FONTES DOS DADOS E METADADOS</span>
+          <span><span class="badge-num">11</span> FONTES DOS DADOS E METADADOS</span>
           <span class="badge-blue">TRANSPARÊNCIA PÚBLICA</span>
         </h3>
         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 11.5px; color: #334155; line-height: 1.5;">
+          <div style="margin-bottom: 8px;">
+            <strong style="color: #0f172a;">• Serviço Geológico do Brasil (SGB, 2025):</strong>
+            Mapeamento de Áreas de Risco Geológico e Hidrológico e Domicílios em Risco (25 setores e 1.115 domicílios inventariados).
+          </div>
           <div style="margin-bottom: 8px;">
             <strong style="color: #0f172a;">• IBGE — Censo Demográfico 2022:</strong>
             Malhas territoriais e informações censitárias utilizadas nas análises, quando aplicável.
           </div>
           <div style="margin-bottom: 8px;">
             <strong style="color: #0f172a;">• Defesa Civil de Passo Fundo:</strong>
-            Informações e dados temáticos relacionados à Defesa Civil, áreas de risco, abrigos e demais informações institucionais disponibilizadas pelo órgão.
+            Informações e dados temáticos relacionados à Defesa Civil, rede oficial de 17 abrigos, ZPHs, áreas de risco e decretos municipais de emergência.
           </div>
           <div style="margin-bottom: 8px;">
             <strong style="color: #0f172a;">• Prefeitura Municipal de Passo Fundo:</strong>

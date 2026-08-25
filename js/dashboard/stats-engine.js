@@ -84,6 +84,31 @@ export class StatsEngine {
       sgbVulneStats: {
         medio: { setores: 9, edif: 177, pess: 708, pct: 28.7 },
         alto: { setores: 16, edif: 440, pess: 1760, pct: 71.3 }
+      },
+      exposicaoCobertura: {
+        totalSetores: 25,
+        totalEdif: 617,
+        totalPess: 2468,
+        cobertura2km: {
+          setores: 24,
+          setoresPct: 96.0,
+          edif: 616,
+          edifPct: 99.8,
+          pess: 2464,
+          pessPct: 99.8,
+          edifFora: 1,
+          pessFora: 4
+        },
+        cobertura1km: {
+          setores: 17,
+          setoresPct: 68.0,
+          edif: 409,
+          edifPct: 66.3,
+          pess: 1636,
+          pessPct: 66.3,
+          edifFora: 208,
+          pessFora: 832
+        }
       }
     };
   }
