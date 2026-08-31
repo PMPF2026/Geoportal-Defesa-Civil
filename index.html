@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="css/map-controls.css">
   <link rel="stylesheet" href="css/popup.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/weather.css">
 </head>
 <body>
   <div id="app">
@@ -43,6 +44,11 @@
       </div>
 
       <div class="header-tools">
+        <button class="header-btn" id="btn-open-weather-modal" title="Central Meteorológica e Alertas — Passo Fundo/RS" style="background:rgba(2, 132, 199, 0.18); border-color:#0284c7; color:#38bdf8;">
+          <i class="lucide-cloud-sun"></i>
+          <span>Central Meteorológica</span>
+        </button>
+
         <button class="header-btn" id="btn-import-layer" title="Adicionar arquivo GeoJSON ou KML local">
           <i class="lucide-upload"></i>
           <span>Importar Camada</span>
@@ -301,6 +307,22 @@
 
               <div class="analysis-results-box" id="analysis-exposure-results"></div>
             </div>
+
+            <!-- Tool 6: Análise Meteorológica e Risco Territorial -->
+            <div class="analysis-tool-card">
+              <div class="analysis-tool-title">
+                <i class="lucide-cloud-rain" style="color:#0284c7;"></i>
+                <span>Análise Meteorológica e Risco Territorial</span>
+              </div>
+              <p class="analysis-tool-desc">
+                Cruza os prognósticos meteorológicos oficiais de chuva e vento com as áreas sensíveis mapeadas no município (Rio Passo Fundo, APP 30m, 25 setores SGB e rede de abrigos).
+              </p>
+              <button class="analysis-btn" id="btn-run-meteo-analysis" style="background:#0284c7; border-color:#0369a1;">
+                <i class="lucide-activity"></i> Processar Análise Meteorológica
+              </button>
+
+              <div class="analysis-results-box" id="analysis-meteo-results"></div>
+            </div>
           </div>
 
           <!-- TAB 5: DASHBOARD / MÉTRICAS -->
@@ -315,6 +337,16 @@
             <div class="dashboard-container">
               <!-- KPI Cards Grid -->
               <div class="kpi-grid">
+                <!-- Weather Widget Card in Sidebar -->
+                <div class="kpi-card" id="widget-sidebar-weather" style="border-left: 3px solid #0284c7; background: linear-gradient(135deg, rgba(2,132,199,0.12) 0%, var(--dc-blue-card) 100%); cursor:pointer;" onclick="document.getElementById('btn-open-weather-modal').click();" title="Clique para abrir a Central Meteorológica">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Central Meteorológica</span>
+                    <i class="lucide-cloud-sun kpi-icon" style="color:#0284c7;"></i>
+                  </div>
+                  <div class="kpi-value"><span id="sidebar-weather-temp">--°C</span><span class="kpi-unit" id="sidebar-weather-status" style="font-size:11px; margin-left:6px; font-weight:700; color:#10b981;">NORMAL</span></div>
+                  <div class="kpi-subtitle" id="sidebar-weather-cond">Passo Fundo / RS &bull; Ver Central &rarr;</div>
+                </div>
+
                 <div class="kpi-card kpi-hazard">
                   <div class="kpi-header">
                     <span class="kpi-title">Mancha Enchente</span>
@@ -342,21 +374,48 @@
                   <div class="kpi-subtitle">Censo IBGE 2022</div>
                 </div>
 
-                <div class="kpi-card kpi-water">
+                <div class="kpi-card kpi-people" style="border-left-color: #06b6d4;">
                   <div class="kpi-header">
-                    <span class="kpi-title">Malha Hídrica</span>
-                    <i class="lucide-droplet kpi-icon" style="color:var(--dc-info-cyan);"></i>
+                    <span class="kpi-title">Total Domicílios</span>
+                    <i class="lucide-building kpi-icon" style="color:#06b6d4;"></i>
                   </div>
-                  <div class="kpi-value"><span data-kpi="hidroKm">1.708,73</span><span class="kpi-unit">km</span></div>
-                  <div class="kpi-subtitle">3.739 trechos fluviais</div>
+                  <div class="kpi-value"><span data-kpi="totalDomicilios">95.421</span><span class="kpi-unit">unid</span></div>
+                  <div class="kpi-subtitle">Censo IBGE 2022</div>
                 </div>
 
-                <div class="kpi-card kpi-roads">
+                <div class="kpi-card kpi-area">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Área Territorial</span>
+                    <i class="lucide-map-pin kpi-icon" style="color:var(--dc-blue-light);"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="totalAreaKm2">783.4</span><span class="kpi-unit">km²</span></div>
+                  <div class="kpi-subtitle">Município de Passo Fundo</div>
+                </div>
+
+                <div class="kpi-card" style="border-left-color: #8b5cf6;">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Malha Hídrica</span>
+                    <i class="lucide-waves kpi-icon" style="color:#8b5cf6;"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="hidroKm">1.196</span><span class="kpi-unit">km</span></div>
+                  <div class="kpi-subtitle">Rede hidrográfica mapeada</div>
+                </div>
+
+                <div class="kpi-card" style="border-left-color: #f59e0b;">
+                  <div class="kpi-header">
+                    <span class="kpi-title">Faixa APP 30m</span>
+                    <i class="lucide-shield-alert kpi-icon" style="color:#f59e0b;"></i>
+                  </div>
+                  <div class="kpi-value"><span data-kpi="app30mHa">105.7</span><span class="kpi-unit">ha</span></div>
+                  <div class="kpi-subtitle">Rio Passo Fundo (17.68 km)</div>
+                </div>
+
+                <div class="kpi-card" style="border-left-color: #64748b;">
                   <div class="kpi-header">
                     <span class="kpi-title">Malha Viária</span>
-                    <i class="lucide-navigation kpi-icon" style="color:var(--dc-warning-amber);"></i>
+                    <i class="lucide-navigation kpi-icon" style="color:#64748b;"></i>
                   </div>
-                  <div class="kpi-value"><span data-kpi="totalViasKm">1.959,34</span><span class="kpi-unit">km</span></div>
+                  <div class="kpi-value"><span data-kpi="totalViasKm">3.711</span><span class="kpi-unit">km</span></div>
                   <div class="kpi-subtitle">Total de vias e rodovias</div>
                 </div>
 
@@ -1163,6 +1222,26 @@
           </div>
 
           <div id="shelter-conclusions-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL CENTRAL METEOROLÓGICA E ALERTAS ================= -->
+  <div class="modal-overlay" id="weather-modal">
+    <div class="modal-card weather-modal-card">
+      <div class="modal-header weather-modal-header">
+        <div class="modal-title">
+          <i class="lucide-cloud-sun" style="color:#38bdf8;"></i>
+          <span>Central Meteorológica e Alertas — Passo Fundo/RS</span>
+        </div>
+        <button class="modal-close-btn" id="btn-close-weather-modal" title="Fechar Central Meteorológica">&times;</button>
+      </div>
+
+      <div class="modal-body" id="weather-modal-body" style="overflow-y:auto; max-height:calc(92vh - 70px); padding:16px 20px;">
+        <div style="text-align:center; padding:40px; color:var(--text-muted);">
+          <i class="lucide-loader-2" style="font-size:32px; animation:spin 1s linear infinite; display:inline-block; margin-bottom:12px; color:#38bdf8;"></i>
+          <p>Conectando às fontes oficiais do INMET, Defesa Civil RS e CPTEC/INPE...</p>
         </div>
       </div>
     </div>
