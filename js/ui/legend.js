@@ -181,7 +181,7 @@ export class LegendUI {
           </span>
           <div>
             <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
-            <span style="font-size: 10px; color: var(--text-muted);">Mosaico Aerofotogramétrico (Jul/2026 - EPSG:31982)</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Ortofotos – Levantamento Aerofotogramétrico &bull; Prefeitura de Passo Fundo (Jul/2026)</span>
           </div>
         </div>
       `;
