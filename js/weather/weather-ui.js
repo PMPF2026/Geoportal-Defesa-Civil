@@ -231,33 +231,103 @@ export class WeatherUI {
 
       <!-- 3. ALERTAS OFICIAIS VIGENTES -->
       <div class="weather-alerts-container">
-        <div style="font-size:12.5px; font-weight:800; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="font-size:12.5px; font-weight:800; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <i class="lucide-alert-triangle" style="color:#f97316;"></i>
             <span>Alertas e Avisos Meteorológicos Oficiais Vigentes</span>
           </div>
-          <span style="font-size:11px; color:var(--text-muted);">${alerts.length} aviso(s) ativo(s)</span>
+          <span style="font-size:11px; color:var(--text-muted);">${alerts.length} aviso(s) ativo(s) no RS</span>
         </div>
 
-        ${alerts.length === 0 ? `
-          <div style="background:rgba(22,163,74,0.08); border:1px solid rgba(22,163,74,0.3); border-radius:var(--radius-md); padding:12px 16px; font-size:12px; color:#4ade80; display:flex; align-items:center; gap:8px;">
-            <i class="lucide-check-circle"></i>
-            <span>Nenhum aviso meteorológico adverso emitido oficialmente pelo INMET ou Defesa Civil RS no momento para Passo Fundo/RS.</span>
-          </div>
-        ` : alerts.map(a => `
-          <div class="weather-alert-card ${a.severityClass}">
-            <div style="flex:1;">
-              <div class="weather-alert-title">⚠️ ${a.title} — ${a.severity}</div>
-              <div class="weather-alert-meta">
-                <strong>Vigência:</strong> ${a.start} até ${a.end} &bull; <strong>Fonte:</strong> ${a.source} &bull; <strong>Área:</strong> ${a.area}
+        ${(() => {
+          if (alerts.length === 0) {
+            return `
+              <div style="background:rgba(22,163,74,0.08); border:1px solid rgba(22,163,74,0.3); border-radius:var(--radius-md); padding:14px 18px; font-size:12.5px; color:#4ade80; display:flex; align-items:center; gap:10px;">
+                <i class="lucide-check-circle" style="font-size:20px; flex-shrink:0;"></i>
+                <div>
+                  <strong>Nenhum alerta meteorológico oficial vigente identificado para Passo Fundo.</strong>
+                  <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Monitoramento contínuo das fontes oficiais do INMET e Defesa Civil RS.</div>
+                </div>
               </div>
-              <div class="weather-alert-risks">${a.risks}</div>
+            `;
+          }
+
+          const pfAlerts = alerts.filter(a => a.isPassoFundo);
+          const regAlerts = alerts.filter(a => !a.isPassoFundo);
+
+          let html = '';
+
+          // If no alerts for Passo Fundo, but there are regional RS alerts
+          if (pfAlerts.length === 0 && regAlerts.length > 0) {
+            html += `
+              <div style="background:rgba(22,163,74,0.08); border:1px solid rgba(22,163,74,0.3); border-radius:var(--radius-md); padding:12px 16px; font-size:12px; color:#4ade80; display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <i class="lucide-check-circle" style="font-size:16px; flex-shrink:0;"></i>
+                <div>
+                  <strong>Nenhum alerta meteorológico oficial vigente identificado para Passo Fundo.</strong>
+                  <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Há outros avisos vigentes no Rio Grande do Sul que não abrangem diretamente o município:</div>
+                </div>
+              </div>
+            `;
+          }
+
+          // Render list of alerts
+          const renderCard = (a) => `
+            <div class="weather-alert-card ${a.severityClass}">
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+                  ${a.isPassoFundo ? `
+                    <span class="weather-alert-badge-pf">
+                      <i class="lucide-map-pin" style="font-size:11px;"></i>
+                      <span>📍 PASSO FUNDO INCLUÍDO</span>
+                    </span>
+                  ` : `
+                    <span class="weather-alert-badge-regional">
+                      <i class="lucide-alert-circle" style="font-size:11px;"></i>
+                      <span>⚠️ ALERTA REGIONAL — VERIFICAR ABRANGÊNCIA</span>
+                    </span>
+                  `}
+                  <span class="weather-alert-title" style="font-size:13.5px;">
+                    ${a.isPassoFundo ? 'ALERTA PARA PASSO FUNDO — ' : ''}${a.title} (${a.severity})
+                  </span>
+                </div>
+
+                <div class="weather-alert-meta" style="font-size:11.5px; color:var(--text-muted); margin-bottom:6px; line-height:1.4;">
+                  <div><strong>Vigência:</strong> ${a.start} até ${a.end}</div>
+                  <div><strong>Área de interesse:</strong> <span style="color:var(--text-main); font-weight:600;">${a.area}</span></div>
+                </div>
+
+                <div class="weather-alert-risks" style="font-size:11.5px; color:var(--text-main); margin-bottom:4px; line-height:1.4;">
+                  <strong>Riscos previstos:</strong> ${a.risks}
+                </div>
+
+                <div style="font-size:11px; color:var(--text-subtle); line-height:1.4; margin-top:4px;">
+                  <strong>Recomendações oficiais:</strong> ${a.instructions}
+                </div>
+
+                <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px; display:flex; align-items:center; gap:12px;">
+                  <span>Fonte: <strong>${a.source}</strong></span>
+                  <span>Atualizado: <strong>${updatedStr}</strong></span>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink:0;">
+                <a href="${a.url}" target="_blank" rel="noopener noreferrer" class="mini-btn" style="background:#0284c7; color:#fff; border:none; white-space:nowrap;" title="Ver aviso oficial no portal do INMET">
+                  Fonte Oficial &rarr;
+                </a>
+              </div>
             </div>
-            <a href="${a.url}" target="_blank" rel="noopener noreferrer" class="mini-btn" style="background:#0284c7; color:#fff; border:none; white-space:nowrap;" title="Ver aviso oficial no portal do INMET">
-              Fonte Oficial &rarr;
-            </a>
-          </div>
-        `).join('')}
+          `;
+
+          html += alerts.map(renderCard).join('');
+
+          html += `
+            <div style="margin-top:6px; font-size:10.5px; color:var(--text-subtle); text-align:right;">
+              Fonte: Instituto Nacional de Meteorologia — INMET &bull; Dados oficiais atualizados automaticamente.
+            </div>
+          `;
+
+          return html;
+        })()}
       </div>
 
       <!-- 4. PREVISÃO OFICIAL DE 5 DIAS (120 HORAS) -->

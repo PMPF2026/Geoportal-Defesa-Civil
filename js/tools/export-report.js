@@ -225,7 +225,7 @@ export class ExportReportTool {
             weatherSummary.previsao24h = `${wd.forecast5Days[0].condition} (Máx: ${wd.forecast5Days[0].tempMax}°C / Mín: ${wd.forecast5Days[0].tempMin}°C - Chuva: ${wd.forecast5Days[0].precipSum} mm)`;
           }
           if (wd.alerts && wd.alerts.length > 0) {
-            weatherSummary.alertas = wd.alerts.map(a => `${a.title} (${a.severity})`).join(', ');
+            weatherSummary.alertas = wd.alerts.map(a => `${a.isPassoFundo ? '📍 [Passo Fundo] ' : '⚠️ [Regional RS] '}${a.title} (${a.severity})`).join('; ');
           }
         }
       }

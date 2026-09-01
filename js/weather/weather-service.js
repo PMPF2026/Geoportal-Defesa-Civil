@@ -91,28 +91,46 @@ export class WeatherService {
   }
 
   /**
-   * Fetch INMET Active Alerts (Alertas2)
+   * Fetch Active Official Warnings from INMET Structured API
    */
   async fetchInmetAlerts() {
     try {
       const res = await this.fetchWithTimeout(this.config.endpoints.inmetAlerts, {}, 6000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      const hoje = json.hoje || [];
-      const futuro = json.futuro || [];
+      const hoje = Array.isArray(json.hoje) ? json.hoje : [];
+      const futuro = Array.isArray(json.futuro) ? json.futuro : [];
       const allAlerts = [...hoje, ...futuro];
 
-      // Filter alerts affecting Passo Fundo or RS
-      const filtered = allAlerts.filter(a => {
-        const estados = a.estados || '';
-        const desc = a.descricao || '';
-        const mun = JSON.stringify(a.municipios || '');
-        return estados.includes('RS') || estados.includes('Rio Grande do Sul') || mun.includes('4314100') || mun.toLowerCase().includes('passo fundo');
+      const now = new Date();
+
+      // Filter: Level 1 - MUST affect Rio Grande do Sul (RS) & NOT be expired
+      const rsAlerts = allAlerts.filter(a => {
+        if (a.encerrado === true) return false;
+
+        // Check expiration
+        if (a.fim) {
+          const fimDate = new Date(a.fim.replace(' ', 'T'));
+          if (!isNaN(fimDate.getTime()) && fimDate < now) {
+            return false; // Expired alert
+          }
+        }
+
+        const estados = String(a.estados || '');
+        const municipios = String(a.municipios || '');
+        const geocodes = String(a.geocodes || '');
+
+        // Strict RS filter: Must explicitly cover Rio Grande do Sul
+        const hasRsState = estados.includes('Rio Grande do Sul') || estados.includes('RS');
+        const hasRsMun = municipios.includes('- RS') || municipios.includes('(43');
+        const hasRsGeocode = geocodes.split(',').some(g => g.trim().startsWith('43'));
+
+        return hasRsState || hasRsMun || hasRsGeocode;
       });
 
       this.sourcesStatus.inmetAlerts.status = 'online';
       this.sourcesStatus.inmetAlerts.lastSuccess = new Date().toISOString();
-      return { success: true, alerts: filtered, totalInmet: allAlerts.length };
+      return { success: true, alerts: rsAlerts, totalInmet: allAlerts.length };
     } catch (err) {
       console.warn('[WeatherService] INMET Alertas indisponível ou bloqueado por CORS:', err.message);
       this.sourcesStatus.inmetAlerts.status = 'indisponivel';
@@ -349,7 +367,20 @@ export class WeatherService {
       }
     }
 
-    // 5. Process Active Official Alerts
+    // 5. Process Active Official Alerts with Priority for Passo Fundo (IBGE 4314100)
+    const formatAlertDate = (dStr) => {
+      if (!dStr) return 'Em vigor';
+      try {
+        const d = new Date(dStr.replace(' ', 'T'));
+        if (isNaN(d.getTime())) return dStr;
+        const dataFmt = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const horaFmt = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return `${dataFmt} às ${horaFmt}`;
+      } catch (e) {
+        return dStr;
+      }
+    };
+
     const formattedAlerts = alertsData.map((a, idx) => {
       let severityClass = 'warning';
       const sev = (a.severidade || '').toLowerCase();
@@ -357,26 +388,73 @@ export class WeatherService {
         severityClass = 'danger';
       } else if (sev.includes('perigo') || sev.includes('laranja')) {
         severityClass = 'orange';
-      } else if (sev.includes('potencial') || sev.includes('amarelo')) {
+      } else if (sev.includes('potencial') || sev.includes('amarelo') || sev.includes('atenção')) {
         severityClass = 'yellow';
       }
 
+      // Check direct inclusion of Passo Fundo (IBGE 4314100)
+      const geocodes = String(a.geocodes || '');
+      const municipios = String(a.municipios || '');
+      const mesorregioes = String(a.mesorregioes || '');
+
+      const isPassoFundo = geocodes.includes('4314100') ||
+                           municipios.includes('Passo Fundo') ||
+                           municipios.includes('4314100');
+
+      // Contextualized Area Description (never list irrelevant national states)
+      let areaText = '';
+      if (isPassoFundo) {
+        areaText = 'Passo Fundo e municípios da Região Norte/Planalto Médio (RS)';
+      } else {
+        const rsMesos = mesorregioes
+          .split(',')
+          .map(m => m.trim())
+          .filter(m => m.length > 0 && !['São Paulo', 'Minas Gerais', 'Paraná', 'Santa Catarina', 'Mato Grosso do Sul', 'Rio de Janeiro', 'Goiás', 'Bahia'].some(st => m.includes(st)));
+
+        if (rsMesos.length > 0) {
+          areaText = `Rio Grande do Sul (Regiões: ${rsMesos.slice(0, 3).join(', ')})`;
+        } else {
+          areaText = 'Rio Grande do Sul (demais regiões do estado)';
+        }
+      }
+
+      const risksText = a.riscos ? (Array.isArray(a.riscos) ? a.riscos.join(' ') : String(a.riscos)) : 'Acompanhe as orientações oficiais da Defesa Civil.';
+      const instructionsText = a.instrucoes ? (Array.isArray(a.instrucoes) ? a.instrucoes.join(' ') : String(a.instrucoes)) : 'Em caso de rajadas de vento ou tempestades, não se abrigue debaixo de árvores e ligue 199 (Defesa Civil) ou 193 (Bombeiros).';
+
       return {
         id: a.id || `inmet_alert_${idx}`,
+        id_aviso: a.id_aviso,
         title: a.descricao || 'Aviso Meteorológico Oficial',
         event: a.descricao || 'Condição Adversa',
         severity: a.severidade || 'Perigo Potencial',
         severityClass,
-        color: a.aviso_cor || '#eab308',
-        start: a.inicio || 'Em vigor',
-        end: a.fim || 'A determinar',
-        area: a.estados || 'Rio Grande do Sul / Passo Fundo',
-        risks: a.riscos ? (Array.isArray(a.riscos) ? a.riscos.join(' ') : a.riscos) : 'Acompanhe as atualizações oficiais.',
-        source: 'INMET (Alertas2)',
+        color: a.aviso_cor || (severityClass === 'danger' ? '#dc2626' : severityClass === 'orange' ? '#f97316' : '#eab308'),
+        isPassoFundo,
+        start: formatAlertDate(a.inicio),
+        end: formatAlertDate(a.fim),
+        startRaw: a.inicio,
+        endRaw: a.fim,
+        area: areaText,
+        risks: risksText,
+        instructions: instructionsText,
+        source: 'Instituto Nacional de Meteorologia — INMET',
         url: 'https://alertas2.inmet.gov.br/',
         updatedAt: new Date().toISOString()
       };
     });
+
+    // Sort: Passo Fundo alerts first, then by severity priority
+    const severityWeight = { danger: 4, orange: 3, yellow: 2, warning: 1 };
+    formattedAlerts.sort((a, b) => {
+      if (a.isPassoFundo && !b.isPassoFundo) return -1;
+      if (!a.isPassoFundo && b.isPassoFundo) return 1;
+      const weightA = severityWeight[a.severityClass] || 0;
+      const weightB = severityWeight[b.severityClass] || 0;
+      return weightB - weightA;
+    });
+
+    const passoFundoAlerts = formattedAlerts.filter(a => a.isPassoFundo);
+    const regionalAlerts = formattedAlerts.filter(a => !a.isPassoFundo);
 
     // 6. Calculate Operational Status (Portal Defesa Civil)
     // 🟢 NORMAL | 🟡 ATENÇÃO | 🟠 ALERTA | 🔴 ALERTA SEVERO
@@ -386,41 +464,50 @@ export class WeatherService {
       badgeClass: 'status-normal',
       title: 'Condição Meteorológica Estável',
       subtitle: 'Sem avisos oficiais severos vigentes para Passo Fundo/RS.',
-      explanation: 'Classificação operacional baseada nas informações oficiais disponíveis.'
+      explanation: 'Classificação operacional baseada nas informações oficiais disponíveis — não substitui alertas emitidos pelos órgãos oficiais.'
     };
 
-    const hasDangerAlert = formattedAlerts.some(a => a.severityClass === 'danger');
-    const hasOrangeAlert = formattedAlerts.some(a => a.severityClass === 'orange');
-    const hasYellowAlert = formattedAlerts.some(a => a.severityClass === 'yellow');
+    const hasDangerPF = passoFundoAlerts.some(a => a.severityClass === 'danger');
+    const hasOrangePF = passoFundoAlerts.some(a => a.severityClass === 'orange');
+    const hasYellowPF = passoFundoAlerts.some(a => a.severityClass === 'yellow');
     const totalRainNext24h = forecast5Days[0]?.precipSum || 0;
     const maxWindSpeed = current.windGust || current.windSpeed || 0;
 
-    if (hasDangerAlert || totalRainNext24h >= 80 || maxWindSpeed >= 80) {
+    if (hasDangerPF || totalRainNext24h >= 80 || maxWindSpeed >= 80) {
       operationalStatus = {
         level: 'ALERTA SEVERO',
         color: '#dc2626',
         badgeClass: 'status-danger',
-        title: 'Condição Severa Identificada',
-        subtitle: 'Aviso oficial de Grande Perigo ou evento severo iminente.',
-        explanation: 'Classificação operacional baseada nas informações oficiais disponíveis.'
+        title: 'Alerta Meteorológico Severo (Passo Fundo)',
+        subtitle: 'Aviso oficial de Grande Perigo emitido pelo INMET para o município.',
+        explanation: 'Classificação operacional baseada nas informações oficiais disponíveis — não substitui alertas emitidos pelos órgãos oficiais.'
       };
-    } else if (hasOrangeAlert || totalRainNext24h >= 40 || maxWindSpeed >= 60) {
+    } else if (hasOrangePF || totalRainNext24h >= 40 || maxWindSpeed >= 60) {
       operationalStatus = {
         level: 'ALERTA',
         color: '#f97316',
         badgeClass: 'status-alert',
-        title: 'Alerta Meteorológico Vigente',
-        subtitle: 'Aviso oficial de tempestade, chuva intensa ou ventos fortes.',
-        explanation: 'Classificação operacional baseada nas informações oficiais disponíveis.'
+        title: 'Alerta Meteorológico Vigente (Passo Fundo)',
+        subtitle: 'Aviso oficial de tempestade ou chuva intensa para o município.',
+        explanation: 'Classificação operacional baseada nas informações oficiais disponíveis — não substitui alertas emitidos pelos órgãos oficiais.'
       };
-    } else if (hasYellowAlert || totalRainNext24h >= 15 || maxWindSpeed >= 40) {
+    } else if (hasYellowPF || totalRainNext24h >= 15 || maxWindSpeed >= 40) {
       operationalStatus = {
         level: 'ATENÇÃO',
         color: '#eab308',
         badgeClass: 'status-warning',
-        title: 'Estado de Atenção Meteorológica',
-        subtitle: 'Condição meteorológica com potencial de instabilidade moderada.',
-        explanation: 'Classificação operacional baseada nas informações oficiais disponíveis.'
+        title: 'Estado de Atenção Meteorológica (Passo Fundo)',
+        subtitle: 'Aviso oficial de perigo potencial emitido pelo INMET para o município.',
+        explanation: 'Classificação operacional baseada nas informações oficiais disponíveis — não substitui alertas emitidos pelos órgãos oficiais.'
+      };
+    } else if (regionalAlerts.length > 0) {
+      operationalStatus = {
+        level: 'NORMAL',
+        color: '#16a34a',
+        badgeClass: 'status-normal',
+        title: 'Sem Alertas Diretos para Passo Fundo',
+        subtitle: `${regionalAlerts.length} aviso(s) regional(is) vigente(s) em outras áreas do RS sob monitoramento.`,
+        explanation: 'Classificação operacional baseada nas informações oficiais disponíveis — não substitui alertas emitidos pelos órgãos oficiais.'
       };
     }
 
