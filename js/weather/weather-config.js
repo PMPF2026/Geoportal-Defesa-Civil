@@ -22,11 +22,14 @@ export const WEATHER_CONFIG = {
     alerts: 5 * 60 * 1000       // 5 minutes for active warnings
   },
 
-  // Official Endpoints
+  // Official Endpoints (with Serverless Proxy for CORS Resolution)
   endpoints: {
-    inmetForecast: 'https://apiprevmet3.inmet.gov.br/previsao/4314100',
-    inmetAlerts: 'https://apiprevmet3.inmet.gov.br/avisos/ativos',
-    cptecForecastXml: 'https://servicos.cptec.inpe.br/XML/cidade/3757/previsao.xml',
+    inmetForecast: '/api/weather/inmet-forecast',
+    inmetAlerts: '/api/weather/inmet-alerts',
+    cptecForecastXml: '/api/weather/cptec-forecast',
+    inmetForecastDirect: 'https://apiprevmet3.inmet.gov.br/previsao/4314100',
+    inmetAlertsDirect: 'https://apiprevmet3.inmet.gov.br/avisos/ativos',
+    cptecForecastXmlDirect: 'https://servicos.cptec.inpe.br/XML/cidade/3757/previsao.xml',
     openMeteoTelemetry: 'https://api.open-meteo.com/v1/forecast?latitude=-28.2628&longitude=-52.4067&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,rain,wind_speed_10m,wind_gusts_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&timezone=America%2FSao_Paulo'
   },
 

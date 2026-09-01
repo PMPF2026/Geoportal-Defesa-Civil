@@ -90,9 +90,41 @@ export class WeatherUI {
       }
     } catch (err) {
       console.error('[WeatherUI] Erro ao carregar dados meteorológicos:', err);
+      this.renderErrorState(err);
       if (forceRefresh) {
         Notification.error('Erro ao conectar com as fontes meteorológicas.');
       }
+    }
+  }
+
+  renderErrorState(err) {
+    const container = document.getElementById('weather-modal-body');
+    if (!container) return;
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px 20px; color:var(--text-main);">
+        <div style="width:48px; height:48px; border-radius:50%; background:rgba(239,68,68,0.15); color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; font-size:24px;">
+          <i class="lucide-alert-triangle"></i>
+        </div>
+        <h3 style="font-size:16px; font-weight:700; margin-bottom:8px;">Indisponibilidade Temporária de Conexão</h3>
+        <p style="font-size:12.5px; color:var(--text-muted); max-width:480px; margin:0 auto 20px auto; line-height:1.5;">
+          Não foi possível sincronizar no momento com os servidores de meteorologia. O sistema tentará se reconectar automaticamente em instantes.
+        </p>
+        <button class="mini-btn" id="btn-retry-weather" style="background:#0284c7; color:#fff; border:none; padding:8px 18px; font-weight:600; border-radius:6px; cursor:pointer;">
+          <i class="lucide-refresh-cw"></i> Tentar Novamente
+        </button>
+      </div>
+    `;
+    const btnRetry = document.getElementById('btn-retry-weather');
+    if (btnRetry) {
+      btnRetry.addEventListener('click', () => {
+        container.innerHTML = `
+          <div style="text-align:center; padding:40px; color:var(--text-muted);">
+            <i class="lucide-loader-2" style="font-size:32px; animation:spin 1s linear infinite; display:inline-block; margin-bottom:12px; color:#38bdf8;"></i>
+            <p>Conectando às fontes oficiais do INMET, Defesa Civil RS e CPTEC/INPE...</p>
+          </div>
+        `;
+        this.loadData(true);
+      });
     }
   }
 

@@ -2,6 +2,10 @@
   "version": 2,
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
       "src": "/(.*\\.geojson)",
       "headers": {
         "Content-Type": "application/geo+json; charset=utf-8",

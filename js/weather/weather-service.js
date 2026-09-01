@@ -85,70 +85,87 @@ export class WeatherService {
    * Fetch INMET Municipal Forecast (5 days)
    */
   async fetchInmetForecast() {
-    try {
-      const res = await this.fetchWithTimeout(this.config.endpoints.inmetForecast, {}, 6000);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      const pfData = json[this.config.city.ibgeCode] || json['4314100'];
-      if (pfData) {
-        this.sourcesStatus.inmet.status = 'online';
-        this.sourcesStatus.inmet.lastSuccess = new Date().toISOString();
-        return { success: true, data: pfData, source: 'INMET' };
+    const urls = [
+      this.config.endpoints.inmetForecast,
+      this.config.endpoints.inmetForecastDirect
+    ].filter(Boolean);
+
+    for (const url of urls) {
+      try {
+        const res = await this.fetchWithTimeout(url, {}, 8000);
+        if (!res.ok) continue;
+        const json = await res.json();
+        const pfData = json[this.config.city.ibgeCode] || json['4314100'];
+        if (pfData) {
+          this.sourcesStatus.inmet.status = 'online';
+          this.sourcesStatus.inmet.lastSuccess = new Date().toISOString();
+          return { success: true, data: pfData, source: 'INMET' };
+        }
+      } catch (err) {
+        // Try next fallback URL
       }
-      throw new Error('Dados de Passo Fundo não encontrados na resposta do INMET');
-    } catch (err) {
-      console.warn('[WeatherService] INMET Previsão direta indisponível ou bloqueada por CORS:', err.message);
-      this.sourcesStatus.inmet.status = 'indisponivel';
-      return { success: false, error: err.message };
     }
+
+    console.warn('[WeatherService] INMET Previsão indisponível em todas as rotas.');
+    this.sourcesStatus.inmet.status = 'indisponivel';
+    return { success: false, error: 'INMET indisponível' };
   }
 
   /**
    * Fetch Active Official Warnings from INMET Structured API
    */
   async fetchInmetAlerts() {
-    try {
-      const res = await this.fetchWithTimeout(this.config.endpoints.inmetAlerts, {}, 6000);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      const hoje = Array.isArray(json.hoje) ? json.hoje : [];
-      const futuro = Array.isArray(json.futuro) ? json.futuro : [];
-      const allAlerts = [...hoje, ...futuro];
+    const urls = [
+      this.config.endpoints.inmetAlerts,
+      this.config.endpoints.inmetAlertsDirect
+    ].filter(Boolean);
 
-      const now = new Date();
+    for (const url of urls) {
+      try {
+        const res = await this.fetchWithTimeout(url, {}, 8000);
+        if (!res.ok) continue;
+        const json = await res.json();
+        const hoje = Array.isArray(json.hoje) ? json.hoje : [];
+        const futuro = Array.isArray(json.futuro) ? json.futuro : [];
+        const allAlerts = [...hoje, ...futuro];
 
-      // Filter: Level 1 - MUST affect Rio Grande do Sul (RS) & NOT be expired
-      const rsAlerts = allAlerts.filter(a => {
-        if (a.encerrado === true) return false;
+        const now = new Date();
 
-        // Check expiration
-        if (a.fim) {
-          const fimDate = new Date(a.fim.replace(' ', 'T'));
-          if (!isNaN(fimDate.getTime()) && fimDate < now) {
-            return false; // Expired alert
+        // Filter: Level 1 - MUST affect Rio Grande do Sul (RS) & NOT be expired
+        const rsAlerts = allAlerts.filter(a => {
+          if (a.encerrado === true) return false;
+
+          // Check expiration
+          if (a.fim) {
+            const fimDate = new Date(a.fim.replace(' ', 'T'));
+            if (!isNaN(fimDate.getTime()) && fimDate < now) {
+              return false; // Expired alert
+            }
           }
-        }
 
-        const estados = String(a.estados || '');
-        const municipios = String(a.municipios || '');
-        const geocodes = String(a.geocodes || '');
+          const estados = String(a.estados || '');
+          const municipios = String(a.municipios || '');
+          const geocodes = String(a.geocodes || '');
 
-        // Strict RS filter: Must explicitly cover Rio Grande do Sul
-        const hasRsState = estados.includes('Rio Grande do Sul') || estados.includes('RS');
-        const hasRsMun = municipios.includes('- RS') || municipios.includes('(43');
-        const hasRsGeocode = geocodes.split(',').some(g => g.trim().startsWith('43'));
+          // Strict RS filter: Must explicitly cover Rio Grande do Sul
+          const hasRsState = estados.includes('Rio Grande do Sul') || estados.includes('RS');
+          const hasRsMun = municipios.includes('- RS') || municipios.includes('(43');
+          const hasRsGeocode = geocodes.split(',').some(g => g.trim().startsWith('43'));
 
-        return hasRsState || hasRsMun || hasRsGeocode;
-      });
+          return hasRsState || hasRsMun || hasRsGeocode;
+        });
 
-      this.sourcesStatus.inmetAlerts.status = 'online';
-      this.sourcesStatus.inmetAlerts.lastSuccess = new Date().toISOString();
-      return { success: true, alerts: rsAlerts, totalInmet: allAlerts.length };
-    } catch (err) {
-      console.warn('[WeatherService] INMET Alertas indisponível ou bloqueado por CORS:', err.message);
-      this.sourcesStatus.inmetAlerts.status = 'indisponivel';
-      return { success: false, error: err.message };
+        this.sourcesStatus.inmetAlerts.status = 'online';
+        this.sourcesStatus.inmetAlerts.lastSuccess = new Date().toISOString();
+        return { success: true, alerts: rsAlerts, totalInmet: allAlerts.length };
+      } catch (err) {
+        // Try next fallback URL
+      }
     }
+
+    console.warn('[WeatherService] INMET Alertas indisponível em todas as rotas.');
+    this.sourcesStatus.inmetAlerts.status = 'indisponivel';
+    return { success: false, error: 'INMET Alertas indisponível', alerts: [] };
   }
 
   /**
@@ -156,7 +173,7 @@ export class WeatherService {
    */
   async fetchTelemetryData() {
     try {
-      const res = await this.fetchWithTimeout(this.config.endpoints.openMeteoTelemetry, {}, 6000);
+      const res = await this.fetchWithTimeout(this.config.endpoints.openMeteoTelemetry, {}, 8000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       this.sourcesStatus.telemetry.status = 'online';
@@ -173,32 +190,43 @@ export class WeatherService {
    * Fetch CPTEC XML Forecast
    */
   async fetchCptecForecast() {
-    try {
-      const res = await this.fetchWithTimeout(this.config.endpoints.cptecForecastXml, {}, 5000);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(text, 'text/xml');
-      const previsoes = xmlDoc.getElementsByTagName('previsao');
-      const cptecDays = [];
-      for (let i = 0; i < previsoes.length; i++) {
-        const item = previsoes[i];
-        cptecDays.push({
-          dia: item.getElementsByTagName('dia')[0]?.textContent,
-          tempo: item.getElementsByTagName('tempo')[0]?.textContent,
-          maxima: item.getElementsByTagName('maxima')[0]?.textContent,
-          minima: item.getElementsByTagName('minima')[0]?.textContent,
-          iuv: item.getElementsByTagName('iuv')[0]?.textContent
-        });
+    const urls = [
+      this.config.endpoints.cptecForecastXml,
+      this.config.endpoints.cptecForecastXmlDirect
+    ].filter(Boolean);
+
+    for (const url of urls) {
+      try {
+        const res = await this.fetchWithTimeout(url, {}, 7000);
+        if (!res.ok) continue;
+        const text = await res.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'text/xml');
+        const previsoes = xmlDoc.getElementsByTagName('previsao');
+        if (previsoes.length === 0) continue;
+
+        const cptecDays = [];
+        for (let i = 0; i < previsoes.length; i++) {
+          const item = previsoes[i];
+          cptecDays.push({
+            dia: item.getElementsByTagName('dia')[0]?.textContent,
+            tempo: item.getElementsByTagName('tempo')[0]?.textContent,
+            maxima: item.getElementsByTagName('maxima')[0]?.textContent,
+            minima: item.getElementsByTagName('minima')[0]?.textContent,
+            iuv: item.getElementsByTagName('iuv')[0]?.textContent
+          });
+        }
+        this.sourcesStatus.cptec.status = 'online';
+        this.sourcesStatus.cptec.lastSuccess = new Date().toISOString();
+        return { success: true, data: cptecDays, source: 'CPTEC/INPE' };
+      } catch (err) {
+        // Try next fallback URL
       }
-      this.sourcesStatus.cptec.status = 'online';
-      this.sourcesStatus.cptec.lastSuccess = new Date().toISOString();
-      return { success: true, data: cptecDays, source: 'CPTEC/INPE' };
-    } catch (err) {
-      console.warn('[WeatherService] CPTEC XML indisponível:', err.message);
-      this.sourcesStatus.cptec.status = 'indisponivel';
-      return { success: false, error: err.message };
     }
+
+    console.warn('[WeatherService] CPTEC XML indisponível em todas as rotas.');
+    this.sourcesStatus.cptec.status = 'indisponivel';
+    return { success: false, error: 'CPTEC indisponível', data: [] };
   }
 
   /**
@@ -548,7 +576,7 @@ export class WeatherService {
         convergenceLevel,
         details: [
           { source: 'INMET', status: formattedAlerts.length > 0 ? `${formattedAlerts.length} aviso(s) ativo(s)` : 'Sem avisos críticos' },
-          { source: 'Defesa Civil RS', status: hasOrangeAlert || hasDangerAlert ? 'Alerta estadual de instabilidade' : 'Monitoramento contínuo' },
+          { source: 'Defesa Civil RS', status: (hasOrangePF || hasDangerPF || regionalAlerts.length > 0) ? 'Alerta estadual de instabilidade' : 'Monitoramento contínuo' },
           { source: 'CPTEC / INPE', status: totalRainNext24h > 5 ? `Previsão de chuva (${totalRainNext24h} mm)` : 'Tempo estável previsto' }
         ]
       },
