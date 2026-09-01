@@ -1,4 +1,4 @@
-﻿// Vercel Serverless Function: INMET Active Alerts
+// Vercel Serverless Function: INMET Active Alerts
 // Proxies https://apiprevmet3.inmet.gov.br/avisos/ativos to bypass browser CORS
 
 export default async function handler(req, res) {
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: INMET API responded with status ,
+        error: `INMET API responded with status ${response.status}`,
         hoje: [],
         futuro: []
       });
