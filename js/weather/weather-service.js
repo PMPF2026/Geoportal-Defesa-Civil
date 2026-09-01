@@ -25,6 +25,7 @@ export class WeatherService {
     }
 
     this.sourcesStatus = {
+      defesaCivilRsTelemetry: { name: 'Defesa Civil RS (Estação DCRS-00016)', status: 'pendente', lastSuccess: null },
       inmet: { name: 'INMET (Previsão 5 Dias)', status: 'pendente', lastSuccess: null },
       inmetAlerts: { name: 'INMET (Alertas Oficiais)', status: 'pendente', lastSuccess: null },
       telemetry: { name: 'Rede Telemétrica / Observada', status: 'pendente', lastSuccess: null },
@@ -230,6 +231,28 @@ export class WeatherService {
   }
 
   /**
+   * Fetch Real-Time Hydrometeorological Observation from Defesa Civil RS (Estação DCRS-00016)
+   */
+  async fetchDefesaCivilRsTelemetry() {
+    const url = this.config.endpoints.defesaCivilRsTelemetry || '/api/weather/defesa-civil-rs';
+    try {
+      const res = await this.fetchWithTimeout(url, { headers: { 'Accept': 'application/json' } }, 10000);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      if (payload && payload.available) {
+        this.sourcesStatus.defesaCivilRsTelemetry.status = 'online';
+        this.sourcesStatus.defesaCivilRsTelemetry.lastSuccess = new Date().toISOString();
+        return { success: true, data: payload };
+      }
+      throw new Error(payload?.error || 'Dados indisponíveis');
+    } catch (err) {
+      console.warn('[WeatherService] Estação Defesa Civil RS (DCRS-00016) indisponível:', err.message);
+      this.sourcesStatus.defesaCivilRsTelemetry.status = 'indisponivel';
+      return { success: false, error: err.message, data: null };
+    }
+  }
+
+  /**
    * Format Weather Condition Description from WMO Weather Code
    */
   getConditionFromCode(code) {
@@ -254,7 +277,7 @@ export class WeatherService {
       82: { label: 'Pancadas de Chuva Violentas', icon: 'cloud-lightning' },
       95: { label: 'Tempestade / Trovoadas', icon: 'cloud-lightning' },
       96: { label: 'Tempestade com Granizo Leve', icon: 'cloud-hail' },
-      99: { label: 'Tempestade Severa com Granizo', icon: 'cloud-hail' }
+      97: { label: 'Tempestade Severa com Granizo', icon: 'cloud-hail' }
     };
     return map[code] || { label: 'Tempo Instável', icon: 'cloud' };
   }
@@ -287,18 +310,20 @@ export class WeatherService {
       }
     }
 
-    // 2. Fetch fresh data concurrently
-    const [inmetRes, alertsRes, teleRes, cptecRes] = await Promise.allSettled([
+    // 2. Fetch fresh data concurrently from all official sources
+    const [inmetRes, alertsRes, teleRes, cptecRes, dcrsRes] = await Promise.allSettled([
       this.fetchInmetForecast(),
       this.fetchInmetAlerts(),
       this.fetchTelemetryData(),
-      this.fetchCptecForecast()
+      this.fetchCptecForecast(),
+      this.fetchDefesaCivilRsTelemetry()
     ]);
 
     const inmetData = inmetRes.status === 'fulfilled' && inmetRes.value.success ? inmetRes.value.data : null;
     const alertsData = alertsRes.status === 'fulfilled' && alertsRes.value.success ? alertsRes.value.alerts : [];
     const teleData = teleRes.status === 'fulfilled' && teleRes.value.success ? teleRes.value.data : null;
     const cptecData = cptecRes.status === 'fulfilled' && cptecRes.value.success ? cptecRes.value.data : [];
+    const dcrsData = dcrsRes.status === 'fulfilled' && dcrsRes.value.success ? dcrsRes.value.data : null;
 
     // If both telemetry and inmet failed, fall back to cached data if present
     if (!teleData && !inmetData) {
@@ -562,11 +587,76 @@ export class WeatherService {
     if (sourcesWithAdverseSignal >= 2) convergenceLevel = 'ELEVADA';
     else if (sourcesWithAdverseSignal === 0) convergenceLevel = 'ESTÁVEL';
 
+    // 7.5. Process Official Telemetry from Defesa Civil RS (Estação DCRS-00016)
+    let dcrsStation = null;
+    if (dcrsData && dcrsData.available && dcrsData.data) {
+      const d = dcrsData.data;
+      const obsDate = dcrsData.observedAt ? new Date(dcrsData.observedAt) : null;
+      let obsFormatted = 'N/D';
+      let ageMinutes = null;
+      let freshness = { label: 'Indisponível', color: '#94a3b8', badgeClass: 'freshness-stale', text: 'Sem timestamp' };
+
+      if (obsDate && !isNaN(obsDate.getTime())) {
+        obsFormatted = obsDate.toLocaleDateString('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }) + ' às ' + obsDate.toLocaleTimeString('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        ageMinutes = Math.max(0, Math.round((Date.now() - obsDate.getTime()) / (60 * 1000)));
+        if (ageMinutes <= 15) {
+          freshness = { label: '🟢 Dado atualizado', color: '#22c55e', badgeClass: 'freshness-live', text: `Atualizado há ${ageMinutes} min` };
+        } else if (ageMinutes <= 45) {
+          freshness = { label: '🟡 Atenção (Atraso leve)', color: '#eab308', badgeClass: 'freshness-warning', text: `Atualizado há ${ageMinutes} min` };
+        } else {
+          freshness = { label: '🟠 Dado atrasado', color: '#f97316', badgeClass: 'freshness-stale', text: `Última medição há ${Math.round(ageMinutes / 60)} h` };
+        }
+      }
+
+      // Format River Trend Icon & Text
+      const rTrend = d.riverTrend;
+      let rTrendIcon = 'lucide-minus';
+      let rTrendText = 'Nível estável';
+      let rTrendColor = '#38bdf8';
+      if (rTrend !== null && rTrend !== undefined && !isNaN(rTrend)) {
+        if (rTrend > 0.01) {
+          rTrendIcon = 'lucide-trending-up';
+          rTrendText = `Subindo (+${(rTrend * 100).toFixed(1)} cm/h)`;
+          rTrendColor = '#ef4444';
+        } else if (rTrend < -0.01) {
+          rTrendIcon = 'lucide-trending-down';
+          rTrendText = `Descendo (${(rTrend * 100).toFixed(1)} cm/h)`;
+          rTrendColor = '#22c55e';
+        }
+      }
+
+      dcrsStation = {
+        ...dcrsData.station,
+        source: dcrsData.source,
+        observedAt: dcrsData.observedAt,
+        observedAtFormatted: obsFormatted,
+        ageMinutes,
+        freshness,
+        data: {
+          ...d,
+          riverTrendIcon,
+          riverTrendText,
+          riverTrendColor
+        }
+      };
+    }
+
     // 8. Consolidated Result Object
     const consolidated = {
       available: true,
       city: this.config.city,
       current,
+      dcrsStation,
       forecast5Days,
       alerts: formattedAlerts,
       operationalStatus,
@@ -576,7 +666,7 @@ export class WeatherService {
         convergenceLevel,
         details: [
           { source: 'INMET', status: formattedAlerts.length > 0 ? `${formattedAlerts.length} aviso(s) ativo(s)` : 'Sem avisos críticos' },
-          { source: 'Defesa Civil RS', status: (hasOrangePF || hasDangerPF || regionalAlerts.length > 0) ? 'Alerta estadual de instabilidade' : 'Monitoramento contínuo' },
+          { source: 'Defesa Civil RS (Rede Telemétrica)', status: dcrsStation ? 'Estação DCRS-00016 ativa' : 'Monitoramento contínuo' },
           { source: 'CPTEC / INPE', status: totalRainNext24h > 5 ? `Previsão de chuva (${totalRainNext24h} mm)` : 'Tempo estável previsto' }
         ]
       },

@@ -134,6 +134,7 @@ export class WeatherUI {
 
     const d = this.weatherData;
     const cur = d.current || {};
+    const dcrs = d.dcrsStation || null;
     const st = d.operationalStatus || {};
     const f5 = d.forecast5Days || [];
     const alerts = d.alerts || [];
@@ -156,7 +157,7 @@ export class WeatherUI {
           </span>
         </div>
 
-        <button class="mini-btn" id="btn-refresh-weather" style="background:#0284c7; color:#fff; border:none; padding:5px 12px; font-weight:600;">
+        <button class="mini-btn" id="btn-refresh-weather" style="background:#0284c7; color:#fff; border:none; padding:5px 12px; font-weight:600; cursor:pointer;">
           <i class="lucide-refresh-cw"></i> Atualizar Agora
         </button>
       </div>
@@ -178,10 +179,139 @@ export class WeatherUI {
         </div>
       </div>
 
-      <!-- 2. CONDIÇÕES ATUAIS (8 KPI CARDS) -->
+      <!-- 1.5. MONITORAMENTO HIDROMETEOROLÓGICO OFICIAL DA DEFESA CIVIL RS (DCRS-00016) -->
+      <div class="dcrs-station-container" style="background:var(--bg-card, #1e293b); border:1px solid rgba(56,189,248,0.25); border-radius:var(--radius-md, 8px); padding:14px 16px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div style="background:#0284c7; color:#fff; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:700; display:flex; align-items:center; gap:4px;">
+              <i class="lucide-radio"></i> DCRS-00016
+            </div>
+            <span style="font-size:13px; font-weight:800; color:var(--text-main);">
+              Rede Hidrometeorológica Oficial — Passo Fundo/RS
+            </span>
+            <span style="font-size:11px; color:var(--text-muted); background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">
+              Bacia do Rio Passo Fundo &bull; 2ª CREPDEC
+            </span>
+          </div>
+
+          ${dcrs ? `
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="dcrs-freshness-badge" style="font-size:11px; font-weight:600; color:${dcrs.freshness.color}; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:12px; border:1px solid ${dcrs.freshness.color}40; display:flex; align-items:center; gap:4px;">
+                <span>${dcrs.freshness.label}</span>
+                <span style="color:var(--text-muted); font-size:10.5px;">(${dcrs.freshness.text})</span>
+              </span>
+              <span style="font-size:11px; color:var(--text-muted);">
+                Medição: <strong style="color:var(--text-main);">${dcrs.observedAtFormatted}</strong>
+              </span>
+            </div>
+          ` : `
+            <span style="font-size:11px; color:#f59e0b; font-weight:600;">
+              <i class="lucide-alert-circle"></i> Estação temporariamente offline
+            </span>
+          `}
+        </div>
+
+        ${dcrs && dcrs.data ? `
+          <!-- DCRS GRID: RIO + CHUVA + METEO -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-bottom:10px;">
+            
+            <!-- CARD 1: NÍVEL DO RIO PASSO FUNDO -->
+            <div style="background:rgba(2,132,199,0.08); border:1px solid rgba(2,132,199,0.3); border-radius:6px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
+                  <i class="lucide-waves"></i> Nível do Rio Passo Fundo
+                </span>
+                <span style="font-size:10.5px; color:${dcrs.data.riverTrendColor}; font-weight:700; display:flex; align-items:center; gap:3px;">
+                  <i class="${dcrs.data.riverTrendIcon}"></i> ${dcrs.data.riverTrendText}
+                </span>
+              </div>
+              <div style="font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:4px;">
+                ${dcrs.data.riverLevel !== null ? Number(dcrs.data.riverLevel).toFixed(2) : '--'}<span style="font-size:13px; font-weight:600; color:var(--text-muted); margin-left:3px;">m</span>
+              </div>
+              <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+                Cota observada por sensor ultrassônico in-situ na calha do Rio Passo Fundo.
+              </div>
+            </div>
+
+            <!-- CARD 2: CHUVA OBSERVADA (JANELAS DA ESTAÇÃO) -->
+            <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.3); border-radius:6px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:700; color:#60a5fa; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
+                  <i class="lucide-cloud-rain"></i> Chuva Observada (Pluviômetro Telemétrico)
+                </span>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; text-align:center;">
+                <div style="background:rgba(255,255,255,0.03); padding:4px 2px; border-radius:4px;">
+                  <div style="font-size:10px; color:var(--text-muted);">1 hora</div>
+                  <div style="font-size:13px; font-weight:700; color:var(--text-main);">${dcrs.data.rain1h !== null ? Number(dcrs.data.rain1h).toFixed(1) : '0.0'} mm</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); padding:4px 2px; border-radius:4px;">
+                  <div style="font-size:10px; color:var(--text-muted);">24 horas</div>
+                  <div style="font-size:13px; font-weight:700; color:#38bdf8;">${dcrs.data.rain24h !== null ? Number(dcrs.data.rain24h).toFixed(1) : '0.0'} mm</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); padding:4px 2px; border-radius:4px;">
+                  <div style="font-size:10px; color:var(--text-muted);">Últimos 7 dias</div>
+                  <div style="font-size:13px; font-weight:700; color:#60a5fa;">${dcrs.data.rain7d !== null ? Number(dcrs.data.rain7d).toFixed(1) : '0.0'} mm</div>
+                </div>
+              </div>
+              <div style="font-size:10.5px; color:var(--text-subtle); margin-top:6px; display:flex; justify-content:space-between;">
+                <span>3h: <strong>${dcrs.data.rain3h !== null ? Number(dcrs.data.rain3h).toFixed(1) : '0.0'} mm</strong></span>
+                <span>6h: <strong>${dcrs.data.rain6h !== null ? Number(dcrs.data.rain6h).toFixed(1) : '0.0'} mm</strong></span>
+                <span>12h: <strong>${dcrs.data.rain12h !== null ? Number(dcrs.data.rain12h).toFixed(1) : '0.0'} mm</strong></span>
+              </div>
+            </div>
+
+            <!-- CARD 3: PARÂMETROS METEOROLÓGICOS IN-SITU -->
+            <div style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:700; color:#fbbf24; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
+                  <i class="lucide-gauge"></i> Sensores Atmosféricos In-Situ
+                </span>
+                <span style="font-size:10.5px; color:var(--text-muted);">
+                  Pressão: <strong>${dcrs.data.pressure !== null ? Number(dcrs.data.pressure).toFixed(0) : '--'} hPa</strong>
+                </span>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; font-size:11px;">
+                <div>
+                  <div style="color:var(--text-muted); font-size:10px;">Temp. Real</div>
+                  <div style="font-weight:700; color:var(--text-main); font-size:13px;">${dcrs.data.temperature !== null ? Number(dcrs.data.temperature).toFixed(1) + '°C' : '--'}</div>
+                </div>
+                <div>
+                  <div style="color:var(--text-muted); font-size:10px;">Sensação</div>
+                  <div style="font-weight:700; color:#f97316; font-size:13px;">${dcrs.data.feelsLike !== null ? Number(dcrs.data.feelsLike).toFixed(1) + '°C' : '--'}</div>
+                </div>
+                <div>
+                  <div style="color:var(--text-muted); font-size:10px;">Umidade</div>
+                  <div style="font-weight:700; color:#06b6d4; font-size:13px;">${dcrs.data.humidity !== null ? Number(dcrs.data.humidity).toFixed(0) + '%' : '--'}</div>
+                </div>
+              </div>
+              <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between;">
+                <span>Vento: <strong>${dcrs.data.windSpeed !== null ? Number(dcrs.data.windSpeed).toFixed(1) : '0'} km/h (${dcrs.data.windDirectionCardinal || 'N/D'})</strong></span>
+                <span>Rajada: <strong>${dcrs.data.windGust !== null ? Number(dcrs.data.windGust).toFixed(1) : '0'} km/h</strong></span>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="font-size:10.5px; color:var(--text-subtle); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <span>
+              Fonte Oficial: <strong>Defesa Civil do Estado do Rio Grande do Sul — Rede Hidrometeorológica</strong> (Estação Passo Fundo DCRS-00016).
+            </span>
+            <a href="https://redehidrometeorologica.defesacivil.rs.gov.br/Mapa" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:none; font-weight:600;">
+              Ver Rede Estadual no Mapa &rarr;
+            </a>
+          </div>
+        ` : `
+          <div style="padding:10px; font-size:12px; color:var(--text-muted); text-align:center;">
+            Os dados observados da estação DCRS-00016 estão temporariamente indisponíveis no servidor estadual. As previsões e alertas continuam operando normalmente.
+          </div>
+        `}
+      </div>
+
+      <!-- 2. CONDIÇÕES GERAIS E TELEMETRIA MULTIFONTES -->
       <div style="font-size:12.5px; font-weight:800; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
         <i class="lucide-thermometer-sun" style="color:#38bdf8;"></i>
-        <span>Condições Meteorológicas Observadas — Passo Fundo/RS</span>
+        <span>Condições Meteorológicas Gerais e Indicadores — Passo Fundo/RS</span>
       </div>
 
       <div class="weather-kpi-grid">

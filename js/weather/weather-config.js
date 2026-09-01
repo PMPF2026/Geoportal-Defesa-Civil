@@ -17,7 +17,7 @@ export const WEATHER_CONFIG = {
 
   // Cache Timeouts in Milliseconds
   cacheTTL: {
-    current: 15 * 60 * 1000,    // 15 minutes for observations
+    current: 5 * 60 * 1000,     // 5 minutes for real-time observations
     forecast: 30 * 60 * 1000,   // 30 minutes for forecasts
     alerts: 5 * 60 * 1000       // 5 minutes for active warnings
   },
@@ -27,6 +27,7 @@ export const WEATHER_CONFIG = {
     inmetForecast: '/api/weather/inmet-forecast',
     inmetAlerts: '/api/weather/inmet-alerts',
     cptecForecastXml: '/api/weather/cptec-forecast',
+    defesaCivilRsTelemetry: '/api/weather/defesa-civil-rs',
     inmetForecastDirect: 'https://apiprevmet3.inmet.gov.br/previsao/4314100',
     inmetAlertsDirect: 'https://apiprevmet3.inmet.gov.br/avisos/ativos',
     cptecForecastXmlDirect: 'https://servicos.cptec.inpe.br/XML/cidade/3757/previsao.xml',
@@ -64,6 +65,13 @@ export const WEATHER_CONFIG = {
       type: 'Boletins Oficiais'
     },
     {
+      id: 'defesa_civil_rs_rede',
+      name: 'Rede Hidrometeorológica Oficial — Defesa Civil RS',
+      description: 'Telemetria em tempo real das 130 estações hidrometeorológicas do RS',
+      url: 'https://redehidrometeorologica.defesacivil.rs.gov.br/Mapa',
+      type: 'Rede Hidrometeorológica Estadual'
+    },
+    {
       id: 'defesa_civil_rs_hidro',
       name: 'Monitoramento Hidrológico — Defesa Civil RS',
       description: 'Estações telemétricas de monitoramento de rios e chuvas',
@@ -88,6 +96,17 @@ export const WEATHER_CONFIG = {
 
   // Nearby Regional Monitoring Stations
   nearbyStations: [
+    {
+      id: 'DCRS-00016',
+      name: 'Passo Fundo (DCRS-00016)',
+      institution: 'Defesa Civil RS / Rede Hidrometeorológica',
+      type: 'Estação Hidrometeorológica Telemétrica',
+      basin: 'RS - Rio Passo Fundo',
+      distanceKm: 0.0,
+      lat: -28.2470,
+      lon: -52.3713,
+      status: 'Operacional'
+    },
     {
       id: 'A831',
       name: 'Passo Fundo (A831)',
