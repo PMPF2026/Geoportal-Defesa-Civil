@@ -41,9 +41,9 @@ export const WEATHER_CONFIG = {
     },
     {
       id: 'inmet_alertas',
-      name: 'Alertas Meteorológicos INMET (Alertas2)',
-      description: 'Sistema oficial de alertas e avisos meteorológicos do Brasil',
-      url: 'https://alertas2.inmet.gov.br/',
+      name: 'INMET — Avisos Meteorológicos Oficiais',
+      description: 'Sistema oficial de previsão de tempo severo e monitoramento climático',
+      url: 'https://portal.inmet.gov.br/',
       type: 'Alertas Oficiais'
     },
     {

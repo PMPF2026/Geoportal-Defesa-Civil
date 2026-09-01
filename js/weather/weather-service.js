@@ -8,9 +8,22 @@ import { WEATHER_CONFIG } from './weather-config.js';
 export class WeatherService {
   constructor() {
     this.config = WEATHER_CONFIG;
-    this.cacheKey = 'dc_pf_weather_consolidated_v1';
-    this.alertsCacheKey = 'dc_pf_weather_alerts_v1';
+    this.cacheKey = 'dc_pf_weather_consolidated_v4';
+    this.alertsCacheKey = 'dc_pf_weather_alerts_v4';
     this.lastFetchTime = null;
+
+    // Purge old schemas from localStorage
+    try {
+      localStorage.removeItem('dc_pf_weather_consolidated_v1');
+      localStorage.removeItem('dc_pf_weather_consolidated_v2');
+      localStorage.removeItem('dc_pf_weather_consolidated_v3');
+      localStorage.removeItem('dc_pf_weather_alerts_v1');
+      localStorage.removeItem('dc_pf_weather_alerts_v2');
+      localStorage.removeItem('dc_pf_weather_alerts_v3');
+    } catch (e) {
+      // Ignore
+    }
+
     this.sourcesStatus = {
       inmet: { name: 'INMET (Previsão 5 Dias)', status: 'pendente', lastSuccess: null },
       inmetAlerts: { name: 'INMET (Alertas Oficiais)', status: 'pendente', lastSuccess: null },
@@ -401,25 +414,23 @@ export class WeatherService {
                            municipios.includes('Passo Fundo') ||
                            municipios.includes('4314100');
 
-      // Contextualized Area Description (never list irrelevant national states)
-      let areaText = '';
-      if (isPassoFundo) {
-        areaText = 'Passo Fundo e municípios da Região Norte/Planalto Médio (RS)';
-      } else {
-        const rsMesos = mesorregioes
-          .split(',')
-          .map(m => m.trim())
-          .filter(m => m.length > 0 && !['São Paulo', 'Minas Gerais', 'Paraná', 'Santa Catarina', 'Mato Grosso do Sul', 'Rio de Janeiro', 'Goiás', 'Bahia'].some(st => m.includes(st)));
+      // Contextualized Area Description (strictly Passo Fundo — RS or Rio Grande do Sul)
+      const areaText = isPassoFundo ? 'Passo Fundo — RS' : 'Rio Grande do Sul';
 
-        if (rsMesos.length > 0) {
-          areaText = `Rio Grande do Sul (Regiões: ${rsMesos.slice(0, 3).join(', ')})`;
-        } else {
-          areaText = 'Rio Grande do Sul (demais regiões do estado)';
-        }
+      // Parse and clean risks & instructions
+      let risksText = 'Acompanhe as orientações oficiais de segurança da Defesa Civil.';
+      if (Array.isArray(a.riscos) && a.riscos.length > 0) {
+        risksText = a.riscos.map(r => String(r).trim()).filter(r => r.length > 0).join(' ');
+      } else if (typeof a.riscos === 'string' && a.riscos.trim()) {
+        risksText = a.riscos.trim();
       }
 
-      const risksText = a.riscos ? (Array.isArray(a.riscos) ? a.riscos.join(' ') : String(a.riscos)) : 'Acompanhe as orientações oficiais da Defesa Civil.';
-      const instructionsText = a.instrucoes ? (Array.isArray(a.instrucoes) ? a.instrucoes.join(' ') : String(a.instrucoes)) : 'Em caso de rajadas de vento ou tempestades, não se abrigue debaixo de árvores e ligue 199 (Defesa Civil) ou 193 (Bombeiros).';
+      let instructionsText = 'Consulte as orientações oficiais de segurança da Defesa Civil (Emergência 199 / 193).';
+      if (Array.isArray(a.instrucoes) && a.instrucoes.length > 0) {
+        instructionsText = a.instrucoes.map(i => String(i).trim()).filter(i => i.length > 0).join(' ');
+      } else if (typeof a.instrucoes === 'string' && a.instrucoes.trim()) {
+        instructionsText = a.instrucoes.trim();
+      }
 
       return {
         id: a.id || `inmet_alert_${idx}`,
@@ -437,8 +448,9 @@ export class WeatherService {
         area: areaText,
         risks: risksText,
         instructions: instructionsText,
+        recommendations: instructionsText,
         source: 'Instituto Nacional de Meteorologia — INMET',
-        url: 'https://alertas2.inmet.gov.br/',
+        url: 'https://portal.inmet.gov.br/',
         updatedAt: new Date().toISOString()
       };
     });

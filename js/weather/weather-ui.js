@@ -297,22 +297,22 @@ export class WeatherUI {
                 </div>
 
                 <div class="weather-alert-risks" style="font-size:11.5px; color:var(--text-main); margin-bottom:4px; line-height:1.4;">
-                  <strong>Riscos previstos:</strong> ${a.risks}
+                  <strong>Riscos previstos:</strong> ${a.risks || 'Acompanhe as orientações oficiais de segurança da Defesa Civil.'}
                 </div>
 
                 <div style="font-size:11px; color:var(--text-subtle); line-height:1.4; margin-top:4px;">
-                  <strong>Recomendações oficiais:</strong> ${a.instructions}
+                  <strong>Recomendações:</strong> ${a.recommendations || a.instructions || 'Consulte as orientações oficiais de segurança da Defesa Civil (Emergência 199 / 193).'}
                 </div>
 
                 <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px; display:flex; align-items:center; gap:12px;">
-                  <span>Fonte: <strong>${a.source}</strong></span>
+                  <span>Fonte: <strong>Instituto Nacional de Meteorologia — INMET</strong></span>
                   <span>Atualizado: <strong>${updatedStr}</strong></span>
                 </div>
               </div>
 
               <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink:0;">
-                <a href="${a.url}" target="_blank" rel="noopener noreferrer" class="mini-btn" style="background:#0284c7; color:#fff; border:none; white-space:nowrap;" title="Ver aviso oficial no portal do INMET">
-                  Fonte Oficial &rarr;
+                <a href="${a.url || 'https://portal.inmet.gov.br/'}" target="_blank" rel="noopener noreferrer" class="mini-btn" style="background:#0284c7; color:#fff; border:none; white-space:nowrap;" title="Acessar portal oficial do INMET">
+                  Portal do INMET &rarr;
                 </a>
               </div>
             </div>
