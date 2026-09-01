@@ -57,7 +57,7 @@ export const LAYER_GROUPS = [
   },
   {
     id: 'ortofotos',
-    title: 'Ortofotos – Levantamento Aerofotogramétrico',
+    title: '8. Ortofotos – Levantamento Aerofotogramétrico',
     iconClass: 'ortho',
     iconName: 'camera',
     description: 'Levantamento aerofotogramétrico de alta resolução (Julho/2026 - SIRGAS 2000 UTM 22S / Web Mercator)',
@@ -979,6 +979,12 @@ export const LAYERS_CONFIG = [
  * Predefined Quick Operational Map Scenarios / Presets
  */
 export const OPERATIONAL_PRESETS = [
+  {
+    id: 'preset_ortofoto',
+    name: '🛰️ Ortofotos & Rio Passo Fundo',
+    description: 'Ortofotos de alta resolução combinadas com o curso do Rio Passo Fundo, APP de 30m e 318 residências',
+    activeLayers: ['ortofotos_rio_passo_fundo', 'ortofoto_central', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'areas_enchente_2024', 'limite_territorial']
+  },
   {
     id: 'preset_app_risco',
     name: '🌊 APP & Rio Passo Fundo',
