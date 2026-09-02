@@ -214,6 +214,29 @@ class WebGisApp {
         }
       });
     }
+
+    // Modal de Contatos Oficiais
+    const contactBtn = document.getElementById('btn-open-contact-modal');
+    const contactModal = document.getElementById('contact-modal');
+    const closeContactBtn = document.getElementById('btn-close-contact-modal');
+
+    if (contactBtn && contactModal) {
+      contactBtn.addEventListener('click', () => {
+        contactModal.classList.add('active');
+      });
+    }
+    if (closeContactBtn && contactModal) {
+      closeContactBtn.addEventListener('click', () => {
+        contactModal.classList.remove('active');
+      });
+    }
+    if (contactModal) {
+      contactModal.addEventListener('click', (e) => {
+        if (e.target === contactModal) {
+          contactModal.classList.remove('active');
+        }
+      });
+    }
   }
 
   bindKeyboardShortcuts() {
@@ -226,6 +249,10 @@ class WebGisApp {
         this.measureTool.stopMeasurement();
         const modal = document.getElementById('dashboard-modal');
         if (modal) modal.classList.remove('active');
+        const contactModal = document.getElementById('contact-modal');
+        if (contactModal) contactModal.classList.remove('active');
+        const shelterModal = document.getElementById('shelter-analysis-modal');
+        if (shelterModal) shelterModal.classList.remove('active');
       } else if (e.key === '+' || e.key === '=') {
         this.mapEngine.zoomIn();
       } else if (e.key === '-' || e.key === '_') {

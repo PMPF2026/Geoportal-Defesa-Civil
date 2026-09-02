@@ -926,6 +926,26 @@ export class ExportReportTool {
           <strong>Camadas Cartográficas Ativas na Emissão:</strong> ${activeLayers.join(', ') || 'Todas as camadas temáticas padrão'}.
         </div>
 
+        <!-- CONTATOS OFICIAIS DA DEFESA CIVIL -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #ff7800; border-radius: 6px; padding: 12px 16px; margin-bottom: 24px; font-size: 11.5px; color: #334155; line-height: 1.5; page-break-inside: avoid;">
+          <div style="font-weight: 800; font-size: 12.5px; color: #0f172a; margin-bottom: 8px;">
+            CONTATOS — DEFESA CIVIL DE PASSO FUNDO
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <strong style="color: #ea580c; display: block; margin-bottom: 4px; font-size: 11.5px;">Defesa Civil de Passo Fundo:</strong>
+              <div>📱 <strong>WhatsApp:</strong> <a href="https://wa.me/5554991940449" target="_blank" style="color: #0284c7; text-decoration: none; font-weight: 700;">(54) 99194-0449</a></div>
+              <div>✉️ <strong>E-mail:</strong> <a href="mailto:defesacivil@pmpf.rs.gov.br" style="color: #0284c7; text-decoration: none;">defesacivil@pmpf.rs.gov.br</a></div>
+              <div>☎️ <strong>Telefones:</strong> <a href="tel:+555433167108" style="color: #0284c7; text-decoration: none;">(54) 3316-7108</a> / <a href="tel:+555433133768" style="color: #0284c7; text-decoration: none;">(54) 3313-3768</a></div>
+            </div>
+            <div>
+              <strong style="color: #ea580c; display: block; margin-bottom: 4px; font-size: 11.5px;">Coordenadoria de Administração e Planejamento:</strong>
+              <div>✉️ <strong>E-mail:</strong> <a href="mailto:capseg@pmpf.rs.gov.br" style="color: #0284c7; text-decoration: none;">capseg@pmpf.rs.gov.br</a></div>
+              <div>☎️ <strong>Telefone:</strong> <a href="tel:+555433138458" style="color: #0284c7; text-decoration: none;">(54) 3313-8458</a></div>
+            </div>
+          </div>
+        </div>
+
         <!-- ASSINATURA INSTITUCIONAL -->
         <div class="signature-box">
           <div style="min-width: 320px; max-width: 380px;">
