@@ -30,8 +30,8 @@ export class DownloadsUI {
   prepareLayerCatalog() {
     const descriptions = {
       'areas_enchente_2024': 'Mancha oficial de inundaÃ§Ã£o do evento hidrolÃ³gico extremo de Maio/2024 (Decreto Estadual 57.600/2024 - ADA).',
-      'app_30metros': 'Faixa marginal de PreservaÃ§Ã£o Permanente de 30 metros ao longo do Rio Passo Fundo (Lei Federal 12.651/2012).',
-      'edificacoes_app': '318 edificaÃ§Ãµes residenciais e comerciais localizadas dentro da faixa de 30 metros de APP com distÃ¢ncias mÃ©tricas ao rio.',
+      'app_30metros': 'Faixa de 30 metros ao longo do Rio Passo Fundo (Lei Federal 12.651/2012).',
+      'edificacoes_app': '318 edificações residenciais e comerciais localizadas dentro da Faixa de 30 metros com distâncias métricas ao rio.',
       'abrigos_defesa_civil': '17 locais e ginásios públicos cadastrados pela Defesa Civil para acolhimento de emergência em desastres climáticos.',
       'cobertura_abrigos_2km': 'Área de influência e cobertura territorial de 2 km ao redor dos 17 abrigos da Defesa Civil.',
       'zph_helicoptero': '9 Zonas de Pouso de Helicóptero (ZPH) cadastradas para pouso de emergência e resgate aéreo da Defesa Civil.',

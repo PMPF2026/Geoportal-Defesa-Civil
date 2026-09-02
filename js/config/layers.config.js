@@ -113,7 +113,7 @@ export const LAYERS_CONFIG = [
   },
   {
     id: 'app_30metros',
-    name: 'Faixa de 30 metros - Rio Passo Fundo',
+    name: 'Faixa de 30 metros — Rio Passo Fundo',
     fileName: 'APP_30metros.geojson',
     source: 'Prefeitura Municipal de Passo Fundo / Lei 12.651',
     refDate: '2026',
@@ -133,7 +133,7 @@ export const LAYERS_CONFIG = [
     },
     popupConfig: {
       titleField: 'APP 30m',
-      defaultTitle: 'Área de Preservação Permanente (APP 30m)',
+      defaultTitle: 'Faixa de 30 metros — Rio Passo Fundo',
       fields: [
         { key: 'APP 30m', label: 'Classificação Legal' },
         { key: 'AREA hec', label: 'Área da Faixa (hectares)', format: 'number' },
@@ -144,7 +144,7 @@ export const LAYERS_CONFIG = [
   },
   {
     id: 'edificacoes_app',
-    name: 'Residências na Faixa de 30 metros',
+    name: 'Residências na Faixa de 30 metros (318 pontos)',
     fileName: 'Edificações em APP.geojson',
     source: 'Defesa Civil de Passo Fundo',
     refDate: '2026',
@@ -164,7 +164,7 @@ export const LAYERS_CONFIG = [
     },
     popupConfig: {
       titleField: 'id',
-      titlePrefix: 'Residência na APP — ID: ',
+      titlePrefix: 'Residência na Faixa de 30 metros — ID: ',
       fields: [
         { key: 'id', label: 'Identificador (ID)' },
         { key: 'Edificacoe', label: 'Tipo de Edificação' },
@@ -982,19 +982,19 @@ export const OPERATIONAL_PRESETS = [
   {
     id: 'preset_ortofoto',
     name: '🛰️ Ortofotos & Rio Passo Fundo',
-    description: 'Ortofotos de alta resolução combinadas com o curso do Rio Passo Fundo, APP de 30m e 318 residências',
+    description: 'Ortofotos de alta resolução combinadas com o curso do Rio Passo Fundo, Faixa de 30 metros e 318 residências',
     activeLayers: ['ortofotos_rio_passo_fundo', 'ortofoto_central', 'rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'areas_enchente_2024', 'limite_territorial']
   },
   {
     id: 'preset_app_risco',
-    name: '🌊 APP & Rio Passo Fundo',
-    description: 'Foco no Rio Passo Fundo, faixa de APP de 30m e 318 residências mapeadas',
+    name: '🌊 Faixa de 30 metros & Rio Passo Fundo',
+    description: 'Foco no Rio Passo Fundo, faixa de Faixa de 30 metros e 318 residências mapeadas',
     activeLayers: ['rio_passo_fundo', 'app_30metros', 'edificacoes_app', 'areas_enchente_2024', 'bairros', 'limite_territorial']
   },
   {
     id: 'preset_defesa_civil',
     name: '🚨 Cenário de Risco & Enchentes',
-    description: 'Foco em mancha de inundação 2024, faixa de APP, abrigos de emergência e sua cobertura de 2 km, malha hídrica e bairros',
+    description: 'Foco em mancha de inundação 2024, Faixa de 30 metros, abrigos de emergência e sua cobertura de 2 km, malha hídrica e bairros',
     activeLayers: ['areas_enchente_2024', 'app_30metros', 'cobertura_abrigos_2km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
   },
   {

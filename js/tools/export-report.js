@@ -449,12 +449,12 @@ export class ExportReportTool {
               <td>Cálculo Territorial Municipal</td>
             </tr>
             <tr class="highlight-row">
-              <td><strong>Residências Identificadas na APP de 30m</strong></td>
+              <td><strong>Residências Identificadas na Faixa de 30 metros</strong></td>
               <td><strong style="color:#ea580c;">${formatNumber(totalResidencias, 0)} residências</strong></td>
               <td>Levantamento Cadastral de Risco (Rio Passo Fundo)</td>
             </tr>
             <tr class="highlight-row">
-              <td><strong>Área da Faixa de APP do Rio Passo Fundo</strong></td>
+              <td><strong>Área da Faixa de 30 metros do Rio Passo Fundo</strong></td>
               <td><strong>${formatNumber(stats.app30mHa, 2)} hectares</strong> (${formatNumber(stats.app30mHa * 10000, 0)} m²)</td>
               <td>Faixa Legal de 30m (Lei Federal 12.651/2012)</td>
             </tr>
@@ -506,17 +506,17 @@ export class ExportReportTool {
               <td>Vetorização contínua da calha fluvial</td>
             </tr>
             <tr>
-              <td><strong>Largura da Faixa de APP Considerada</strong></td>
+              <td><strong>Largura da Faixa de 30 metros Considerada</strong></td>
               <td><strong>30 metros em ambas as margens</strong></td>
               <td>Art. 4º da Lei Federal 12.651/2012 (Código Florestal)</td>
             </tr>
             <tr>
-              <td><strong>Área Total da Faixa de APP</strong></td>
+              <td><strong>Área Total da Faixa de 30 metros</strong></td>
               <td><strong>${formatNumber(stats.app30mHa, 2)} hectares</strong></td>
               <td>Polígono de Proteção Permanente ao longo do curso</td>
             </tr>
             <tr>
-              <td><strong>Residências Edificadas na Faixa de APP</strong></td>
+              <td><strong>Residências Edificadas na Faixa de 30 metros</strong></td>
               <td><strong>${formatNumber(totalResidencias, 0)} edificações</strong></td>
               <td>Pontos cadastrados com menor distância linear calculada</td>
             </tr>
@@ -528,9 +528,9 @@ export class ExportReportTool {
           </tbody>
         </table>
 
-        <!-- 4. LEVANTAMENTO DE RESIDÊNCIAS NA APP -->
+        <!-- 4. LEVANTAMENTO DE RESIDÊNCIAS NA FAIXA DE 30 METROS -->
         <h3 class="section-title">
-          <span><span class="badge-num">3</span> LEVANTAMENTO DE RESIDÊNCIAS NA FAIXA DE APP</span>
+          <span><span class="badge-num">3</span> LEVANTAMENTO DE RESIDÊNCIAS NA FAIXA DE 30 METROS</span>
           <span class="badge-orange">${totalResidencias} EDIFICAÇÕES MAPEADAS</span>
         </h3>
         <div class="grid-2col">
@@ -597,7 +597,7 @@ export class ExportReportTool {
               </tr>
               <tr>
                 <td><strong>Camada Utilizada no WebGIS</strong></td>
-                <td><code>Edificações em APP (318 Pontos)</code></td>
+                <td><code>Residências na Faixa de 30 metros (318 Pontos)</code></td>
               </tr>
             </tbody>
           </table>
@@ -847,7 +847,7 @@ export class ExportReportTool {
         </h3>
         <div class="synthesis-card">
           <p>
-            No território do Município de Passo Fundo / RS, com área de <strong>${formatNumber(stats.totalAreaKm2, 2)} km²</strong> e população de <strong>${formatNumber(stats.totalPop, 0)} habitantes</strong> (Censo 2022), foram cadastradas e georreferenciadas <strong>${formatNumber(totalResidencias, 0)} residências</strong> situadas no interior e entorno imediato da Área de Preservação Permanente (APP de 30 metros) do Rio Passo Fundo.
+            No território do Município de Passo Fundo / RS, com área de <strong>${formatNumber(stats.totalAreaKm2, 2)} km²</strong> e população de <strong>${formatNumber(stats.totalPop, 0)} habitantes</strong> (Censo 2022), foram cadastradas e georreferenciadas <strong>${formatNumber(totalResidencias, 0)} residências</strong> situadas no interior e entorno imediato da Faixa de 30 metros do Rio Passo Fundo.
           </p>
           <p style="margin-top:8px;">
             A análise métrica de proximidade indica que <strong>${countMenor10m} residências</strong> encontram-se a menos de 10 metros da margem do rio (menor distância aferida: <strong>${formatNumber(distMin, 2)} m</strong>, ID 110), e <strong>${count10a20m} residências</strong> situam-se na faixa crítica entre 10 e 20 metros. A distância média das edificações até a calha do rio é de <strong>${formatNumber(distMedia, 2)} metros</strong>.

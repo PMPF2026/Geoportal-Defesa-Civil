@@ -512,7 +512,7 @@ export class SpatialAnalysisTool {
     csvContent += 'SGB,2025,"Domicilios","Total Domicilios em Area de Risco",1115,100%,"Mapeamento Geologico Oficial"\n';
     csvContent += 'SGB,2025,"Domicilios","Domicilios Particulares Ocupados",1011,90.7%,"Classificacao COD_ESPECI 1"\n';
     csvContent += 'SGB,2025,"Cruzamento","Exposicao Mancha Enchente 2024",361,32.4%,"Sobreposicao maio/2024"\n';
-    csvContent += 'SGB,2025,"Cruzamento","Exposicao Faixa 30m Rio Passo Fundo",67,6.0%,"APP ribeirinha"\n';
+    csvContent += 'SGB,2025,"Cruzamento","Exposicao Faixa 30m Rio Passo Fundo",67,6.0%,"Faixa de 30 metros"\n';
     csvContent += 'SGB,2025,"Cruzamento","Cobertura Rede de Abrigos 2km",1112,99.7%,"Raio de atendimento emergencial"\n';
 
     const encodedUri = encodeURI(csvContent);
