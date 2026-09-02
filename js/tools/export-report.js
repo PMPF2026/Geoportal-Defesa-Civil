@@ -339,10 +339,9 @@ export class ExportReportTool {
 
           /* Rodapé & Assinaturas */
           .signature-box {
-            margin-top: 36px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
             text-align: center;
             page-break-inside: avoid;
           }
@@ -927,15 +926,11 @@ export class ExportReportTool {
           <strong>Camadas Cartográficas Ativas na Emissão:</strong> ${activeLayers.join(', ') || 'Todas as camadas temáticas padrão'}.
         </div>
 
-        <!-- ASSINATURAS INSTITUCIONAIS -->
+        <!-- ASSINATURA INSTITUCIONAL -->
         <div class="signature-box">
-          <div>
+          <div style="min-width: 320px; max-width: 380px;">
             <div class="signature-line">COORDENADORIA MUNICIPAL DE DEFESA CIVIL</div>
             <div class="signature-sub">Município de Passo Fundo / RS</div>
-          </div>
-          <div>
-            <div class="signature-line">VAGNER A. DUARTE – GEÓGRAFO</div>
-            <div class="signature-sub">Secretaria de Planejamento &bull; Prefeitura Municipal de Passo Fundo/RS</div>
           </div>
         </div>
 
