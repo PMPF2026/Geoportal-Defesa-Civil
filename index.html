@@ -28,7 +28,6 @@
   <link rel="stylesheet" href="css/map-controls.css">
   <link rel="stylesheet" href="css/popup.css">
   <link rel="stylesheet" href="css/dashboard.css">
-  <link rel="stylesheet" href="css/weather.css">
 </head>
 <body>
   <div id="app">
@@ -44,11 +43,6 @@
       </div>
 
       <div class="header-tools">
-        <button class="header-btn" id="btn-open-weather-modal" title="Central Meteorológica e Alertas — Passo Fundo/RS" style="background:rgba(2, 132, 199, 0.18); border-color:#0284c7; color:#38bdf8;">
-          <i class="lucide-cloud-sun"></i>
-          <span>Central Meteorológica</span>
-        </button>
-
         <button class="header-btn" id="btn-import-layer" title="Adicionar arquivo GeoJSON ou KML local">
           <i class="lucide-upload"></i>
           <span>Importar Camada</span>
@@ -337,16 +331,6 @@
             <div class="dashboard-container">
               <!-- KPI Cards Grid -->
               <div class="kpi-grid">
-                <!-- Weather Widget Card in Sidebar -->
-                <div class="kpi-card" id="widget-sidebar-weather" style="border-left: 3px solid #0284c7; background: linear-gradient(135deg, rgba(2,132,199,0.12) 0%, var(--dc-blue-card) 100%); cursor:pointer;" onclick="document.getElementById('btn-open-weather-modal').click();" title="Clique para abrir a Central Meteorológica">
-                  <div class="kpi-header">
-                    <span class="kpi-title">Central Meteorológica</span>
-                    <i class="lucide-cloud-sun kpi-icon" style="color:#0284c7;"></i>
-                  </div>
-                  <div class="kpi-value"><span id="sidebar-weather-temp">--°C</span><span class="kpi-unit" id="sidebar-weather-status" style="font-size:11px; margin-left:6px; font-weight:700; color:#10b981;">NORMAL</span></div>
-                  <div class="kpi-subtitle" id="sidebar-weather-cond">Passo Fundo / RS &bull; Ver Central &rarr;</div>
-                </div>
-
                 <div class="kpi-card kpi-hazard">
                   <div class="kpi-header">
                     <span class="kpi-title">Mancha Enchente</span>
@@ -1222,26 +1206,6 @@
           </div>
 
           <div id="shelter-conclusions-box"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= MODAL CENTRAL METEOROLÓGICA E ALERTAS ================= -->
-  <div class="modal-overlay" id="weather-modal">
-    <div class="modal-card weather-modal-card">
-      <div class="modal-header weather-modal-header">
-        <div class="modal-title">
-          <i class="lucide-cloud-sun" style="color:#38bdf8;"></i>
-          <span>Central Meteorológica e Alertas — Passo Fundo/RS</span>
-        </div>
-        <button class="modal-close-btn" id="btn-close-weather-modal" title="Fechar Central Meteorológica">&times;</button>
-      </div>
-
-      <div class="modal-body" id="weather-modal-body" style="overflow-y:auto; max-height:calc(92vh - 70px); padding:16px 20px;">
-        <div style="text-align:center; padding:40px; color:var(--text-muted);">
-          <i class="lucide-loader-2" style="font-size:32px; animation:spin 1s linear infinite; display:inline-block; margin-bottom:12px; color:#38bdf8;"></i>
-          <p>Conectando às fontes oficiais do INMET, Defesa Civil RS e CPTEC/INPE...</p>
         </div>
       </div>
     </div>

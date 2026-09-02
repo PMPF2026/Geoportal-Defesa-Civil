@@ -198,41 +198,6 @@ export class ExportReportTool {
       console.warn('[ExportReport] Erro ao extrair estatísticas de residências:', e);
     }
 
-    // 2.1. Extrair situação meteorológica consolidada
-    let weatherSummary = {
-      temp: '18,4 °C',
-      cond: 'Predomínio de Sol / Parcialmente Nublado',
-      umid: '68%',
-      vento: '12 km/h (SE)',
-      chuva24h: '0.0 mm',
-      previsao24h: 'Tempo estável a parcialmente nublado',
-      alertas: 'Sem alertas severos vigentes no momento',
-      fontes: 'Open-Meteo / Defesa Civil RS'
-    };
-
-    try {
-      const cachedW = localStorage.getItem('dc_pf_weather_consolidated_v1');
-      if (cachedW) {
-        const parsedW = JSON.parse(cachedW);
-        const wd = parsedW.data || parsedW;
-        if (wd && wd.current) {
-          weatherSummary.temp = `${wd.current.temperature !== null ? wd.current.temperature + ' °C' : 'N/D'} (Sensação ${wd.current.apparentTemperature !== null ? wd.current.apparentTemperature + ' °C' : 'N/D'})`;
-          weatherSummary.cond = wd.current.conditionLabel || weatherSummary.cond;
-          weatherSummary.umid = `${wd.current.humidity !== null ? wd.current.humidity + '%' : 'N/D'}`;
-          weatherSummary.vento = `${wd.current.windSpeed !== null ? wd.current.windSpeed + ' km/h' : 'N/D'} (${wd.current.windDirectionCardinal || 'N/D'})`;
-          weatherSummary.chuva24h = `${wd.current.precipitation24h !== null ? wd.current.precipitation24h + ' mm' : '0.0 mm'}`;
-          if (wd.forecast5Days && wd.forecast5Days[0]) {
-            weatherSummary.previsao24h = `${wd.forecast5Days[0].condition} (Máx: ${wd.forecast5Days[0].tempMax}°C / Mín: ${wd.forecast5Days[0].tempMin}°C - Chuva: ${wd.forecast5Days[0].precipSum} mm)`;
-          }
-          if (wd.alerts && wd.alerts.length > 0) {
-            weatherSummary.alertas = wd.alerts.map(a => `${a.isPassoFundo ? '📍 [Passo Fundo] ' : '⚠️ [Regional RS] '}${a.title} (${a.severity})`).join('; ');
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('[ExportReport] Erro ao extrair dados meteorológicos:', e);
-    }
-
     // 3. Obter camadas ativas na sessão
     const activeLayers = LAYERS_CONFIG.filter(c => {
       const l = this.layerManager.getLayer(c.id);
@@ -860,55 +825,10 @@ export class ExportReportTool {
           *Fonte dos dados: Serviço Geológico do Brasil (SGB), 2025; Defesa Civil de Passo Fundo e demais fontes oficiais do portal.
         </div>
 
-        <!-- 9. SITUAÇÃO METEOROLÓGICA E ALERTAS VIGENTES -->
-        <h3 class="section-title">
-          <span><span class="badge-num">9</span> SITUAÇÃO METEOROLÓGICA E ALERTAS VIGENTES</span>
-          <span class="badge-blue">CENTRAL METEOROLÓGICA PASSO FUNDO/RS</span>
-        </h3>
-        <table class="kpi-table">
-          <thead>
-            <tr>
-              <th>Parâmetro Meteorológico</th>
-              <th>Registro / Previsão Oficial</th>
-              <th>Órgão Emissor / Fonte</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Condição Atual e Temperatura</strong></td>
-              <td><strong>${weatherSummary.temp}</strong> &bull; ${weatherSummary.cond}</td>
-              <td>INMET / Rede Telemétrica Oficial</td>
-            </tr>
-            <tr>
-              <td><strong>Umidade e Ventos</strong></td>
-              <td>Umidade: <strong>${weatherSummary.umid}</strong> &bull; Vento: <strong>${weatherSummary.vento}</strong></td>
-              <td>Estação Passo Fundo (A831)</td>
-            </tr>
-            <tr>
-              <td><strong>Precipitação Acumulada 24h</strong></td>
-              <td><strong>${weatherSummary.chuva24h}</strong></td>
-              <td>Monitoramento Pluviométrico Oficial</td>
-            </tr>
-            <tr>
-              <td><strong>Previsão para as Próximas 24 Horas</strong></td>
-              <td><strong>${weatherSummary.previsao24h}</strong></td>
-              <td>INMET / CPTEC-INPE</td>
-            </tr>
-            <tr class="highlight-row">
-              <td><strong>Alertas e Avisos Oficiais Vigentes</strong></td>
-              <td><strong>${weatherSummary.alertas}</strong></td>
-              <td>INMET (Alertas2) / Defesa Civil RS</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style="font-size:11px; color:#64748b; margin-top:-6px; margin-bottom:16px;">
-          *Fontes oficiais consultadas: Instituto Nacional de Meteorologia (INMET), Defesa Civil do Rio Grande do Sul e CPTEC/INPE.
-        </div>
-
-        <!-- 10. COMPOSIÇÃO CARTOGRÁFICA -->
+        <!-- 9. COMPOSIÇÃO CARTOGRÁFICA -->
         ${mapSnapshot ? `
           <h3 class="section-title">
-            <span><span class="badge-num">10</span> COMPOSIÇÃO CARTOGRÁFICA DA SITUAÇÃO OPERACIONAL</span>
+            <span><span class="badge-num">9</span> COMPOSIÇÃO CARTOGRÁFICA DA SITUAÇÃO OPERACIONAL</span>
             <span class="badge-blue">MAPA GERADO NO MOMENTO DA EMISSÃO</span>
           </h3>
           <div class="map-report-card">
