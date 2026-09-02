@@ -207,7 +207,7 @@ export class ExportReportTool {
       chuva24h: '0.0 mm',
       previsao24h: 'Tempo estável a parcialmente nublado',
       alertas: 'Sem alertas severos vigentes no momento',
-      fontes: 'INMET / Defesa Civil RS / CPTEC-INPE'
+      fontes: 'Open-Meteo / Defesa Civil RS'
     };
 
     try {
