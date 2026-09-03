@@ -1,14 +1,17 @@
 /**
  * Portal Defesa Civil Passo Fundo - WebGIS
- * Configurações da Central Meteorológica e Avisos
+ * Configurações da Central Meteorológica e Avisos (Defesa Civil RS & CPTEC/INPE)
  */
 
 export const WEATHER_CONFIG = {
   // 1. DEFESA CIVIL DO ESTADO DO RS (Rede Hidrometeorológica Oficial)
   DEFESA_CIVIL_RS: {
     GRAPHQL_ENDPOINT: 'https://redehidrometeorologica.defesacivil.rs.gov.br/graphql',
+    WS_ENDPOINT: 'wss://redehidrometeorologica.defesacivil.rs.gov.br/graphql',
     CLIENT: 'casa-militar-defesa-civil-rs',
     DEFAULT_STATION: 'DCRS-00016', // Passo Fundo/RS Oficial
+    OFFICIAL_PAGE_URL: 'https://redehidrometeorologica.defesacivil.rs.gov.br/Estacao/DCRS-00016',
+    API_DOC_URL: 'https://sistemas.defesacivil.rs.gov.br/api-redehidrometeorologica',
     STATIONS: [
       {
         code: 'DCRS-00016',
@@ -16,6 +19,7 @@ export const WEATHER_CONFIG = {
         municipality: 'Passo Fundo / RS',
         ibge: '4314100',
         basin: 'RS - Rio Passo Fundo',
+        riverName: 'Rio Passo Fundo',
         lat: -28.2470,
         lon: -52.3713,
         hasRiverSensor: true
@@ -25,6 +29,7 @@ export const WEATHER_CONFIG = {
         name: 'Paulo Bento',
         municipality: 'Paulo Bento / RS',
         basin: 'RS - Rio Passo Fundo',
+        riverName: 'Rio Passo Fundo',
         lat: -27.6988,
         lon: -52.4182,
         hasRiverSensor: true
@@ -34,6 +39,7 @@ export const WEATHER_CONFIG = {
         name: 'Sarandi',
         municipality: 'Sarandi / RS',
         basin: 'RS - Rio da Várzea',
+        riverName: 'Rio da Várzea',
         lat: -27.9374,
         lon: -52.9195,
         hasRiverSensor: true
@@ -43,6 +49,7 @@ export const WEATHER_CONFIG = {
         name: 'Panambi',
         municipality: 'Panambi / RS',
         basin: 'RS - Rio Ijuí',
+        riverName: 'Rio Fiúza',
         lat: -28.3013,
         lon: -53.5033,
         hasRiverSensor: true
@@ -60,8 +67,9 @@ export const WEATHER_CONFIG = {
     SERVERLESS_API: '/api/weather/cptec'
   },
 
-  // 3. Atualização Automática
-  REFRESH_INTERVAL_MS: 5 * 60 * 1000, // 5 minutos
+  // 3. Intervalos de Atualização
+  REFRESH_INTERVAL_MS: 60 * 1000, // 60 segundos para polling suave
+  WS_RECONNECT_INTERVAL_MS: 15 * 1000, // 15s para reconectar WebSocket
 
   // 4. Mapeamento de Condições do CPTEC
   CONDITIONS_MAP: {

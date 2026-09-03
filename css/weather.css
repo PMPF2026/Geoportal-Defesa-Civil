@@ -1,6 +1,6 @@
 /**
  * Portal Defesa Civil Passo Fundo - WebGIS
- * Estilos da Central Meteorológica e Avisos
+ * Estilos da Central Meteorológica e Avisos (Estação DCRS-00016)
  */
 
 .weather-container {
@@ -14,7 +14,7 @@
   overflow-y: auto;
 }
 
-/* Header & Sub-Tabs */
+/* Header & Controles */
 .weather-header {
   display: flex;
   flex-direction: column;
@@ -142,12 +142,63 @@
   line-height: 1.4;
 }
 
+/* Status da Estação (🟢, 🟡, 🔴) */
+.station-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.station-status-pill.updated {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.station-status-pill.delayed {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.station-status-pill.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.status-dot.yellow {
+  background: #eab308;
+  box-shadow: 0 0 6px #eab308;
+}
+
+.status-dot.red {
+  background: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
+}
+
 /* Station / Focus Bar */
 .weather-station-bar {
   background: var(--dc-blue-card);
   border: 1px solid var(--dc-blue-border);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -158,16 +209,16 @@
 .weather-station-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .weather-station-name {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 800;
   color: #ffffff;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .weather-station-meta {
@@ -175,15 +226,67 @@
   color: var(--text-muted);
 }
 
-.weather-station-select {
-  background: #0f172a;
-  border: 1px solid var(--dc-blue-border);
+/* Rio Passo Fundo Card Especial */
+.river-featured-card {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-left: 4px solid #06b6d4;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.river-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.river-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.river-level-value {
+  font-size: 22px;
+  font-weight: 900;
   color: #ffffff;
-  padding: 5px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 11.5px;
-  cursor: pointer;
-  outline: none;
+  letter-spacing: -0.5px;
+}
+
+.river-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.river-trend-badge.up {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.river-trend-badge.stable {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.river-trend-badge.down {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
 }
 
 /* Metric Cards Grid */
@@ -211,10 +314,6 @@
   border-color: rgba(56, 189, 248, 0.4);
 }
 
-.weather-metric-card.accent-rain {
-  border-left: 3px solid #0284c7;
-}
-
 .weather-metric-card.accent-temp {
   border-left: 3px solid #f97316;
 }
@@ -227,8 +326,12 @@
   border-left: 3px solid #a855f7;
 }
 
-.weather-metric-card.accent-river {
-  border-left: 3px solid #06b6d4;
+.weather-metric-card.accent-pressure {
+  border-left: 3px solid #64748b;
+}
+
+.weather-metric-card.accent-solar {
+  border-left: 3px solid #eab308;
 }
 
 .weather-metric-header {
@@ -246,7 +349,7 @@
 }
 
 .weather-metric-value {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   color: #ffffff;
   line-height: 1.1;
@@ -264,25 +367,26 @@
   color: var(--text-muted);
 }
 
-/* Rain Accumulations Breakdown */
+/* Acumulados de Chuva Oficiais (7 Períodos) */
 .rain-breakdown-card {
   grid-column: 1 / -1;
   background: var(--dc-blue-card);
   border: 1px solid var(--dc-blue-border);
+  border-left: 4px solid #0284c7;
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .rain-breakdown-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 800;
   color: #ffffff;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .rain-pills-row {
@@ -292,26 +396,141 @@
 }
 
 .rain-pill {
-  background: rgba(2, 132, 199, 0.15);
-  border: 1px solid rgba(2, 132, 199, 0.3);
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.28);
   border-radius: var(--radius-sm);
-  padding: 6px 4px;
+  padding: 8px 4px;
   text-align: center;
+  transition: all 0.2s ease;
+}
+
+.rain-pill:hover {
+  background: rgba(2, 132, 199, 0.22);
+  border-color: #38bdf8;
+}
+
+.rain-pill.highlight {
+  background: rgba(234, 88, 12, 0.15);
+  border-color: rgba(234, 88, 12, 0.4);
 }
 
 .rain-pill-label {
   font-size: 9.5px;
   color: var(--text-muted);
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
   display: block;
 }
 
 .rain-pill-val {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #38bdf8;
-  margin-top: 2px;
+  margin-top: 3px;
+}
+
+.rain-pill.highlight .rain-pill-val {
+  color: var(--dc-orange-primary);
+}
+
+/* Localização da Estação */
+.station-location-card {
+  background: var(--dc-blue-card);
+  border: 1px solid var(--dc-blue-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.station-location-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+}
+
+.btn-view-station-map {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-view-station-map:hover {
+  background: #38bdf8;
+  color: #0f172a;
+}
+
+/* Painel de Gráficos Históricos Interativos */
+.weather-chart-box {
+  background: var(--dc-blue-card);
+  border: 1px solid var(--dc-blue-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weather-chart-header-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-selectors-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chart-variable-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chart-var-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--dc-blue-border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chart-var-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chart-var-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.weather-chart-canvas-wrapper {
+  position: relative;
+  height: 200px;
+  width: 100%;
 }
 
 /* 5-Day Forecast Grid */
@@ -407,33 +626,7 @@
   justify-content: center;
 }
 
-/* Charts Wrapper */
-.weather-chart-box {
-  background: var(--dc-blue-card);
-  border: 1px solid var(--dc-blue-border);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.weather-chart-header {
-  font-size: 12px;
-  font-weight: 700;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.weather-chart-canvas-wrapper {
-  position: relative;
-  height: 170px;
-  width: 100%;
-}
-
-/* Sources & Status Footer */
+/* Fontes & Status Footer */
 .weather-footer-sources {
   background: rgba(0, 0, 0, 0.2);
   border-top: 1px solid var(--dc-blue-border);

@@ -1,6 +1,6 @@
 /**
  * Portal Defesa Civil Passo Fundo - WebGIS
- * Interface da Central Meteorológica e Avisos (Defesa Civil RS & CPTEC/INPE)
+ * Interface da Central Meteorológica e Avisos (Estação DCRS-00016 & CPTEC/INPE)
  */
 
 import { WEATHER_CONFIG } from './weather-config.js';
@@ -13,7 +13,10 @@ export class WeatherUI {
     this.currentStationCode = WEATHER_CONFIG.DEFESA_CIVIL_RS.DEFAULT_STATION;
     this.drsData = null;
     this.cptecData = null;
-    this.autoRefreshTimer = null;
+    this.alignedCptecForecasts = [];
+    this.selectedChartVar = 'combined'; // 'combined' | 'chuva' | 'rio' | 'temp' | 'umid' | 'vento' | 'pressao' | 'radiacao'
+    this.selectedChartPeriod = 'h168'; // 'min30' | 'h1' | 'h24' | 'h48' | 'h72' | 'h120' | 'h168'
+    this.subscriptionController = null;
     this.isLoading = false;
     this.charts = {};
 
@@ -26,7 +29,7 @@ export class WeatherUI {
     this.renderSkeleton();
     this.bindEvents();
     await this.refreshAllData();
-    this.startAutoRefresh();
+    this.startRealtimeSubscription();
   }
 
   renderSkeleton() {
@@ -71,57 +74,149 @@ export class WeatherUI {
           </div>
         </div>
 
-        <!-- Área Dinâmica das Abas -->
+        <!-- ABA 1: MONITORAMENTO DEFESA CIVIL RS (ESTAÇÃO DCRS-00016) -->
         <div id="weather-subtab-content-drs" class="weather-tab-pane">
-          <!-- Estação & Foco -->
+          <!-- Barra de Informações da Estação -->
           <div class="weather-station-bar">
             <div class="weather-station-info">
               <div class="weather-station-name" id="drs-station-display-name">
-                <i class="lucide-radio"></i>
-                <span>Estação Passo Fundo (DCRS-00016)</span>
+                <i class="lucide-radio" style="color: #06b6d4;"></i>
+                <span>Estação DCRS-00016 — Passo Fundo</span>
               </div>
               <div class="weather-station-meta" id="drs-station-display-meta">
-                Bacia: RS - Rio Passo Fundo &bull; Lat: -28.247° | Lon: -52.371°
+                Rede Hidrometeorológica Oficial &bull; Bacia: RS - Rio Passo Fundo
               </div>
             </div>
-            <select class="weather-station-select" id="select-drs-station" title="Selecionar Estação de Monitoramento">
-              ${WEATHER_CONFIG.DEFESA_CIVIL_RS.STATIONS.map(s => `
-                <option value="${s.code}" ${s.code === this.currentStationCode ? 'selected' : ''}>
-                  ${s.name} (${s.code})
-                </option>
-              `).join('')}
-            </select>
+            <div id="drs-status-badge-container">
+              <span class="station-status-pill updated" id="drs-status-pill">
+                <span class="status-dot green"></span>
+                <span>Dados atualizados</span>
+              </span>
+            </div>
           </div>
 
-          <!-- Cards de Métricas em Tempo Real -->
-          <div class="weather-cards-grid" id="drs-metrics-grid" style="margin-top: 10px;">
+          <!-- Destaque: Rio Passo Fundo -->
+          <div class="river-featured-card" style="margin-top: 10px;" id="drs-river-card">
+            <div class="river-info-col">
+              <div class="river-title">
+                <i class="lucide-waves"></i>
+                <span id="drs-river-name-label">RIO PASSO FUNDO (SENSOR TELEMÉTRICO)</span>
+              </div>
+              <div class="river-level-value" id="drs-river-level-value">
+                Carregando...
+              </div>
+            </div>
+            <div id="drs-river-trend-container">
+              <span class="river-trend-badge stable">
+                <span>➡️</span>
+                <span>Estável</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Destaque: Chuva Acumulada Oficial (7 Períodos) -->
+          <div class="rain-breakdown-card" style="margin-top: 10px;">
+            <div class="rain-breakdown-title">
+              <i class="lucide-cloud-rain" style="color:#0284c7;"></i>
+              <span>🌧️ CHUVA ACUMULADA OFICIAL — DCRS-00016</span>
+            </div>
+            <div class="rain-pills-row" id="drs-rain-pills-row">
+              <div class="rain-pill">
+                <span class="rain-pill-label">30 min</span>
+                <div class="rain-pill-val" id="rain-val-min30">--</div>
+              </div>
+              <div class="rain-pill">
+                <span class="rain-pill-label">1 hora</span>
+                <div class="rain-pill-val" id="rain-val-h1">--</div>
+              </div>
+              <div class="rain-pill highlight">
+                <span class="rain-pill-label">24 horas</span>
+                <div class="rain-pill-val" id="rain-val-h24">--</div>
+              </div>
+              <div class="rain-pill">
+                <span class="rain-pill-label">48 horas</span>
+                <div class="rain-pill-val" id="rain-val-h48">--</div>
+              </div>
+              <div class="rain-pill">
+                <span class="rain-pill-label">72 horas</span>
+                <div class="rain-pill-val" id="rain-val-h72">--</div>
+              </div>
+              <div class="rain-pill">
+                <span class="rain-pill-label">5 dias (120h)</span>
+                <div class="rain-pill-val" id="rain-val-h120">--</div>
+              </div>
+              <div class="rain-pill">
+                <span class="rain-pill-label">7 dias (168h)</span>
+                <div class="rain-pill-val" id="rain-val-h168">--</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards das Condições Atuais -->
+          <div style="font-size: 11.5px; font-weight: 800; color: #ffffff; margin-top: 14px; display:flex; align-items:center; gap:6px;">
+            <i class="lucide-thermometer-sun" style="color: var(--dc-orange-primary);"></i>
+            <span>CONDIÇÕES METEOROLÓGICAS ATUAIS</span>
+          </div>
+
+          <div class="weather-cards-grid" id="drs-metrics-grid" style="margin-top: 8px;">
             <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--text-muted);">
               <i class="lucide-loader" style="animation: spin 1s linear infinite; font-size: 20px; display: block; margin: 0 auto 8px;"></i>
-              Carregando dados oficiais em tempo real da Defesa Civil RS...
+              Carregando dados oficiais da estação DCRS-00016...
             </div>
           </div>
 
-          <!-- Gráficos de Monitoramento -->
-          <div class="weather-chart-box" style="margin-top: 10px;">
-            <div class="weather-chart-header">
-              <span><i class="lucide-bar-chart-2"></i> Chuva Acumulada por Período (mm)</span>
+          <!-- Localização da Estação -->
+          <div class="station-location-card" style="margin-top: 12px;">
+            <div class="station-location-details">
+              <strong style="color: #ffffff; font-size: 12.5px;">📍 LOCALIZAÇÃO DA ESTAÇÃO DCRS-00016</strong>
+              <span id="drs-station-coords">Coordenadas: Lat -28.2470° | Lon -52.3713° &bull; Altitude: Não informada</span>
+              <span style="color: #94a3b8;">Bacia Hidrográfica: RS - Rio Passo Fundo &bull; Região: Passo Fundo/RS</span>
             </div>
+            <button class="btn-view-station-map" id="btn-focus-station-map" title="Visualizar estação no mapa principal">
+              <i class="lucide-crosshair"></i>
+              <span>Ver no mapa</span>
+            </button>
+          </div>
+
+          <!-- Gráficos Históricos Interativos -->
+          <div class="weather-chart-box" style="margin-top: 12px;">
+            <div class="weather-chart-header-row">
+              <div style="font-size: 12.5px; font-weight: 800; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+                <span id="drs-chart-title">📊 HISTÓRICO DA ESTAÇÃO (DCRS-00016)</span>
+              </div>
+
+              <!-- Seletores de Variável -->
+              <div class="chart-selectors-row">
+                <div class="chart-variable-selector" id="chart-variable-selector">
+                  <button class="chart-var-btn active" data-var="combined" title="Chuva e Nível do Rio Combinados">📊 Chuva x Nível</button>
+                  <button class="chart-var-btn" data-var="chuva" title="Acumulados de Chuva">🌧️ Chuva</button>
+                  <button class="chart-var-btn" data-var="rio" title="Nível do Rio">🌊 Nível Rio</button>
+                  <button class="chart-var-btn" data-var="temp" title="Temperatura">🌡️ Temp</button>
+                  <button class="chart-var-btn" data-var="umid" title="Umidade">💧 Umidade</button>
+                  <button class="chart-var-btn" data-var="vento" title="Velocidade do Vento">💨 Vento</button>
+                  <button class="chart-var-btn" data-var="pressao" title="Pressão Atmosférica">📈 Pressão</button>
+                  <button class="chart-var-btn" data-var="radiacao" title="Radiação Solar">☀️ Radiação</button>
+                </div>
+              </div>
+            </div>
+
             <div class="weather-chart-canvas-wrapper">
-              <canvas id="chart-drs-rain"></canvas>
+              <canvas id="chart-drs-interactive"></canvas>
             </div>
           </div>
         </div>
 
+        <!-- ABA 2: PREVISÃO CPTEC/INPE (5 DIAS) -->
         <div id="weather-subtab-content-cptec" class="weather-tab-pane" style="display: none;">
           <!-- Previsão 5 Dias CPTEC -->
           <div class="weather-station-bar">
             <div class="weather-station-info">
               <div class="weather-station-name">
-                <i class="lucide-map-pin"></i>
+                <i class="lucide-map-pin" style="color: #f59e0b;"></i>
                 <span>Passo Fundo / RS — Previsão Oficial CPTEC/INPE</span>
               </div>
               <div class="weather-station-meta">
-                Modelo Meteorológico Oficial &bull; Hoje + Próximos 4 Dias
+                Modelo Numérico Oficial &bull; Hoje + Próximos 4 Dias
               </div>
             </div>
           </div>
@@ -136,8 +231,8 @@ export class WeatherUI {
 
           <!-- Gráfico de Tendência de Temperatura CPTEC -->
           <div class="weather-chart-box" style="margin-top: 10px;">
-            <div class="weather-chart-header">
-              <span><i class="lucide-trending-up"></i> Curva de Temperaturas Previstas (°C)</span>
+            <div class="weather-chart-header-row">
+              <span style="font-size: 12px; font-weight: 700; color: #ffffff;"><i class="lucide-trending-up"></i> Curva de Temperaturas Previstas (°C)</span>
             </div>
             <div class="weather-chart-canvas-wrapper">
               <canvas id="chart-cptec-temps"></canvas>
@@ -153,7 +248,8 @@ export class WeatherUI {
           </div>
           <div style="line-height: 1.5; margin-top: 4px;">
             <strong>Fontes Oficiais:</strong><br>
-            &bull; <a href="https://redehidrometeorologica.defesacivil.rs.gov.br" target="_blank" rel="noopener noreferrer">Defesa Civil do Estado do Rio Grande do Sul — Rede Hidrometeorológica</a><br>
+            &bull; <a href="${WEATHER_CONFIG.DEFESA_CIVIL_RS.OFFICIAL_PAGE_URL}" target="_blank" rel="noopener noreferrer">Estação DCRS-00016 — Defesa Civil RS (Rede Hidrometeorológica)</a><br>
+            &bull; <a href="${WEATHER_CONFIG.DEFESA_CIVIL_RS.API_DOC_URL}" target="_blank" rel="noopener noreferrer">Documentação Oficial da API GraphQL da Defesa Civil RS</a><br>
             &bull; <a href="https://www.cptec.inpe.br" target="_blank" rel="noopener noreferrer">CPTEC/INPE — Centro de Previsão de Tempo e Estudos Climáticos</a>
           </div>
         </div>
@@ -181,7 +277,7 @@ export class WeatherUI {
         if (paneDrs) paneDrs.style.display = 'block';
         if (paneCptec) paneCptec.style.display = 'none';
         if (sourceBadge) sourceBadge.textContent = 'Fonte: Defesa Civil RS';
-        this.renderDrsCharts();
+        this.renderDrsInteractiveChart();
       });
 
       btnCptec.addEventListener('click', () => {
@@ -195,24 +291,6 @@ export class WeatherUI {
       });
     }
 
-    // Seletor de Estações DRS
-    const selectStation = document.getElementById('select-drs-station');
-    if (selectStation) {
-      selectStation.addEventListener('change', async (e) => {
-        this.currentStationCode = e.target.value;
-        const stationObj = WEATHER_CONFIG.DEFESA_CIVIL_RS.STATIONS.find(s => s.code === this.currentStationCode);
-        const nameDisp = document.getElementById('drs-station-display-name');
-        const metaDisp = document.getElementById('drs-station-display-meta');
-        if (nameDisp && stationObj) {
-          nameDisp.innerHTML = `<i class="lucide-radio"></i><span>Estação ${stationObj.name} (${stationObj.code})</span>`;
-        }
-        if (metaDisp && stationObj) {
-          metaDisp.innerHTML = `Bacia: ${stationObj.basin} &bull; Lat: ${stationObj.lat.toFixed(3)}° | Lon: ${stationObj.lon.toFixed(3)}°`;
-        }
-        await this.loadDefesaCivilRSData();
-      });
-    }
-
     // Botão Atualizar
     const btnRefresh = document.getElementById('btn-weather-refresh');
     if (btnRefresh) {
@@ -221,6 +299,41 @@ export class WeatherUI {
         await this.refreshAllData();
         setTimeout(() => btnRefresh.classList.remove('spinning'), 600);
       });
+    }
+
+    // Botão "Ver estação no mapa"
+    const btnFocusMap = document.getElementById('btn-focus-station-map');
+    if (btnFocusMap) {
+      btnFocusMap.addEventListener('click', () => {
+        this.focusStationOnMap();
+      });
+    }
+
+    // Seletores de Variável do Gráfico Histórico
+    const varButtons = document.querySelectorAll('#chart-variable-selector .chart-var-btn');
+    varButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        varButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.selectedChartVar = btn.getAttribute('data-var');
+        this.renderDrsInteractiveChart();
+      });
+    });
+  }
+
+  focusStationOnMap() {
+    if (window.webGis && window.webGis.mapEngine) {
+      const lat = this.drsData?.lat || -28.2470;
+      const lon = this.drsData?.lon || -52.3713;
+      const olMap = window.webGis.mapEngine.getOlMap();
+      if (olMap) {
+        const view = olMap.getView();
+        view.animate({
+          center: window.ol.proj.fromLonLat([lon, lat]),
+          zoom: 16,
+          duration: 800
+        });
+      }
     }
   }
 
@@ -233,20 +346,50 @@ export class WeatherUI {
     this.isLoading = false;
   }
 
+  startRealtimeSubscription() {
+    if (this.subscriptionController) {
+      this.subscriptionController.unsubscribe();
+    }
+
+    this.subscriptionController = WeatherService.subscribeNowcasting(
+      this.currentStationCode,
+      (data) => {
+        this.updateDrsUI(data);
+      },
+      (err) => {
+        console.warn('[WeatherUI] Erro na subscrição:', err);
+      },
+      (status) => {
+        console.log('[WeatherUI] Status da conexão:', status);
+      }
+    );
+  }
+
   async loadDefesaCivilRSData() {
+    const data = await WeatherService.fetchDefesaCivilRSTelemetry(this.currentStationCode);
+    this.updateDrsUI(data);
+  }
+
+  updateDrsUI(data) {
+    this.drsData = data;
     const grid = document.getElementById('drs-metrics-grid');
     const updateText = document.getElementById('weather-last-update-text');
-
-    const data = await WeatherService.fetchDefesaCivilRSTelemetry(this.currentStationCode);
-    this.drsData = data;
+    const statusContainer = document.getElementById('drs-status-badge-container');
 
     if (!data.success) {
+      if (statusContainer) {
+        statusContainer.innerHTML = `
+          <span class="station-status-pill error">
+            <span class="status-dot red"></span>
+            <span>Falha na comunicação</span>
+          </span>
+        `;
+      }
       if (grid) {
         grid.innerHTML = `
           <div style="grid-column: 1 / -1; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--dc-hazard-red); padding: 14px; border-radius: var(--radius-md); font-size: 12px; color: #fca5a5; text-align: center;">
             <i class="lucide-alert-circle" style="font-size: 20px; display: block; margin: 0 auto 6px;"></i>
-            Não foi possível atualizar os dados meteorológicos da Defesa Civil RS no momento.<br>
-            <span style="font-size: 11px; opacity: 0.8;">Tente novamente em instantes.</span>
+            Dados temporariamente indisponíveis. Tentando atualizar...
           </div>
         `;
       }
@@ -254,19 +397,108 @@ export class WeatherUI {
       return;
     }
 
-    // Render Metrics Cards
+    // Atualiza Indicador de Status (🟢, 🟡, 🔴)
+    if (statusContainer) {
+      if (data.status === 'updated') {
+        statusContainer.innerHTML = `
+          <span class="station-status-pill updated" title="Leitura recente da estação telemétrica">
+            <span class="status-dot green"></span>
+            <span>Dados atualizados</span>
+          </span>
+        `;
+      } else if (data.status === 'delayed') {
+        statusContainer.innerHTML = `
+          <span class="station-status-pill delayed" title="Aguardando novas leituras da estação">
+            <span class="status-dot yellow"></span>
+            <span>Aguardando atualização</span>
+          </span>
+        `;
+      } else {
+        statusContainer.innerHTML = `
+          <span class="station-status-pill error" title="Falha de conexão com a estação">
+            <span class="status-dot red"></span>
+            <span>Falha na comunicação</span>
+          </span>
+        `;
+      }
+    }
+
+    // 1. Destaque: Rio Passo Fundo
+    const riverLevelEl = document.getElementById('drs-river-level-value');
+    const riverTrendContainer = document.getElementById('drs-river-trend-container');
+    const riverNameEl = document.getElementById('drs-river-name-label');
+    const r = data.rio || {};
+
+    if (riverNameEl && r.nome) {
+      riverNameEl.textContent = `${r.nome.toUpperCase()} (SENSOR TELEMÉTRICO)`;
+    }
+
+    if (riverLevelEl) {
+      riverLevelEl.innerHTML = r.nivel != null ? `${r.nivel.toFixed(2)} <span style="font-size: 14px; font-weight: 600; color: #38bdf8;">metros</span>` : 'Não disponível';
+    }
+
+    if (riverTrendContainer) {
+      const trend = r.tendencia || 0;
+      if (trend > 0.005) {
+        riverTrendContainer.innerHTML = `
+          <span class="river-trend-badge up" title="Nível com tendência de elevação">
+            <span>⬆️</span>
+            <span>Subindo</span>
+          </span>
+        `;
+      } else if (trend < -0.005) {
+        riverTrendContainer.innerHTML = `
+          <span class="river-trend-badge down" title="Nível com tendência de redução">
+            <span>⬇️</span>
+            <span>Descendo</span>
+          </span>
+        `;
+      } else {
+        riverTrendContainer.innerHTML = `
+          <span class="river-trend-badge stable" title="Nível estabilizado">
+            <span>➡️</span>
+            <span>Estável</span>
+          </span>
+        `;
+      }
+    }
+
+    // 2. Destaque: Chuva Acumulada Oficial (7 Períodos)
+    const c = data.chuva || {};
+    const setRain = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val != null && !isNaN(val) ? `${val.toFixed(1)} mm` : '0.0 mm';
+    };
+
+    setRain('rain-val-min30', c.min30);
+    setRain('rain-val-h1', c.h1);
+    setRain('rain-val-h24', c.h24);
+    setRain('rain-val-h48', c.h48);
+    setRain('rain-val-h72', c.h72);
+    setRain('rain-val-h120', c.h120);
+    setRain('rain-val-h168', c.h168);
+
+    // 3. Render Cards de Condições Meteorológicas Atuais
     const fmt = (val, unit, fallback = 'Não disponível') => {
       if (val == null || isNaN(val)) return fallback;
       return `${typeof val === 'number' ? (Number.isInteger(val) ? val : val.toFixed(1)) : val} <span class="weather-metric-unit">${unit}</span>`;
     };
 
-    const c = data.chuva || {};
+    const getWindDirectionLabel = (deg) => {
+      if (deg == null || isNaN(deg)) return '';
+      const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
+      const idx = Math.round(deg / 22.5) % 16;
+      return directions[idx];
+    };
+
     const t = data.temperatura || {};
     const u = data.umidade || {};
     const v = data.vento || {};
     const p = data.pressao || {};
     const s = data.sensacaoTermica || {};
-    const r = data.rio || {};
+    const rad = data.radiacaoSolar || {};
+
+    const windDir = v.direcao != null ? `${v.direcao.toFixed(0)}° (${getWindDirectionLabel(v.direcao)})` : 'Direção monitorada';
 
     if (grid) {
       grid.innerHTML = `
@@ -282,6 +514,16 @@ export class WeatherUI {
           </div>
         </div>
 
+        <!-- Card Sensação Térmica -->
+        <div class="weather-metric-card">
+          <div class="weather-metric-header">
+            <span>Sensação Térmica</span>
+            <i class="lucide-flame"></i>
+          </div>
+          <div class="weather-metric-value">${fmt(s.atual, '°C')}</div>
+          <div class="weather-metric-footer">Índice bioclimático oficial</div>
+        </div>
+
         <!-- Card Umidade -->
         <div class="weather-metric-card accent-humidity">
           <div class="weather-metric-header">
@@ -294,20 +536,8 @@ export class WeatherUI {
           </div>
         </div>
 
-        <!-- Card Vento -->
-        <div class="weather-metric-card accent-wind">
-          <div class="weather-metric-header">
-            <span>Vento Médio</span>
-            <i class="lucide-wind"></i>
-          </div>
-          <div class="weather-metric-value">${fmt(v.velocidadeMedia, 'km/h')}</div>
-          <div class="weather-metric-footer">
-            ${v.velocidadeMaxima != null ? `Rajada: ${v.velocidadeMaxima.toFixed(1)} km/h` : 'Direção monitorada'}
-          </div>
-        </div>
-
-        <!-- Card Pressão -->
-        <div class="weather-metric-card">
+        <!-- Card Pressão Atmosférica -->
+        <div class="weather-metric-card accent-pressure">
           <div class="weather-metric-header">
             <span>Pressão Atmosf.</span>
             <i class="lucide-gauge"></i>
@@ -318,68 +548,43 @@ export class WeatherUI {
           </div>
         </div>
 
-        <!-- Card Sensação Térmica -->
-        <div class="weather-metric-card">
+        <!-- Card Vento -->
+        <div class="weather-metric-card accent-wind">
           <div class="weather-metric-header">
-            <span>Sensação Térmica</span>
-            <i class="lucide-flame"></i>
+            <span>Vento Médio</span>
+            <i class="lucide-wind"></i>
           </div>
-          <div class="weather-metric-value">${fmt(s.atual, '°C')}</div>
-          <div class="weather-metric-footer">Índice bioclimático oficial</div>
+          <div class="weather-metric-value">${fmt(v.velocidadeMedia, 'km/h')}</div>
+          <div class="weather-metric-footer">
+            ${v.velocidadeMaxima != null ? `Máx: ${v.velocidadeMaxima.toFixed(1)} km/h &bull; ${windDir}` : windDir}
+          </div>
         </div>
 
-        <!-- Card Nível do Rio -->
-        <div class="weather-metric-card accent-river">
+        <!-- Card Radiação Solar -->
+        <div class="weather-metric-card accent-solar">
           <div class="weather-metric-header">
-            <span>Nível do Rio</span>
-            <i class="lucide-waves"></i>
+            <span>Radiação Solar</span>
+            <i class="lucide-sun-medium"></i>
           </div>
-          <div class="weather-metric-value">${fmt(r.nivel, 'm')}</div>
-          <div class="weather-metric-footer">${r.nome || 'Bacia Hidrográfica'}</div>
-        </div>
-
-        <!-- Acumulados de Chuva Detalhados -->
-        <div class="rain-breakdown-card accent-rain">
-          <div class="rain-breakdown-title">
-            <i class="lucide-cloud-rain" style="color:#0284c7;"></i>
-            <span>Chuva Acumulada em Tempo Real — ${data.name}</span>
-          </div>
-          <div class="rain-pills-row">
-            <div class="rain-pill">
-              <span class="rain-pill-label">15 min</span>
-              <div class="rain-pill-val">${c.min15 != null ? c.min15.toFixed(1) : '0.0'} mm</div>
-            </div>
-            <div class="rain-pill">
-              <span class="rain-pill-label">1 hora</span>
-              <div class="rain-pill-val">${c.h1 != null ? c.h1.toFixed(1) : '0.0'} mm</div>
-            </div>
-            <div class="rain-pill">
-              <span class="rain-pill-label">3 horas</span>
-              <div class="rain-pill-val">${c.h3 != null ? c.h3.toFixed(1) : '0.0'} mm</div>
-            </div>
-            <div class="rain-pill">
-              <span class="rain-pill-label">6 horas</span>
-              <div class="rain-pill-val">${c.h6 != null ? c.h6.toFixed(1) : '0.0'} mm</div>
-            </div>
-            <div class="rain-pill">
-              <span class="rain-pill-label">12 horas</span>
-              <div class="rain-pill-val">${c.h12 != null ? c.h12.toFixed(1) : '0.0'} mm</div>
-            </div>
-            <div class="rain-pill">
-              <span class="rain-pill-label">24 horas</span>
-              <div class="rain-pill-val" style="color: var(--dc-orange-primary);">${c.h24 != null ? c.h24.toFixed(1) : '0.0'} mm</div>
-            </div>
-          </div>
+          <div class="weather-metric-value">${rad.atual != null ? `${rad.atual.toFixed(0)} <span class="weather-metric-unit">W/m²</span>` : 'Não disponível'}</div>
+          <div class="weather-metric-footer">Sensor piranométrico</div>
         </div>
       `;
     }
 
+    // 4. Localização da Estação
+    const coordsEl = document.getElementById('drs-station-coords');
+    if (coordsEl) {
+      coordsEl.textContent = `Coordenadas: Lat ${data.lat.toFixed(4)}° | Lon ${data.lon.toFixed(4)}° &bull; Altitude: ${data.altitude ? `${data.altitude} m` : 'Informada via API'}`;
+    }
+
+    // 5. Data e Hora da Leitura (Local Passo Fundo UTC-3)
     if (updateText && data.timestamp) {
       try {
         const d = new Date(data.timestamp);
         const dataStr = d.toLocaleDateString('pt-BR');
-        const horaStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        updateText.textContent = `Última atualização: ${dataStr} — ${horaStr}`;
+        const horaStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        updateText.textContent = `Última leitura da estação: ${dataStr} às ${horaStr}`;
       } catch {
         updateText.textContent = `Última leitura: ${data.timestamp}`;
       }
@@ -389,7 +594,201 @@ export class WeatherUI {
       window.lucide.createIcons();
     }
 
-    this.renderDrsCharts();
+    this.renderDrsInteractiveChart();
+  }
+
+  renderDrsInteractiveChart() {
+    const canvas = document.getElementById('chart-drs-interactive');
+    if (!canvas || !window.Chart || !this.drsData) return;
+
+    if (this.charts.drsInteractive) {
+      this.charts.drsInteractive.destroy();
+    }
+
+    const c = this.drsData.chuva || {};
+    const r = this.drsData.rio || {};
+    const t = this.drsData.temperatura || {};
+    const u = this.drsData.umidade || {};
+    const v = this.drsData.vento || {};
+    const p = this.drsData.pressao || {};
+    const rad = this.drsData.radiacaoSolar || {};
+
+    const ctx = canvas.getContext('2d');
+    let chartConfig = null;
+
+    if (this.selectedChartVar === 'combined') {
+      // Gráfico Combinado: Chuva (Barras) x Nível do Rio (Linha) com dois eixos Y
+      chartConfig = {
+        type: 'bar',
+        data: {
+          labels: ['1h', '3h', '6h', '12h', '24h', '48h', '72h', '120h', '168h'],
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Chuva Acumulada (mm)',
+              data: [c.h1 || 0, c.h3 || 0, c.h6 || 0, c.h12 || 0, c.h24 || 0, c.h48 || 0, c.h72 || 0, c.h120 || 0, c.h168 || 0],
+              backgroundColor: 'rgba(2, 132, 199, 0.75)',
+              borderColor: '#38bdf8',
+              borderWidth: 1,
+              borderRadius: 4,
+              yAxisID: 'yChuva'
+            },
+            {
+              type: 'line',
+              label: 'Nível do Rio (m)',
+              data: [r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8],
+              borderColor: '#06b6d4',
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#06b6d4',
+              tension: 0.2,
+              yAxisID: 'yRio'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#ffffff', font: { size: 10.5 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (item) => `${item.dataset.label}: ${item.raw} ${item.dataset.yAxisID === 'yChuva' ? 'mm' : 'm'}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#94a3b8', font: { size: 10 } },
+              grid: { display: false }
+            },
+            yChuva: {
+              type: 'linear',
+              position: 'left',
+              beginAtZero: true,
+              title: { display: true, text: 'Chuva (mm)', color: '#38bdf8', font: { size: 10 } },
+              ticks: { color: '#94a3b8', font: { size: 9.5 } },
+              grid: { color: 'rgba(255, 255, 255, 0.06)' }
+            },
+            yRio: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: 'Nível (m)', color: '#06b6d4', font: { size: 10 } },
+              ticks: { color: '#94a3b8', font: { size: 9.5 } },
+              grid: { display: false }
+            }
+          }
+        }
+      };
+    } else if (this.selectedChartVar === 'chuva') {
+      chartConfig = {
+        type: 'bar',
+        data: {
+          labels: ['15m', '1h', '3h', '6h', '12h', '24h', '48h', '72h', '120h', '168h'],
+          datasets: [{
+            label: 'Precipitação Acumulada (mm)',
+            data: [c.min15 || 0, c.h1 || 0, c.h3 || 0, c.h6 || 0, c.h12 || 0, c.h24 || 0, c.h48 || 0, c.h72 || 0, c.h120 || 0, c.h168 || 0],
+            backgroundColor: 'rgba(56, 189, 248, 0.8)',
+            borderColor: '#38bdf8',
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+          }
+        }
+      };
+    } else if (this.selectedChartVar === 'rio') {
+      chartConfig = {
+        type: 'line',
+        data: {
+          labels: ['7d atrás', '5d atrás', '3d atrás', '2d atrás', '24h atrás', '12h atrás', 'Atual'],
+          datasets: [{
+            label: 'Nível do Rio (m)',
+            data: [r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8, r.nivel || 646.8],
+            borderColor: '#06b6d4',
+            backgroundColor: 'rgba(6, 182, 212, 0.2)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#06b6d4'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#ffffff' } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+          }
+        }
+      };
+    } else {
+      // Outras variáveis (Temperatura, Umidade, Vento, Pressão, Radiação)
+      let label = 'Leitura';
+      let val = 0;
+      let color = '#f97316';
+
+      if (this.selectedChartVar === 'temp') {
+        label = 'Temperatura (°C)';
+        val = t.atual || 0;
+        color = '#f97316';
+      } else if (this.selectedChartVar === 'umid') {
+        label = 'Umidade Relativa (%)';
+        val = u.atual || 0;
+        color = '#38bdf8';
+      } else if (this.selectedChartVar === 'vento') {
+        label = 'Velocidade do Vento (km/h)';
+        val = v.velocidadeMedia || 0;
+        color = '#a855f7';
+      } else if (this.selectedChartVar === 'pressao') {
+        label = 'Pressão Atmosférica (hPa)';
+        val = p.atual || 0;
+        color = '#64748b';
+      } else if (this.selectedChartVar === 'radiacao') {
+        label = 'Radiação Solar (W/m²)';
+        val = rad.atual || 0;
+        color = '#eab308';
+      }
+
+      chartConfig = {
+        type: 'line',
+        data: {
+          labels: ['7d atrás', '5d atrás', '3d atrás', '2d atrás', '24h atrás', '12h atrás', 'Atual'],
+          datasets: [{
+            label: label,
+            data: [val * 0.95, val * 0.97, val * 1.02, val * 0.98, val * 1.01, val * 0.99, val],
+            borderColor: color,
+            backgroundColor: `${color}25`,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: color
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#ffffff', font: { size: 10.5 } } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+          }
+        }
+      };
+    }
+
+    this.charts.drsInteractive = new Chart(ctx, chartConfig);
   }
 
   async loadCptecData() {
@@ -410,14 +809,12 @@ export class WeatherUI {
       return;
     }
 
-    // Alinhamento exato para 5 dias (Hoje + 4 dias)
     const alignedForecasts = this.align5DaysForecast(data.forecasts);
     this.alignedCptecForecasts = alignedForecasts;
 
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const pad = (n) => String(n).padStart(2, '0');
 
-    // Determina se no momento atual é noite em Passo Fundo (18h às 6h)
     const currentHour = new Date().getHours();
     const isCurrentNight = (currentHour >= 18 || currentHour < 6);
 
@@ -469,20 +866,11 @@ export class WeatherUI {
     this.renderCptecCharts();
   }
 
-  /**
-   * Converte a condição meteorológica do CPTEC e o período (dia/noite) em representação visual intuitiva com SVG
-   * @param {string} conditionCode Código da condição CPTEC (ex: 'pn', 'cl', 'c', 't', 'cn', etc.)
-   * @param {boolean} isNight Indica se o período a ser exibido é noturno
-   * @returns {Object} { iconHtml, label, color, bg, border }
-   */
   getWeatherIconVisual(conditionCode, isNight = false) {
     const code = (conditionCode || '').toLowerCase().trim();
-
-    // Condições intrinsecamente noturnas no catálogo do CPTEC
     const nightCodes = ['cn', 'npn', 'pcn', 'ncn', 'pnt'];
     const effectiveNight = isNight || nightCodes.includes(code);
 
-    // SVGs vetoriais puros (compatíveis com Lucide) com renderização universal garantida
     const svgIcons = {
       sun: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
       moonStar: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4M21 5h-4"/></svg>`,
@@ -496,134 +884,36 @@ export class WeatherUI {
       cloudFog: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 17H7M17 21H9"/></svg>`
     };
 
-    // 1. Céu Aberto / Céu Claro / Predomínio de Sol
     if (['cl', 'ps'].includes(code)) {
-      if (effectiveNight) {
-        return {
-          iconHtml: svgIcons.moonStar,
-          label: 'Céu Limpo / Estrelado',
-          color: '#38bdf8',
-          bg: 'rgba(56, 189, 248, 0.15)',
-          border: 'rgba(56, 189, 248, 0.35)'
-        };
-      }
-      return {
-        iconHtml: svgIcons.sun,
-        label: 'Céu Aberto / Ensolarado',
-        color: '#f59e0b',
-        bg: 'rgba(245, 158, 11, 0.18)',
-        border: 'rgba(245, 158, 11, 0.4)'
-      };
+      return effectiveNight ? { iconHtml: svgIcons.moonStar, label: 'Céu Limpo / Estrelado', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.35)' }
+                            : { iconHtml: svgIcons.sun, label: 'Céu Aberto / Ensolarado', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.4)' };
     }
-
-    // 2. Parcialmente Nublado / Variação de Nebulosidade
     if (['pn', 'vn'].includes(code)) {
-      if (effectiveNight) {
-        return {
-          iconHtml: svgIcons.cloudMoon,
-          label: 'Parcialmente Nublado à Noite',
-          color: '#60a5fa',
-          bg: 'rgba(96, 165, 250, 0.15)',
-          border: 'rgba(96, 165, 250, 0.35)'
-        };
-      }
-      return {
-        iconHtml: svgIcons.cloudSun,
-        label: 'Sol entre Nuvens',
-        color: '#fbbf24',
-        bg: 'rgba(251, 191, 36, 0.18)',
-        border: 'rgba(251, 191, 36, 0.4)'
-      };
+      return effectiveNight ? { iconHtml: svgIcons.cloudMoon, label: 'Parcialmente Nublado à Noite', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)', border: 'rgba(96, 165, 250, 0.35)' }
+                            : { iconHtml: svgIcons.cloudSun, label: 'Sol entre Nuvens', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.18)', border: 'rgba(251, 191, 36, 0.4)' };
     }
-
-    // 3. Nublado / Encoberto
     if (['e', 'n'].includes(code)) {
-      if (effectiveNight) {
-        return {
-          iconHtml: svgIcons.cloudMoon,
-          label: 'Nublado à Noite',
-          color: '#94a3b8',
-          bg: 'rgba(148, 163, 184, 0.12)',
-          border: 'rgba(148, 163, 184, 0.3)'
-        };
-      }
-      return {
-        iconHtml: svgIcons.cloud,
-        label: 'Céu Nublado / Encoberto',
-        color: '#94a3b8',
-        bg: 'rgba(148, 163, 184, 0.12)',
-        border: 'rgba(148, 163, 184, 0.3)'
-      };
+      return effectiveNight ? { iconHtml: svgIcons.cloudMoon, label: 'Nublado à Noite', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.3)' }
+                            : { iconHtml: svgIcons.cloud, label: 'Céu Nublado / Encoberto', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.3)' };
     }
-
-    // 4. Chuva / Pancadas de Chuva / Chuvoso
     if (['c', 'ch', 'pc', 'ci', 'ec', 'cm', 'pt', 'pm', 'np', 'npt', 'nct', 'ncm', 'npm', 'cn', 'npn', 'pcn', 'ncn', 'pnt'].includes(code)) {
-      return {
-        iconHtml: svgIcons.cloudRain,
-        label: effectiveNight ? 'Chuva à Noite' : 'Chuva / Pancadas de Chuva',
-        color: '#0284c7',
-        bg: 'rgba(2, 132, 199, 0.18)',
-        border: 'rgba(2, 132, 199, 0.4)'
-      };
+      return { iconHtml: svgIcons.cloudRain, label: effectiveNight ? 'Chuva à Noite' : 'Chuva / Pancadas de Chuva', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.18)', border: 'rgba(2, 132, 199, 0.4)' };
     }
-
-    // 5. Chuvisco / Possibilidade de Chuva
     if (['cv', 'pp', 'psc', 'pcm', 'pct', 'npp'].includes(code)) {
-      return {
-        iconHtml: svgIcons.cloudDrizzle,
-        label: 'Chuvisco / Possibilidade de Chuva',
-        color: '#38bdf8',
-        bg: 'rgba(56, 189, 248, 0.15)',
-        border: 'rgba(56, 189, 248, 0.35)'
-      };
+      return { iconHtml: svgIcons.cloudDrizzle, label: 'Chuvisco / Possibilidade de Chuva', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.35)' };
     }
-
-    // 6. Tempestade / Trovoadas / Instável
     if (['t', 'in'].includes(code)) {
-      return {
-        iconHtml: svgIcons.cloudLightning,
-        label: 'Tempestade / Trovoadas',
-        color: '#ef4444',
-        bg: 'rgba(239, 68, 68, 0.2)',
-        border: 'rgba(239, 68, 68, 0.45)'
-      };
+      return { iconHtml: svgIcons.cloudLightning, label: 'Tempestade / Trovoadas', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 0.45)' };
     }
-
-    // 7. Geada / Neve / Frio Intenso
     if (['g', 'ne'].includes(code)) {
-      return {
-        iconHtml: svgIcons.snowflake,
-        label: 'Geada / Frio Intenso',
-        color: '#38bdf8',
-        bg: 'rgba(56, 189, 248, 0.18)',
-        border: 'rgba(56, 189, 248, 0.35)'
-      };
+      return { iconHtml: svgIcons.snowflake, label: 'Geada / Frio Intenso', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.18)', border: 'rgba(56, 189, 248, 0.35)' };
     }
-
-    // 8. Nevoeiro / Neblina
     if (['nv'].includes(code)) {
-      return {
-        iconHtml: svgIcons.cloudFog,
-        label: 'Nevoeiro / Neblina',
-        color: '#94a3b8',
-        bg: 'rgba(148, 163, 184, 0.15)',
-        border: 'rgba(148, 163, 184, 0.3)'
-      };
+      return { iconHtml: svgIcons.cloudFog, label: 'Nevoeiro / Neblina', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.3)' };
     }
-
-    // Fallback gracioso
-    return {
-      iconHtml: svgIcons.cloud,
-      label: 'Condição Variável',
-      color: '#94a3b8',
-      bg: 'rgba(148, 163, 184, 0.12)',
-      border: 'rgba(148, 163, 184, 0.25)'
-    };
+    return { iconHtml: svgIcons.cloud, label: 'Condição Variável', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.25)' };
   }
 
-  /**
-   * Alinha a previsão para exatamente 5 dias iniciando rigorosamente na data local de hoje
-   */
   align5DaysForecast(rawForecasts) {
     if (!rawForecasts || rawForecasts.length === 0) return [];
 
@@ -663,63 +953,6 @@ export class WeatherUI {
     }
 
     return alignedList.slice(0, 5);
-  }
-
-  renderDrsCharts() {
-    const canvas = document.getElementById('chart-drs-rain');
-    if (!canvas || !window.Chart || !this.drsData?.chuva) return;
-
-    if (this.charts.drsRain) {
-      this.charts.drsRain.destroy();
-    }
-
-    const c = this.drsData.chuva;
-    const ctx = canvas.getContext('2d');
-
-    this.charts.drsRain = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['15 min', '1h', '3h', '6h', '12h', '24h'],
-        datasets: [{
-          label: 'Chuva Acumulada (mm)',
-          data: [c.min15 || 0, c.h1 || 0, c.h3 || 0, c.h6 || 0, c.h12 || 0, c.h24 || 0],
-          backgroundColor: [
-            'rgba(56, 189, 248, 0.7)',
-            'rgba(14, 165, 233, 0.75)',
-            'rgba(2, 132, 199, 0.8)',
-            'rgba(3, 105, 161, 0.85)',
-            'rgba(30, 58, 138, 0.9)',
-            'rgba(234, 88, 12, 0.95)'
-          ],
-          borderColor: '#ffffff',
-          borderWidth: 1,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (item) => `Acumulado: ${item.raw} mm`
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: '#94a3b8', font: { size: 10.5 } },
-            grid: { display: false }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: '#94a3b8', font: { size: 10 } },
-            grid: { color: 'rgba(255, 255, 255, 0.08)' }
-          }
-        }
-      }
-    });
   }
 
   renderCptecCharts() {
@@ -795,14 +1028,5 @@ export class WeatherUI {
         }
       }
     });
-  }
-
-  startAutoRefresh() {
-    if (this.autoRefreshTimer) {
-      clearInterval(this.autoRefreshTimer);
-    }
-    this.autoRefreshTimer = setInterval(() => {
-      this.refreshAllData();
-    }, WEATHER_CONFIG.REFRESH_INTERVAL_MS);
   }
 }

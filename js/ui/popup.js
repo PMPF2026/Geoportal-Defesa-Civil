@@ -189,6 +189,11 @@ export class PopupUI {
       </div>
 
       <div class="popup-actions">
+        ${(layerConfig.id === 'estacao_dcrs00016' || props['estacao_cod'] === 'DCRS-00016') ? `
+          <button class="popup-action-btn" id="btn-popup-view-weather" style="background: rgba(2, 132, 199, 0.22); color: #38bdf8; border-color: #0284c7; font-weight:700;" title="Ver monitoramento completo na Central Meteorológica">
+            <i class="lucide-activity"></i> Ver Central
+          </button>
+        ` : ''}
         <button class="popup-action-btn" id="btn-popup-zoom" title="Aproximar para esta feição">
           <i class="lucide-zoom-in"></i> Zoom
         </button>
@@ -227,6 +232,17 @@ export class PopupUI {
     }
 
     // Bind Action Buttons
+    const weatherBtn = this.contentEl.querySelector('#btn-popup-view-weather');
+    if (weatherBtn) {
+      weatherBtn.addEventListener('click', () => {
+        if (window.webGis && window.webGis.sidebarUI) {
+          window.webGis.sidebarUI.switchTab('weather');
+        } else if (window.sidebarUI) {
+          window.sidebarUI.switchTab('weather');
+        }
+      });
+    }
+
     const zoomBtn = this.contentEl.querySelector('#btn-popup-zoom');
     if (zoomBtn) {
       zoomBtn.addEventListener('click', () => {

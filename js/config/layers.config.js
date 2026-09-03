@@ -319,6 +319,45 @@ export const LAYERS_CONFIG = [
 
   // ================= 3. HIDROGRAFIA =================
   {
+    id: 'estacao_dcrs00016',
+    name: 'Estação Hidrometeorológica DCRS-00016',
+    fileName: 'Estacao_DCRS_00016.geojson',
+    source: 'Rede Hidrometeorológica Defesa Civil RS',
+    refDate: 'Tempo Real',
+    group: 'hidrografia',
+    geometryType: 'Point',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 96,
+    isCore: true,
+    isLazy: false,
+    style: {
+      isCustomIcon: true,
+      iconType: 'estacao_hidro',
+      pointColor: '#0284c7',
+      pointRadius: 10.0,
+      strokeColor: '#ffffff',
+      strokeWidth: 2.5,
+      previewColor: '#0284c7'
+    },
+    popupConfig: {
+      titleField: 'nome_estacao',
+      defaultTitle: 'ESTAÇÃO HIDROMETEOROLÓGICA DCRS-00016',
+      titlePrefix: '',
+      fields: [
+        { key: 'estacao_cod', label: 'Código da Estação', defaultValue: 'DCRS-00016' },
+        { key: 'rede', label: 'Rede Oficial', defaultValue: 'Rede Hidrometeorológica da Defesa Civil RS' },
+        { key: 'bacia', label: 'Bacia Hidrográfica', defaultValue: 'RS - Rio Passo Fundo' },
+        { key: 'municipio', label: 'Município', defaultValue: 'Passo Fundo / RS' },
+        { key: 'provedor', label: 'Provedor dos Dados', defaultValue: 'DCRS' },
+        { key: 'lat', label: 'Latitude Oficial (WGS84)', format: 'number' },
+        { key: 'lon', label: 'Longitude Oficial (WGS84)', format: 'number' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['estacao_cod', 'nome_estacao']
+  },
+  {
     id: 'rio_passo_fundo',
     name: 'Rio Passo Fundo (Curso Principal)',
     fileName: 'Rio Passo Fundo.geojson',
