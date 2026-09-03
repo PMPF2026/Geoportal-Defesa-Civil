@@ -926,6 +926,15 @@ export class ExportReportTool {
           <strong>Camadas Cartográficas Ativas na Emissão:</strong> ${activeLayers.join(', ') || 'Todas as camadas temáticas padrão'}.
         </div>
 
+        <!-- SEDE DA DEFESA CIVIL -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #ff7800; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 11.5px; color: #334155; line-height: 1.5; page-break-inside: avoid;">
+          <div style="font-weight: 800; font-size: 12.5px; color: #0f172a; margin-bottom: 6px;">
+            🏢 SEDE DA DEFESA CIVIL
+          </div>
+          <div><strong>Endereço Oficial:</strong> Av. Brasil Leste, 1528 - Petrópolis, Passo Fundo - RS</div>
+          <div style="margin-top: 3px;"><strong>Coordenadas UTM:</strong> Este (X): 364.325 m &bull; Norte (Y): 6.874.997 m &bull; <strong>Sistema de Referência:</strong> SIRGAS 2000 / UTM Zona 22S (EPSG:31982)</div>
+        </div>
+
         <!-- CONTATOS OFICIAIS DA DEFESA CIVIL -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #ff7800; border-radius: 6px; padding: 12px 16px; margin-bottom: 24px; font-size: 11.5px; color: #334155; line-height: 1.5; page-break-inside: avoid;">
           <div style="font-weight: 800; font-size: 12.5px; color: #0f172a; margin-bottom: 8px;">

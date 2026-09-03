@@ -344,6 +344,49 @@ export class LayerManager {
       ];
     }
 
+    // 4.5. Sede da Defesa Civil: Ícone institucional emblemático da Defesa Civil
+    if (config.id === 'sede_defesa_civil') {
+      const svgSedeDefesaCivil = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44">
+          <!-- Círculo externo laranja oficial com sombra e borda branca -->
+          <circle cx="22" cy="22" r="19" fill="#ff7800" stroke="#ffffff" stroke-width="2.6"/>
+          <circle cx="22" cy="22" r="15.5" fill="#0f172a" stroke="#ffedd5" stroke-width="1.2"/>
+          <!-- Triângulo institucional da Defesa Civil -->
+          <polygon points="22,9 33,29 11,29" fill="#ff7800" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
+          <polygon points="22,12.5 30.5,27.5 13.5,27.5" fill="#1e3a8a"/>
+          <!-- Família / Pessoas estilizadas no centro -->
+          <circle cx="18" cy="18" r="1.8" fill="#ffffff"/>
+          <path d="M16 26 L17.5 21 C17.5 20.2 18.5 20.2 18.5 21 L20 26 Z" fill="#ffffff"/>
+          <circle cx="25" cy="18" r="1.8" fill="#ffffff"/>
+          <path d="M23 26 L24.5 21 C24.5 20.2 25.5 20.2 25.5 21 L27 26 Z" fill="#ffffff"/>
+          <circle cx="21.5" cy="22" r="1.2" fill="#ffffff"/>
+          <path d="M20.5 26 L21.5 23.5 L22.5 26 Z" fill="#ffffff"/>
+        </svg>
+      `);
+
+      return (feature, resolution) => {
+        const showText = resolution < 60;
+        const name = 'Sede Defesa Civil';
+
+        return new ol.style.Style({
+          image: new ol.style.Icon({
+            src: svgSedeDefesaCivil,
+            anchor: [0.5, 0.5],
+            scale: 0.85
+          }),
+          text: showText ? new ol.style.Text({
+            text: name,
+            offsetY: 22,
+            font: 'bold 11.5px "Inter", sans-serif',
+            fill: new ol.style.Fill({ color: '#ffffff' }),
+            stroke: new ol.style.Stroke({ color: '#c2410c', width: 3.2 }),
+            backgroundFill: new ol.style.Fill({ color: 'rgba(194, 65, 12, 0.95)' }),
+            padding: [3, 8, 3, 8]
+          }) : null
+        });
+      };
+    }
+
     // 5. Distritos e Pontos Especializados (Residências em APP e Abrigos da Defesa Civil)
     if (config.id === 'edificacoes_app') {
       return new ol.style.Style({

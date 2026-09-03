@@ -104,6 +104,23 @@ export class LegendUI {
       `;
     }
 
+    // 2.0. Sede da Defesa Civil
+    if (layerConfig.id === 'sede_defesa_civil') {
+      return `
+        <div class="legend-item" style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #ff7800; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.3);">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="#ffffff" stroke="#ffffff" stroke-width="1.5">
+              <polygon points="12,2 22,20 2,20"/>
+            </svg>
+          </span>
+          <div>
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Sede Operacional — Passo Fundo/RS</span>
+          </div>
+        </div>
+      `;
+    }
+
     // 2.1. Zonas de Pouso de Helicóptero (ZPH)
     if (layerConfig.id === 'zph_helicoptero') {
       return `

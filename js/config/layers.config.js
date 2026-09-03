@@ -76,6 +76,43 @@ export const LAYER_GROUPS = [
 export const LAYERS_CONFIG = [
   // ================= 1. DEFESA CIVIL =================
   {
+    id: 'sede_defesa_civil',
+    name: 'Sede da Defesa Civil',
+    fileName: 'Sede Defesa Civil.geojson',
+    source: 'Defesa Civil de Passo Fundo',
+    refDate: '2026',
+    group: 'defesa_civil',
+    geometryType: 'Point',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 95,
+    isCore: true,
+    isLazy: false,
+    style: {
+      isCustomIcon: true,
+      iconType: 'defesa_civil_sede',
+      pointColor: '#ff7800',
+      pointRadius: 9.0,
+      strokeColor: '#ffffff',
+      strokeWidth: 2.5,
+      previewColor: '#ff7800'
+    },
+    popupConfig: {
+      titleField: 'D. Civil',
+      defaultTitle: 'SEDE DA DEFESA CIVIL',
+      titlePrefix: '',
+      fields: [
+        { key: 'D. Civil', label: 'Identificação Oficial', defaultValue: 'Sede da Defesa Civil' },
+        { key: 'Endereço', label: 'Endereço' },
+        { key: 'Coord X', label: 'Coordenada UTM Este (X)', format: 'number' },
+        { key: 'Coord_Y', label: 'Coordenada UTM Norte (Y)', format: 'number' },
+        { key: 'crs_info', label: 'Sistema de Referência', defaultValue: 'SIRGAS 2000 / UTM Zona 22S (EPSG:31982)' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['D. Civil', 'Endereço']
+  },
+  {
     id: 'areas_enchente_2024',
     name: 'Áreas de Enchente 2024',
     fileName: 'Áreas de Enchente 2024.geojson',

@@ -29,7 +29,8 @@ export class DownloadsUI {
    */
   prepareLayerCatalog() {
     const descriptions = {
-      'areas_enchente_2024': 'Mancha oficial de inundaÃ§Ã£o do evento hidrolÃ³gico extremo de Maio/2024 (Decreto Estadual 57.600/2024 - ADA).',
+      'sede_defesa_civil': 'Ponto de localização geográfica da Sede Oficial da Defesa Civil de Passo Fundo/RS com endereço e coordenadas UTM.',
+      'areas_enchente_2024': 'Mancha oficial de inundação do evento hidrológico extremo de Maio/2024 (Decreto Estadual 57.600/2024 - ADA).',
       'app_30metros': 'Faixa de 30 metros ao longo do Rio Passo Fundo (Lei Federal 12.651/2012).',
       'edificacoes_app': '318 edificações residenciais e comerciais localizadas dentro da Faixa de 30 metros com distâncias métricas ao rio.',
       'abrigos_defesa_civil': '17 locais e ginásios públicos cadastrados pela Defesa Civil para acolhimento de emergência em desastres climáticos.',
