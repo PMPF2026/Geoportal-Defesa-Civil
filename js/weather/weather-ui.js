@@ -28,6 +28,13 @@ export class WeatherUI {
   async init() {
     this.renderSkeleton();
     this.bindEvents();
+
+    // Carrega cache prévio se disponível para exibição instantânea sem telas de erro
+    const cachedDrs = WeatherService.getCachedTelemetry(this.currentStationCode);
+    if (cachedDrs) {
+      this.updateDrsUI(cachedDrs);
+    }
+
     await this.refreshAllData();
     this.startRealtimeSubscription();
   }

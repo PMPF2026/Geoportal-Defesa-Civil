@@ -7,6 +7,10 @@ export const WEATHER_CONFIG = {
   // 1. DEFESA CIVIL DO ESTADO DO RS (Rede Hidrometeorológica Oficial)
   DEFESA_CIVIL_RS: {
     GRAPHQL_ENDPOINT: 'https://redehidrometeorologica.defesacivil.rs.gov.br/graphql',
+    SERVERLESS_ENDPOINT: '/api/weather/defesacivil',
+    CORS_PROXIES: [
+      'https://proxy.cors.sh/https://redehidrometeorologica.defesacivil.rs.gov.br/graphql'
+    ],
     WS_ENDPOINT: 'wss://redehidrometeorologica.defesacivil.rs.gov.br/graphql',
     CLIENT: 'casa-militar-defesa-civil-rs',
     DEFAULT_STATION: 'DCRS-00016', // Passo Fundo/RS Oficial
