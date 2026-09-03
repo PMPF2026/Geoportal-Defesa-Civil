@@ -6,6 +6,7 @@
 import { formatDateTime, formatNumber, formatArea } from '../utils/formatters.js';
 import { Notification } from '../ui/notification.js';
 import { LAYERS_CONFIG } from '../config/layers.config.js';
+import { WeatherService } from '../weather/weather-service.js';
 
 export class ExportReportTool {
   constructor(mapEngine, layerManager, statsEngine) {
@@ -206,6 +207,79 @@ export class ExportReportTool {
 
     // 4. Capturar composição cartográfica do mapa
     const mapSnapshot = await this.captureMapDataUrl();
+
+    // 4.1. Consultar dados meteorológicos oficiais em tempo real (Defesa Civil RS - Estação DCRS-00016)
+    let weatherData = null;
+    try {
+      weatherData = await WeatherService.fetchDefesaCivilRSTelemetry('DCRS-00016');
+    } catch (err) {
+      console.warn('[ExportReport] Erro ao consultar telemetria meteorológica para o boletim:', err);
+    }
+
+    // Função para converter graus de vento em direção cardeal
+    const getWindDirectionLabel = (deg) => {
+      if (deg == null || isNaN(deg)) return '';
+      const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
+      const idx = Math.round(deg / 22.5) % 16;
+      return directions[idx];
+    };
+
+    let weatherReadingDateStr = 'Não disponível no momento da emissão';
+    let tempStr = 'Não disponível';
+    let sensStr = 'Não disponível';
+    let umidStr = 'Não disponível';
+    let pressStr = 'Não disponível';
+    let ventoStr = 'Não disponível';
+    let chuva1hStr = '0,0 mm';
+    let chuva24hStr = '0,0 mm';
+    let nivelRioRow = '';
+
+    if (weatherData && weatherData.success) {
+      if (weatherData.timestamp) {
+        try {
+          const d = new Date(weatherData.timestamp);
+          const dateFormatted = d.toLocaleDateString('pt-BR');
+          const timeFormatted = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          weatherReadingDateStr = `${dateFormatted} às ${timeFormatted}`;
+        } catch {
+          weatherReadingDateStr = weatherData.timestamp;
+        }
+      }
+
+      if (weatherData.temperatura?.atual != null) {
+        tempStr = `${weatherData.temperatura.atual.toFixed(1).replace('.', ',')} °C`;
+      }
+      if (weatherData.sensacaoTermica?.atual != null) {
+        sensStr = `${weatherData.sensacaoTermica.atual.toFixed(1).replace('.', ',')} °C`;
+      }
+      if (weatherData.umidade?.atual != null) {
+        umidStr = `${Math.round(weatherData.umidade.atual)} %`;
+      }
+      if (weatherData.pressao?.atual != null) {
+        pressStr = `${weatherData.pressao.atual.toFixed(1).replace('.', ',')} hPa`;
+      }
+      if (weatherData.vento?.velocidadeMedia != null) {
+        const dirLabel = getWindDirectionLabel(weatherData.vento.direcao);
+        ventoStr = `${weatherData.vento.velocidadeMedia.toFixed(1).replace('.', ',')} km/h${dirLabel ? ` — direção ${dirLabel}` : ''}`;
+        if (weatherData.vento.velocidadeMaxima != null) {
+          ventoStr += ` (rajada: ${weatherData.vento.velocidadeMaxima.toFixed(1).replace('.', ',')} km/h)`;
+        }
+      }
+      if (weatherData.chuva?.h1 != null) {
+        chuva1hStr = `${weatherData.chuva.h1.toFixed(1).replace('.', ',')} mm`;
+      }
+      if (weatherData.chuva?.h24 != null) {
+        chuva24hStr = `${weatherData.chuva.h24.toFixed(1).replace('.', ',')} mm`;
+      }
+      if (weatherData.rio?.nivel != null) {
+        nivelRioRow = `
+          <tr>
+            <td><strong>Nível do sensor / rio</strong></td>
+            <td><strong>${weatherData.rio.nivel.toFixed(2).replace('.', ',')} m</strong></td>
+          </tr>
+        `;
+      }
+    }
 
     // 5. Abrir janela do relatório
     const reportWindow = window.open('', '_blank', 'width=960,height=900');
@@ -480,9 +554,72 @@ export class ExportReportTool {
           </tbody>
         </table>
 
+        <!-- 2. CONDIÇÕES METEOROLÓGICAS NO MOMENTO DA EMISSÃO -->
+        <h3 class="section-title">
+          <span><span class="badge-num">2</span> CONDIÇÕES METEOROLÓGICAS NO MOMENTO DA EMISSÃO</span>
+          <span class="badge-blue">REDE HIDROMETEOROLÓGICA OFICIAL RS</span>
+        </h3>
+
+        ${weatherData && weatherData.success ? `
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 16px; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; font-size: 12px; color: #475569;">
+              <div><strong>Estação meteorológica:</strong> Passo Fundo — DCRS-00016</div>
+              <div><strong>Leitura meteorológica:</strong> ${weatherReadingDateStr}</div>
+            </div>
+
+            <table class="kpi-table" style="margin-bottom: 8px;">
+              <thead>
+                <tr>
+                  <th style="width:50%;">Parâmetro Hidrometeorológico</th>
+                  <th style="width:50%;">Valor Registrado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Temperatura atual</strong></td>
+                  <td><strong>${tempStr}</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>Sensação térmica</strong></td>
+                  <td>${sensStr}</td>
+                </tr>
+                <tr>
+                  <td><strong>Umidade relativa</strong></td>
+                  <td>${umidStr}</td>
+                </tr>
+                <tr>
+                  <td><strong>Pressão atmosférica</strong></td>
+                  <td>${pressStr}</td>
+                </tr>
+                <tr>
+                  <td><strong>Vento</strong></td>
+                  <td>${ventoStr}</td>
+                </tr>
+                <tr>
+                  <td><strong>Chuva acumulada — última 1 hora</strong></td>
+                  <td>${chuva1hStr}</td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>Chuva acumulada — últimas 24 horas</strong></td>
+                  <td><strong style="color: #ea580c;">${chuva24hStr}</strong></td>
+                </tr>
+                ${nivelRioRow}
+              </tbody>
+            </table>
+            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+              <strong>Fonte:</strong> Rede Hidrometeorológica da Defesa Civil RS.
+            </div>
+          </div>
+        ` : `
+          <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 12px 16px; margin-bottom: 18px; color: #9f1239; font-size: 12px;">
+            <strong>Estação meteorológica:</strong> Passo Fundo — DCRS-00016<br>
+            <strong>Dados meteorológicos:</strong> indisponíveis no momento da emissão (tentativa registrada em ${dataEmissao}).
+          </div>
+        `}
+
         <!-- 3. RIO PASSO FUNDO — ANÁLISE HIDROLÓGICA E TERRITORIAL -->
         <h3 class="section-title">
-          <span><span class="badge-num">2</span> RIO PASSO FUNDO — ANÁLISE HIDROLÓGICA E TERRITORIAL</span>
+          <span><span class="badge-num">3</span> RIO PASSO FUNDO — ANÁLISE HIDROLÓGICA E TERRITORIAL</span>
           <span class="badge-orange">CORPO HÍDRICO PRINCIPAL</span>
         </h3>
         <table class="kpi-table">
@@ -529,7 +666,7 @@ export class ExportReportTool {
 
         <!-- 4. LEVANTAMENTO DE RESIDÊNCIAS NA FAIXA DE 30 METROS -->
         <h3 class="section-title">
-          <span><span class="badge-num">3</span> LEVANTAMENTO DE RESIDÊNCIAS NA FAIXA DE 30 METROS</span>
+          <span><span class="badge-num">4</span> LEVANTAMENTO DE RESIDÊNCIAS NA FAIXA DE 30 METROS</span>
           <span class="badge-orange">${totalResidencias} EDIFICAÇÕES MAPEADAS</span>
         </h3>
         <div class="grid-2col">
@@ -604,7 +741,7 @@ export class ExportReportTool {
 
         <!-- 5. ENCHENTE 2024 — ÁREA DE IMPACTO -->
         <h3 class="section-title">
-          <span><span class="badge-num">4</span> ENCHENTE 2024 — ÁREA DE IMPACTO E DIAGNÓSTICO DE VULNERABILIDADE</span>
+          <span><span class="badge-num">5</span> ENCHENTE 2024 — ÁREA DE IMPACTO E DIAGNÓSTICO DE VULNERABILIDADE</span>
           <span class="badge-alert">DECRETO 57.600/2024</span>
         </h3>
         <table class="kpi-table">
@@ -646,7 +783,7 @@ export class ExportReportTool {
 
         <!-- 6. MALHA HIDROGRÁFICA MUNICIPAL -->
         <h3 class="section-title">
-          <span><span class="badge-num">5</span> MALHA HIDROGRÁFICA MUNICIPAL</span>
+          <span><span class="badge-num">6</span> MALHA HIDROGRÁFICA MUNICIPAL</span>
           <span class="badge-blue">BACIAS E CURSOS D'ÁGUA</span>
         </h3>
         <table class="kpi-table">
@@ -678,7 +815,7 @@ export class ExportReportTool {
 
         <!-- 7. INFRAESTRUTURA VIÁRIA E TRANSPORTES -->
         <h3 class="section-title">
-          <span><span class="badge-num">6</span> INFRAESTRUTURA VIÁRIA E MOBILIDADE</span>
+          <span><span class="badge-num">7</span> INFRAESTRUTURA VIÁRIA E MOBILIDADE</span>
           <span>MALHA DE ACESSO E EVACUAÇÃO</span>
         </h3>
         <table class="kpi-table">
@@ -725,7 +862,7 @@ export class ExportReportTool {
 
         <!-- 8. INDICADORES DEMOGRÁFICOS DO CENSO 2022 -->
         <h3 class="section-title">
-          <span><span class="badge-num">7</span> CENSO DEMOGRÁFICO & INDICADORES SETORIAIS (IBGE 2022)</span>
+          <span><span class="badge-num">8</span> CENSO DEMOGRÁFICO & INDICADORES SETORIAIS (IBGE 2022)</span>
           <span class="badge-blue">DISTRIBUIÇÃO POPULACIONAL</span>
         </h3>
         <div class="grid-2col">
@@ -764,9 +901,9 @@ export class ExportReportTool {
           </table>
         </div>
 
-        <!-- 8. EXPOSIÇÃO E COBERTURA DE PROTEÇÃO (SGB x REDE DE ABRIGOS) -->
+        <!-- 9. EXPOSIÇÃO E COBERTURA DE PROTEÇÃO (SGB x REDE DE ABRIGOS) -->
         <h3 class="section-title">
-          <span><span class="badge-num">8</span> EXPOSIÇÃO E COBERTURA DE PROTEÇÃO</span>
+          <span><span class="badge-num">9</span> EXPOSIÇÃO E COBERTURA DE PROTEÇÃO</span>
           <span class="badge-orange">DIAGNÓSTICO SGB 2025 x REDE DE ABRIGOS</span>
         </h3>
         <table class="kpi-table">
@@ -824,10 +961,10 @@ export class ExportReportTool {
           *Fonte dos dados: Serviço Geológico do Brasil (SGB), 2025; Defesa Civil de Passo Fundo e demais fontes oficiais do portal.
         </div>
 
-        <!-- 9. COMPOSIÇÃO CARTOGRÁFICA -->
+        <!-- 10. COMPOSIÇÃO CARTOGRÁFICA -->
         ${mapSnapshot ? `
           <h3 class="section-title">
-            <span><span class="badge-num">9</span> COMPOSIÇÃO CARTOGRÁFICA DA SITUAÇÃO OPERACIONAL</span>
+            <span><span class="badge-num">10</span> COMPOSIÇÃO CARTOGRÁFICA DA SITUAÇÃO OPERACIONAL</span>
             <span class="badge-blue">MAPA GERADO NO MOMENTO DA EMISSÃO</span>
           </h3>
           <div class="map-report-card">
