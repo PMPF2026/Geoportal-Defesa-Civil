@@ -61,6 +61,18 @@ export class SidebarUI {
   }
 
   switchTab(tabId) {
+    if (this.isCollapsed && this.sidebarElement) {
+      this.isCollapsed = false;
+      this.sidebarElement.classList.remove('collapsed');
+      const icon = this.toggleBtn ? this.toggleBtn.querySelector('i') : null;
+      if (icon) icon.className = 'lucide-chevron-left';
+      setTimeout(() => {
+        if (this.mapEngine && this.mapEngine.getOlMap()) {
+          this.mapEngine.getOlMap().updateSize();
+        }
+      }, 300);
+    }
+
     this.activeTab = tabId;
 
     document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {

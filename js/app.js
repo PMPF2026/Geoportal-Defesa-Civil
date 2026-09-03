@@ -220,6 +220,14 @@ class WebGisApp {
       });
     }
 
+    // Botão Central Meteorológica e Avisos no Header
+    const weatherHeaderBtn = document.getElementById('btn-open-weather-modal');
+    if (weatherHeaderBtn && this.sidebarUI) {
+      weatherHeaderBtn.addEventListener('click', () => {
+        this.sidebarUI.switchTab('weather');
+      });
+    }
+
     // Modal de Contatos Oficiais
     const contactBtn = document.getElementById('btn-open-contact-modal');
     const contactModal = document.getElementById('contact-modal');
