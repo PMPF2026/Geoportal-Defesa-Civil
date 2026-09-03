@@ -261,7 +261,7 @@ export class WeatherService {
       const cityUf = xmlDoc.querySelector('uf')?.textContent || 'RS';
       const updateDate = xmlDoc.querySelector('atualizacao')?.textContent || '';
 
-      const previsaoNodes = Array.from(xmlDoc.querySelectorAll('previsao')).slice(0, WEATHER_CONFIG.CPTEC.MAX_DAYS);
+      const previsaoNodes = Array.from(xmlDoc.querySelectorAll('previsao')).slice(0, 7);
       const forecasts = previsaoNodes.map(node => {
         const dia = node.querySelector('dia')?.textContent || '';
         const tempo = (node.querySelector('tempo')?.textContent || 'nd').trim();

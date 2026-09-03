@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
     const forecasts = [];
     let match;
 
-    while ((match = previsaoRegex.exec(xmlText)) !== null && forecasts.length < 5) {
+    while ((match = previsaoRegex.exec(xmlText)) !== null && forecasts.length < 7) {
       const pXml = match[1];
       const dia = extractTag(pXml, 'dia');
       const tempo = extractTag(pXml, 'tempo');

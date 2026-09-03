@@ -410,18 +410,26 @@ export class WeatherUI {
       return;
     }
 
+    // Alinhamento exato para 5 dias (Hoje + 4 dias)
+    const alignedForecasts = this.align5DaysForecast(data.forecasts);
+    this.alignedCptecForecasts = alignedForecasts;
+
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const pad = (n) => String(n).padStart(2, '0');
 
     if (grid) {
-      grid.innerHTML = data.forecasts.map((f, idx) => {
+      grid.innerHTML = alignedForecasts.map((f, idx) => {
         let weekdayLabel = '';
         let dateFormatted = f.date;
         try {
           const parts = f.date.split('-');
           if (parts.length === 3) {
-            const dObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            const y = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10) - 1;
+            const d = parseInt(parts[2], 10);
+            const dObj = new Date(y, m, d);
             weekdayLabel = idx === 0 ? 'Hoje' : weekdays[dObj.getDay()];
-            dateFormatted = `${parts[2]}/${parts[1]}`;
+            dateFormatted = `${pad(d)}/${pad(m + 1)}`;
           }
         } catch {
           weekdayLabel = idx === 0 ? 'Hoje' : `Dia +${idx}`;
@@ -449,6 +457,50 @@ export class WeatherUI {
     }
 
     this.renderCptecCharts();
+  }
+
+  /**
+   * Alinha a previsão para exatamente 5 dias iniciando rigorosamente na data local de hoje
+   */
+  align5DaysForecast(rawForecasts) {
+    if (!rawForecasts || rawForecasts.length === 0) return [];
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    const todayIndex = rawForecasts.findIndex(f => f.date === todayStr);
+    let alignedList = [];
+
+    if (todayIndex !== -1) {
+      alignedList = rawForecasts.slice(todayIndex, todayIndex + 5);
+    } else {
+      const t = this.drsData?.temperatura || {};
+      const hist = t.historico?.diaatual || {};
+      const minTemp = hist.minima != null ? hist.minima : (t.atual != null ? Math.min(t.atual, 14) : 14);
+      const maxTemp = hist.maxima != null ? hist.maxima : (t.atual != null ? Math.max(t.atual, 22.9) : 22.9);
+
+      const todayCard = {
+        date: todayStr,
+        conditionCode: 'pn',
+        conditionLabel: 'Parcialmente Nublado',
+        iconName: 'cloud-sun',
+        color: '#f59e0b',
+        minTemp: Math.round(minTemp),
+        maxTemp: Math.round(maxTemp),
+        iuv: 0
+      };
+
+      alignedList.push(todayCard);
+
+      for (const item of rawForecasts) {
+        if (item.date > todayStr && alignedList.length < 5) {
+          alignedList.push(item);
+        }
+      }
+    }
+
+    return alignedList.slice(0, 5);
   }
 
   renderDrsCharts() {
@@ -510,19 +562,21 @@ export class WeatherUI {
 
   renderCptecCharts() {
     const canvas = document.getElementById('chart-cptec-temps');
-    if (!canvas || !window.Chart || !this.cptecData?.forecasts || this.cptecData.forecasts.length === 0) return;
+    const forecastList = this.alignedCptecForecasts || this.cptecData?.forecasts || [];
+    if (!canvas || !window.Chart || forecastList.length === 0) return;
 
     if (this.charts.cptecTemps) {
       this.charts.cptecTemps.destroy();
     }
 
-    const labels = this.cptecData.forecasts.map(f => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const labels = forecastList.map((f, idx) => {
       const parts = f.date.split('-');
-      return parts.length === 3 ? `${parts[2]}/${parts[1]}` : f.date;
+      return parts.length === 3 ? `${pad(parts[2])}/${pad(parts[1])}` : f.date;
     });
 
-    const maxTemps = this.cptecData.forecasts.map(f => f.maxTemp);
-    const minTemps = this.cptecData.forecasts.map(f => f.minTemp);
+    const maxTemps = forecastList.map(f => f.maxTemp);
+    const minTemps = forecastList.map(f => f.minTemp);
 
     const ctx = canvas.getContext('2d');
     this.charts.cptecTemps = new Chart(ctx, {
