@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="css/map-controls.css">
   <link rel="stylesheet" href="css/popup.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/weather.css">
 </head>
 <body>
   <div id="app">
@@ -127,6 +128,10 @@
           <button class="sidebar-tab-btn" data-tab="downloads" title="Download de Dados Geográficos Públicos">
             <i class="lucide-download"></i>
             <span>Downloads</span>
+          </button>
+          <button class="sidebar-tab-btn" data-tab="weather" title="Central Meteorológica e Avisos (Defesa Civil RS & CPTEC)">
+            <i class="lucide-cloud-sun-rain"></i>
+            <span>Meteorologia</span>
           </button>
           <button class="sidebar-tab-btn" data-tab="sobre" title="Informações e Metadados">
             <i class="lucide-info"></i>
@@ -623,6 +628,9 @@
               </div>
             </div>
           </div>
+
+          <!-- TAB 8: CENTRAL METEOROLÓGICA E AVISOS -->
+          <div class="tab-panel" id="tab-weather"></div>
         </div>
       </aside>
 
