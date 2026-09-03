@@ -417,6 +417,10 @@ export class WeatherUI {
     const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const pad = (n) => String(n).padStart(2, '0');
 
+    // Determina se no momento atual é noite em Passo Fundo (18h às 6h)
+    const currentHour = new Date().getHours();
+    const isCurrentNight = (currentHour >= 18 || currentHour < 6);
+
     if (grid) {
       grid.innerHTML = alignedForecasts.map((f, idx) => {
         let weekdayLabel = '';
@@ -435,18 +439,24 @@ export class WeatherUI {
           weekdayLabel = idx === 0 ? 'Hoje' : `Dia +${idx}`;
         }
 
+        const isNightForCard = (idx === 0) ? isCurrentNight : false;
+        const iconMeta = this.getWeatherIconVisual(f.conditionCode, isNightForCard);
+
         return `
           <div class="forecast-day-card ${idx === 0 ? 'today' : ''}">
             <span class="forecast-weekday">${weekdayLabel}</span>
             <span class="forecast-date">${dateFormatted}</span>
-            <div class="forecast-icon-wrapper" style="color: ${f.color || '#f59e0b'};">
-              <i class="lucide-${f.iconName || 'cloud'}"></i>
+            <div class="forecast-icon-wrapper" 
+                 style="color: ${iconMeta.color}; background: ${iconMeta.bg}; border-color: ${iconMeta.border};" 
+                 title="${iconMeta.label}"
+                 aria-label="${iconMeta.label}">
+              ${iconMeta.iconHtml}
             </div>
             <div class="forecast-temps">
               <span class="forecast-temp-max" title="Máxima Prevista">▲ ${f.maxTemp}°</span>
               <span class="forecast-temp-min" title="Mínima Prevista">▼ ${f.minTemp}°</span>
             </div>
-            <div class="forecast-condition-desc">${f.conditionLabel || 'Parcialmente Nublado'}</div>
+            <div class="forecast-condition-desc">${f.conditionLabel || iconMeta.label}</div>
           </div>
         `;
       }).join('');
@@ -457,6 +467,158 @@ export class WeatherUI {
     }
 
     this.renderCptecCharts();
+  }
+
+  /**
+   * Converte a condição meteorológica do CPTEC e o período (dia/noite) em representação visual intuitiva com SVG
+   * @param {string} conditionCode Código da condição CPTEC (ex: 'pn', 'cl', 'c', 't', 'cn', etc.)
+   * @param {boolean} isNight Indica se o período a ser exibido é noturno
+   * @returns {Object} { iconHtml, label, color, bg, border }
+   */
+  getWeatherIconVisual(conditionCode, isNight = false) {
+    const code = (conditionCode || '').toLowerCase().trim();
+
+    // Condições intrinsecamente noturnas no catálogo do CPTEC
+    const nightCodes = ['cn', 'npn', 'pcn', 'ncn', 'pnt'];
+    const effectiveNight = isNight || nightCodes.includes(code);
+
+    // SVGs vetoriais puros (compatíveis com Lucide) com renderização universal garantida
+    const svgIcons = {
+      sun: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
+      moonStar: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4M21 5h-4"/></svg>`,
+      cloudSun: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>`,
+      cloudMoon: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.188 8.5A6 6 0 0 1 16 4a6 6 0 0 0-6 6c0 1.25.383 2.41 1.034 3.376"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>`,
+      cloud: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`,
+      cloudRain: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6M8 14v6M12 16v6"/></svg>`,
+      cloudDrizzle: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M8 19v1M8 14v1M16 19v1M16 14v1M12 21v1M12 16v1"/></svg>`,
+      cloudLightning: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"/><path d="m13 12-3 5h4l-3 5"/></svg>`,
+      snowflake: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4"/></svg>`,
+      cloudFog: `<svg class="forecast-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 17H7M17 21H9"/></svg>`
+    };
+
+    // 1. Céu Aberto / Céu Claro / Predomínio de Sol
+    if (['cl', 'ps'].includes(code)) {
+      if (effectiveNight) {
+        return {
+          iconHtml: svgIcons.moonStar,
+          label: 'Céu Limpo / Estrelado',
+          color: '#38bdf8',
+          bg: 'rgba(56, 189, 248, 0.15)',
+          border: 'rgba(56, 189, 248, 0.35)'
+        };
+      }
+      return {
+        iconHtml: svgIcons.sun,
+        label: 'Céu Aberto / Ensolarado',
+        color: '#f59e0b',
+        bg: 'rgba(245, 158, 11, 0.18)',
+        border: 'rgba(245, 158, 11, 0.4)'
+      };
+    }
+
+    // 2. Parcialmente Nublado / Variação de Nebulosidade
+    if (['pn', 'vn'].includes(code)) {
+      if (effectiveNight) {
+        return {
+          iconHtml: svgIcons.cloudMoon,
+          label: 'Parcialmente Nublado à Noite',
+          color: '#60a5fa',
+          bg: 'rgba(96, 165, 250, 0.15)',
+          border: 'rgba(96, 165, 250, 0.35)'
+        };
+      }
+      return {
+        iconHtml: svgIcons.cloudSun,
+        label: 'Sol entre Nuvens',
+        color: '#fbbf24',
+        bg: 'rgba(251, 191, 36, 0.18)',
+        border: 'rgba(251, 191, 36, 0.4)'
+      };
+    }
+
+    // 3. Nublado / Encoberto
+    if (['e', 'n'].includes(code)) {
+      if (effectiveNight) {
+        return {
+          iconHtml: svgIcons.cloudMoon,
+          label: 'Nublado à Noite',
+          color: '#94a3b8',
+          bg: 'rgba(148, 163, 184, 0.12)',
+          border: 'rgba(148, 163, 184, 0.3)'
+        };
+      }
+      return {
+        iconHtml: svgIcons.cloud,
+        label: 'Céu Nublado / Encoberto',
+        color: '#94a3b8',
+        bg: 'rgba(148, 163, 184, 0.12)',
+        border: 'rgba(148, 163, 184, 0.3)'
+      };
+    }
+
+    // 4. Chuva / Pancadas de Chuva / Chuvoso
+    if (['c', 'ch', 'pc', 'ci', 'ec', 'cm', 'pt', 'pm', 'np', 'npt', 'nct', 'ncm', 'npm', 'cn', 'npn', 'pcn', 'ncn', 'pnt'].includes(code)) {
+      return {
+        iconHtml: svgIcons.cloudRain,
+        label: effectiveNight ? 'Chuva à Noite' : 'Chuva / Pancadas de Chuva',
+        color: '#0284c7',
+        bg: 'rgba(2, 132, 199, 0.18)',
+        border: 'rgba(2, 132, 199, 0.4)'
+      };
+    }
+
+    // 5. Chuvisco / Possibilidade de Chuva
+    if (['cv', 'pp', 'psc', 'pcm', 'pct', 'npp'].includes(code)) {
+      return {
+        iconHtml: svgIcons.cloudDrizzle,
+        label: 'Chuvisco / Possibilidade de Chuva',
+        color: '#38bdf8',
+        bg: 'rgba(56, 189, 248, 0.15)',
+        border: 'rgba(56, 189, 248, 0.35)'
+      };
+    }
+
+    // 6. Tempestade / Trovoadas / Instável
+    if (['t', 'in'].includes(code)) {
+      return {
+        iconHtml: svgIcons.cloudLightning,
+        label: 'Tempestade / Trovoadas',
+        color: '#ef4444',
+        bg: 'rgba(239, 68, 68, 0.2)',
+        border: 'rgba(239, 68, 68, 0.45)'
+      };
+    }
+
+    // 7. Geada / Neve / Frio Intenso
+    if (['g', 'ne'].includes(code)) {
+      return {
+        iconHtml: svgIcons.snowflake,
+        label: 'Geada / Frio Intenso',
+        color: '#38bdf8',
+        bg: 'rgba(56, 189, 248, 0.18)',
+        border: 'rgba(56, 189, 248, 0.35)'
+      };
+    }
+
+    // 8. Nevoeiro / Neblina
+    if (['nv'].includes(code)) {
+      return {
+        iconHtml: svgIcons.cloudFog,
+        label: 'Nevoeiro / Neblina',
+        color: '#94a3b8',
+        bg: 'rgba(148, 163, 184, 0.15)',
+        border: 'rgba(148, 163, 184, 0.3)'
+      };
+    }
+
+    // Fallback gracioso
+    return {
+      iconHtml: svgIcons.cloud,
+      label: 'Condição Variável',
+      color: '#94a3b8',
+      bg: 'rgba(148, 163, 184, 0.12)',
+      border: 'rgba(148, 163, 184, 0.25)'
+    };
   }
 
   /**

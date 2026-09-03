@@ -357,18 +357,28 @@
 }
 
 .forecast-icon-wrapper {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 4px 0;
+  margin: 6px 0;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.forecast-icon-wrapper i {
-  font-size: 18px;
+.forecast-day-card:hover .forecast-icon-wrapper {
+  transform: scale(1.08);
+}
+
+.forecast-icon-svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 .forecast-temps {
