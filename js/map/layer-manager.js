@@ -489,6 +489,45 @@ export class LayerManager {
       };
     }
 
+    // Estações Meteorológicas Plugfield (16 Estações)
+    if (config.id === 'estacoes_plugfield' || s.iconType === 'estacao_plugfield') {
+      const svgPlugfield = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+          <circle cx="18" cy="18" r="17" fill="#10b981" stroke="#ffffff" stroke-width="2.5" />
+          <circle cx="18" cy="18" r="14" fill="#059669" />
+          <!-- Símbolo Sensor Meteorológico / Pluviômetro & Anemômetro -->
+          <circle cx="18" cy="10" r="3.2" fill="#ffffff" />
+          <line x1="18" y1="13" x2="18" y2="27" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
+          <line x1="12" y1="17" x2="24" y2="17" stroke="#ffffff" stroke-width="2.0" stroke-linecap="round"/>
+          <circle cx="12" cy="17" r="2.2" fill="#34d399"/>
+          <circle cx="24" cy="17" r="2.2" fill="#34d399"/>
+          <path d="M14 27 L22 27" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      `);
+
+      return (feature, resolution) => {
+        const showText = resolution < 45;
+        const name = feature.get('nome_estacao') || 'Estação Plugfield';
+
+        return new ol.style.Style({
+          image: new ol.style.Icon({
+            src: svgPlugfield,
+            anchor: [0.5, 0.5],
+            scale: 0.82
+          }),
+          text: showText ? new ol.style.Text({
+            text: name,
+            offsetY: 22,
+            font: 'bold 10.5px "Inter", sans-serif',
+            fill: new ol.style.Fill({ color: '#ffffff' }),
+            stroke: new ol.style.Stroke({ color: '#065f46', width: 2.8 }),
+            backgroundFill: new ol.style.Fill({ color: 'rgba(5, 150, 105, 0.92)' }),
+            padding: [2, 5, 2, 5]
+          }) : null
+        });
+      };
+    }
+
     // Domicílios em Área de Risco (SGB, 2025): Simbologia própria de risco geológico institucional
     if (config.id === 'domicilios_risco_sgb_2025') {
       return new ol.style.Style({

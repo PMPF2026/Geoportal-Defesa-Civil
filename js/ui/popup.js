@@ -189,8 +189,8 @@ export class PopupUI {
       </div>
 
       <div class="popup-actions">
-        ${(layerConfig.id === 'estacao_dcrs00016' || props['estacao_cod'] === 'DCRS-00016') ? `
-          <button class="popup-action-btn" id="btn-popup-view-weather" style="background: rgba(2, 132, 199, 0.22); color: #38bdf8; border-color: #0284c7; font-weight:700;" title="Ver monitoramento completo na Central Meteorológica">
+        ${(layerConfig.id === 'estacao_dcrs00016' || layerConfig.id === 'estacoes_plugfield' || props['estacao_cod'] === 'DCRS-00016' || props['deviceId']) ? `
+          <button class="popup-action-btn" id="btn-popup-view-weather" style="background: rgba(2, 132, 199, 0.22); color: #38bdf8; border-color: #0284c7; font-weight:700;" title="Ver monitoramento na Central Meteorológica">
             <i class="lucide-activity"></i> Ver Central
           </button>
         ` : ''}
@@ -239,6 +239,10 @@ export class PopupUI {
           window.webGis.sidebarUI.switchTab('weather');
         } else if (window.sidebarUI) {
           window.sidebarUI.switchTab('weather');
+        }
+        if (props['deviceId'] && window.webGis && window.webGis.weatherUI) {
+          window.webGis.weatherUI.switchSubTab('plugfield');
+          window.webGis.weatherUI.selectPlugfieldStation(props['deviceId']);
         }
       });
     }

@@ -1,19 +1,22 @@
 /**
  * Portal Defesa Civil Passo Fundo - WebGIS
- * Interface da Central Meteorológica e Avisos (Estação DCRS-00016 & CPTEC/INPE)
+ * Interface da Central Meteorológica e Avisos (Estação DCRS-00016, CPTEC/INPE & Rede Plugfield)
  */
 
 import { WEATHER_CONFIG } from './weather-config.js';
 import { WeatherService } from './weather-service.js';
+import { PlugfieldService, PLUGFIELD_STATIONS_CONFIG } from './plugfield-service.js';
 
 export class WeatherUI {
   constructor(containerId = 'tab-weather') {
     this.container = document.getElementById(containerId);
-    this.currentSubTab = 'drs'; // 'drs' | 'cptec'
+    this.currentSubTab = 'drs'; // 'drs' | 'cptec' | 'plugfield'
     this.currentStationCode = WEATHER_CONFIG.DEFESA_CIVIL_RS.DEFAULT_STATION;
     this.drsData = null;
     this.cptecData = null;
     this.alignedCptecForecasts = [];
+    this.plugfieldStations = [];
+    this.selectedPlugfieldId = 4283; // Transbrasiliana por padrão
     this.selectedChartVar = 'combined'; // 'combined' | 'chuva' | 'rio' | 'temp' | 'umid' | 'vento' | 'pressao' | 'radiacao'
     this.selectedChartPeriod = 'h168'; // 'min30' | 'h1' | 'h24' | 'h48' | 'h72' | 'h120' | 'h168'
     this.subscriptionController = null;
@@ -38,6 +41,15 @@ export class WeatherUI {
     const cachedCptec = WeatherService.getCachedForecast(WEATHER_CONFIG.CPTEC.CITY_ID);
     if (cachedCptec) {
       this.updateCptecUI(cachedCptec);
+    }
+
+    const cachedPf = PlugfieldService.getCachedStations();
+    if (cachedPf && cachedPf.length > 0) {
+      this.plugfieldStations = cachedPf;
+      this.renderPlugfieldUI();
+    } else {
+      this.plugfieldStations = PLUGFIELD_STATIONS_CONFIG;
+      this.renderPlugfieldUI();
     }
 
     await this.refreshAllData();
@@ -71,6 +83,10 @@ export class WeatherUI {
             <button class="weather-tab-btn" data-subtab="cptec" id="btn-subtab-cptec">
               <i class="lucide-calendar"></i>
               <span>Previsão 5 Dias — CPTEC/INPE</span>
+            </button>
+            <button class="weather-tab-btn" data-subtab="plugfield" id="btn-subtab-plugfield">
+              <i class="lucide-radio-tower"></i>
+              <span>Rede Plugfield (16 Estações)</span>
             </button>
           </div>
         </div>
@@ -118,101 +134,160 @@ export class WeatherUI {
                 Carregando...
               </div>
             </div>
-            <div id="drs-river-trend-container">
-              <span class="river-trend-badge stable">
-                <span>➡️</span>
-                <span>Estável</span>
+            <div class="river-trend-col" id="drs-river-trend-container">
+              <span class="trend-badge stable">
+                <i class="lucide-arrow-right"></i> Estável
               </span>
             </div>
           </div>
 
-          <!-- Destaque: Chuva Acumulada Oficial (7 Períodos) -->
-          <div class="rain-breakdown-card" style="margin-top: 10px;">
-            <div class="rain-breakdown-title">
-              <i class="lucide-cloud-rain" style="color:#0284c7;"></i>
-              <span>🌧️ CHUVA ACUMULADA OFICIAL — DCRS-00016</span>
+          <!-- Grade de Acumulados de Chuva -->
+          <div class="rainfall-periods-container" style="margin-top: 10px;">
+            <div class="rainfall-header">
+              <i class="lucide-cloud-rain"></i>
+              <span>CHUVA ACUMULADA OFICIAL — DCRS-00016</span>
             </div>
-            <div class="rain-pills-row" id="drs-rain-pills-row">
-              <div class="rain-pill">
-                <span class="rain-pill-label">30 min</span>
-                <div class="rain-pill-val" id="rain-val-min30">--</div>
+            <div class="rainfall-grid">
+              <div class="rainfall-pill">
+                <span class="pill-period">30 MIN</span>
+                <span class="pill-value" id="drs-rain-30m">--</span>
               </div>
-              <div class="rain-pill">
-                <span class="rain-pill-label">1 hora</span>
-                <div class="rain-pill-val" id="rain-val-h1">--</div>
+              <div class="rainfall-pill">
+                <span class="pill-period">1 HORA</span>
+                <span class="pill-value" id="drs-rain-1h">--</span>
               </div>
-              <div class="rain-pill highlight">
-                <span class="rain-pill-label">24 horas</span>
-                <div class="rain-pill-val" id="rain-val-h24">--</div>
+              <div class="rainfall-pill highlight-24h">
+                <span class="pill-period">24 HORAS</span>
+                <span class="pill-value" id="drs-rain-24h">--</span>
               </div>
-              <div class="rain-pill">
-                <span class="rain-pill-label">48 horas</span>
-                <div class="rain-pill-val" id="rain-val-h48">--</div>
+              <div class="rainfall-pill">
+                <span class="pill-period">48 HORAS</span>
+                <span class="pill-value" id="drs-rain-48h">--</span>
               </div>
-              <div class="rain-pill">
-                <span class="rain-pill-label">72 horas</span>
-                <div class="rain-pill-val" id="rain-val-h72">--</div>
+              <div class="rainfall-pill">
+                <span class="pill-period">72 HORAS</span>
+                <span class="pill-value" id="drs-rain-72h">--</span>
               </div>
-              <div class="rain-pill">
-                <span class="rain-pill-label">5 dias (120h)</span>
-                <div class="rain-pill-val" id="rain-val-h120">--</div>
+              <div class="rainfall-pill">
+                <span class="pill-period">5 DIAS (120H)</span>
+                <span class="pill-value" id="drs-rain-5d">--</span>
               </div>
-              <div class="rain-pill">
-                <span class="rain-pill-label">7 dias (168h)</span>
-                <div class="rain-pill-val" id="rain-val-h168">--</div>
+              <div class="rainfall-pill">
+                <span class="pill-period">7 DIAS (168H)</span>
+                <span class="pill-value" id="drs-rain-7d">--</span>
               </div>
             </div>
           </div>
 
-          <!-- Cards das Condições Atuais -->
-          <div style="font-size: 11.5px; font-weight: 800; color: #ffffff; margin-top: 14px; display:flex; align-items:center; gap:6px;">
-            <i class="lucide-thermometer-sun" style="color: var(--dc-orange-primary);"></i>
+          <!-- Seção de Condições Meteorológicas Atuais -->
+          <div class="weather-section-title" style="margin-top: 14px;">
+            <i class="lucide-thermometer-sun" style="color: #f97316;"></i>
             <span>CONDIÇÕES METEOROLÓGICAS ATUAIS</span>
           </div>
+          
+          <div class="weather-metrics-grid" id="drs-metrics-grid" style="margin-top: 8px;">
+            <!-- Temperatura -->
+            <div class="weather-metric-card" style="border-left: 3px solid #f97316;">
+              <div class="weather-metric-header">
+                <i class="lucide-thermometer" style="color: #f97316;"></i>
+                <span>TEMPERATURA</span>
+              </div>
+              <div class="weather-metric-value" id="drs-temp-val">-- °C</div>
+              <div class="weather-metric-sub" id="drs-temp-minmax">Mín: -- °C | Máx: -- °C</div>
+            </div>
 
-          <div class="weather-cards-grid" id="drs-metrics-grid" style="margin-top: 8px;">
-            <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--text-muted);">
-              <i class="lucide-loader" style="animation: spin 1s linear infinite; font-size: 20px; display: block; margin: 0 auto 8px;"></i>
-              Carregando dados oficiais da estação DCRS-00016...
+            <!-- Sensação Térmica -->
+            <div class="weather-metric-card" style="border-left: 3px solid #fb923c;">
+              <div class="weather-metric-header">
+                <i class="lucide-flame" style="color: #fb923c;"></i>
+                <span>SENSAÇÃO TÉRMICA</span>
+              </div>
+              <div class="weather-metric-value" id="drs-sens-val">-- °C</div>
+              <div class="weather-metric-sub" id="drs-sens-sub">Índice Bioclimático</div>
+            </div>
+
+            <!-- Umidade Relativa -->
+            <div class="weather-metric-card" style="border-left: 3px solid #38bdf8;">
+              <div class="weather-metric-header">
+                <i class="lucide-droplets" style="color: #38bdf8;"></i>
+                <span>UMIDADE RELATIVA</span>
+              </div>
+              <div class="weather-metric-value" id="drs-umid-val">-- %</div>
+              <div class="weather-metric-sub" id="drs-umid-sub">Higrômetro Oficial</div>
+            </div>
+
+            <!-- Pressão Atmosférica -->
+            <div class="weather-metric-card" style="border-left: 3px solid #64748b;">
+              <div class="weather-metric-header">
+                <i class="lucide-gauge" style="color: #94a3b8;"></i>
+                <span>PRESSÃO ATMOSFÉRICA</span>
+              </div>
+              <div class="weather-metric-value" id="drs-pressao-val">-- hPa</div>
+              <div class="weather-metric-sub" id="drs-pressao-tend">Tendência: Estável</div>
+            </div>
+
+            <!-- Vento -->
+            <div class="weather-metric-card" style="border-left: 3px solid #a855f7;">
+              <div class="weather-metric-header">
+                <i class="lucide-wind" style="color: #c084fc;"></i>
+                <span>VENTO</span>
+              </div>
+              <div class="weather-metric-value" id="drs-vento-val">-- km/h</div>
+              <div class="weather-metric-sub" id="drs-vento-sub">Méd: -- | Máx: -- | Dir: --</div>
+            </div>
+
+            <!-- Radiação Solar -->
+            <div class="weather-metric-card" style="border-left: 3px solid #eab308;">
+              <div class="weather-metric-header">
+                <i class="lucide-sun" style="color: #facc15;"></i>
+                <span>RADIAÇÃO SOLAR</span>
+              </div>
+              <div class="weather-metric-value" id="drs-rad-val">-- W/m²</div>
+              <div class="weather-metric-sub">Piranômetro Digital</div>
             </div>
           </div>
 
           <!-- Localização da Estação -->
-          <div class="station-location-card" style="margin-top: 12px;">
-            <div class="station-location-details">
-              <strong style="color: #ffffff; font-size: 12.5px;">📍 LOCALIZAÇÃO DA ESTAÇÃO DCRS-00016</strong>
-              <span id="drs-station-coords">Coordenadas: Lat -28.2470° | Lon -52.3713° &bull; Altitude: Não informada</span>
-              <span style="color: #94a3b8;">Bacia Hidrográfica: RS - Rio Passo Fundo &bull; Região: Passo Fundo/RS</span>
+          <div class="weather-location-box" style="margin-top: 10px;">
+            <div class="weather-location-info">
+              <div style="font-size: 12px; font-weight: 700; color: #ffffff;">
+                <i class="lucide-map-pin" style="color: #06b6d4;"></i>
+                <span>Localização da Estação DCRS-00016</span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;" id="drs-coords-display">
+                Coordenadas: Lat -28.2470° | Lon -52.3713° &bull; Altitude: Não informada
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                Bacia Hidrográfica: RS - Rio Passo Fundo &bull; Região: Passo Fundo/RS
+              </div>
             </div>
-            <button class="btn-view-station-map" id="btn-focus-station-map" title="Visualizar estação no mapa principal">
+            <button class="weather-focus-btn" id="btn-focus-station-map" title="Centralizar e visualizar estação no mapa">
               <i class="lucide-crosshair"></i>
               <span>Ver no mapa</span>
             </button>
           </div>
 
-          <!-- Gráficos Históricos Interativos -->
-          <div class="weather-chart-box" style="margin-top: 12px;">
+          <!-- Painel de Gráficos Históricos Interativos -->
+          <div class="weather-chart-box" style="margin-top: 10px;">
             <div class="weather-chart-header-row">
-              <div style="font-size: 12.5px; font-weight: 800; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
-                <span id="drs-chart-title">📊 HISTÓRICO DA ESTAÇÃO (DCRS-00016)</span>
-              </div>
-
-              <!-- Seletores de Variável -->
-              <div class="chart-selectors-row">
-                <div class="chart-variable-selector" id="chart-variable-selector">
-                  <button class="chart-var-btn active" data-var="combined" title="Chuva e Nível do Rio Combinados">📊 Chuva x Nível</button>
-                  <button class="chart-var-btn" data-var="chuva" title="Acumulados de Chuva">🌧️ Chuva</button>
-                  <button class="chart-var-btn" data-var="rio" title="Nível do Rio">🌊 Nível Rio</button>
-                  <button class="chart-var-btn" data-var="temp" title="Temperatura">🌡️ Temp</button>
-                  <button class="chart-var-btn" data-var="umid" title="Umidade">💧 Umidade</button>
-                  <button class="chart-var-btn" data-var="vento" title="Velocidade do Vento">💨 Vento</button>
-                  <button class="chart-var-btn" data-var="pressao" title="Pressão Atmosférica">📈 Pressão</button>
-                  <button class="chart-var-btn" data-var="radiacao" title="Radiação Solar">☀️ Radiação</button>
-                </div>
-              </div>
+              <span style="font-size: 12px; font-weight: 700; color: #ffffff;">
+                <i class="lucide-bar-chart-2"></i> Histórico da Estação (DCRS-00016)
+              </span>
             </div>
 
-            <div class="weather-chart-canvas-wrapper">
+            <!-- Seletor de Variável do Gráfico -->
+            <div class="chart-variable-selector" id="chart-variable-selector" style="margin-top: 6px;">
+              <button class="chart-var-btn active" data-var="combined">📊 Chuva x Nível</button>
+              <button class="chart-var-btn" data-var="chuva">🌧️ Chuva</button>
+              <button class="chart-var-btn" data-var="rio">🌊 Nível Rio</button>
+              <button class="chart-var-btn" data-var="temp">🌡️ Temp</button>
+              <button class="chart-var-btn" data-var="umid">💧 Umidade</button>
+              <button class="chart-var-btn" data-var="vento">💨 Vento</button>
+              <button class="chart-var-btn" data-var="pressao">📈 Pressão</button>
+              <button class="chart-var-btn" data-var="radiacao">☀️ Radiação</button>
+            </div>
+
+            <div class="weather-chart-canvas-wrapper" style="margin-top: 8px;">
               <canvas id="chart-drs-interactive"></canvas>
             </div>
           </div>
@@ -262,6 +337,138 @@ export class WeatherUI {
           </div>
         </div>
 
+        <!-- ABA 3: REDE PLUGFIELD (16 ESTAÇÕES) -->
+        <div id="weather-subtab-content-plugfield" class="weather-tab-pane" style="display: none;">
+          <!-- Seletor das 16 Estações -->
+          <div class="plugfield-select-container">
+            <div class="plugfield-select-label">
+              <i class="lucide-radio-tower"></i>
+              <span>SELECIONE A ESTAÇÃO METEOROLÓGICA (16 HABILITADAS):</span>
+            </div>
+            <select id="plugfield-station-select" class="plugfield-station-select">
+              ${PLUGFIELD_STATIONS_CONFIG.map(st => `
+                <option value="${st.deviceId}">${st.name} (ID: ${st.deviceId}) — ${st.type}</option>
+              `).join('')}
+            </select>
+          </div>
+
+          <!-- Barra da Estação Selecionada -->
+          <div class="weather-station-bar" style="margin-top: 10px;">
+            <div class="weather-station-info">
+              <div class="weather-station-name" id="pf-station-display-name">
+                <i class="lucide-radio-tower" style="color: #10b981;"></i>
+                <span id="pf-station-name-text">Transbrasiliana</span>
+              </div>
+              <div class="weather-station-meta" id="pf-station-display-meta">
+                ID: 4283 &bull; Rede Oficial Plugfield &bull; Passo Fundo/RS
+              </div>
+            </div>
+            <div id="pf-status-badge-container">
+              <span class="station-status-pill updated" id="pf-status-pill">
+                <span class="status-dot green"></span>
+                <span id="pf-status-text">Dados atualizados</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Grid de Métricas Principais da Estação -->
+          <div class="weather-metrics-grid" id="pf-metrics-grid" style="margin-top: 10px;">
+            <!-- 1. Temperatura -->
+            <div class="weather-metric-card" style="border-left: 3px solid #f97316;">
+              <div class="weather-metric-header">
+                <i class="lucide-thermometer" style="color: #f97316;"></i>
+                <span>TEMPERATURA</span>
+              </div>
+              <div class="weather-metric-value" id="pf-temp-atual">-- °C</div>
+              <div class="weather-metric-sub" id="pf-temp-minmax">Mín: -- °C | Máx: -- °C</div>
+            </div>
+
+            <!-- 2. Precipitação -->
+            <div class="weather-metric-card" style="border-left: 3px solid #0284c7;">
+              <div class="weather-metric-header">
+                <i class="lucide-cloud-rain" style="color: #38bdf8;"></i>
+                <span>PRECIPITAÇÃO</span>
+              </div>
+              <div class="weather-metric-value" id="pf-rain-day">-- mm</div>
+              <div class="weather-metric-sub" id="pf-rain-month">Acumulado Mês: -- mm</div>
+            </div>
+
+            <!-- 3. Vento -->
+            <div class="weather-metric-card" style="border-left: 3px solid #a855f7;">
+              <div class="weather-metric-header">
+                <i class="lucide-wind" style="color: #c084fc;"></i>
+                <span>VENTO</span>
+              </div>
+              <div class="weather-metric-value" id="pf-wind-val">-- km/h</div>
+              <div class="weather-metric-sub" id="pf-wind-sub">Rajada: -- | Dir: --</div>
+            </div>
+
+            <!-- 4. Pressão Atmosférica -->
+            <div class="weather-metric-card" style="border-left: 3px solid #64748b;">
+              <div class="weather-metric-header">
+                <i class="lucide-gauge" style="color: #94a3b8;"></i>
+                <span>PRESSÃO ATMOSFÉRICA</span>
+              </div>
+              <div class="weather-metric-value" id="pf-pressure-val">-- hPa</div>
+              <div class="weather-metric-sub">Barômetro Digital</div>
+            </div>
+
+            <!-- 5. Nível do Rio (levelAdditional) -->
+            <div class="weather-metric-card" style="grid-column: 1 / -1; border-left: 3px solid #06b6d4;" id="pf-card-river">
+              <div class="weather-metric-header">
+                <i class="lucide-waves" style="color: #06b6d4;"></i>
+                <span>NÍVEL DO RIO (SENSOR TELEMÉTRICO)</span>
+              </div>
+              <div class="weather-metric-value" id="pf-river-level-val" style="font-size: 15px;">
+                Dado não disponível para esta estação
+              </div>
+              <div class="weather-metric-sub" id="pf-river-sub">Sensor adicional levelAdditional</div>
+            </div>
+
+            <!-- 6. Média Mensal de Temperatura -->
+            <div class="weather-metric-card" style="grid-column: 1 / -1; border-left: 3px solid #eab308;">
+              <div class="weather-metric-header">
+                <i class="lucide-calendar" style="color: #eab308;"></i>
+                <span>MÉDIA MENSAL DE TEMPERATURA</span>
+              </div>
+              <div style="font-size: 11.5px; color: #fef08a; padding: 4px 0;" id="pf-temp-monthly-avg">
+                Média mensal indisponível — série histórica insuficiente.
+              </div>
+            </div>
+          </div>
+
+          <!-- Localização da Estação & Botão Ver no Mapa -->
+          <div class="weather-location-box" style="margin-top: 10px;">
+            <div class="weather-location-info">
+              <div style="font-size: 12px; font-weight: 700; color: #ffffff;">
+                <i class="lucide-map-pin" style="color: #10b981;"></i>
+                <span id="pf-loc-title">Localização da Estação</span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;" id="pf-loc-coords">
+                Coordenadas: Conforme dados oficiais da API Plugfield
+              </div>
+            </div>
+            <button class="weather-focus-btn" id="btn-focus-plugfield-map" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: #059669;" title="Centralizar estação no mapa">
+              <i class="lucide-crosshair"></i>
+              <span>Ver no mapa</span>
+            </button>
+          </div>
+
+          <!-- Histórico dos Últimos 5 Dias -->
+          <div class="weather-chart-box" style="margin-top: 10px;">
+            <div class="weather-chart-header-row">
+              <span style="font-size: 12px; font-weight: 700; color: #ffffff;">
+                <i class="lucide-history" style="color: #38bdf8;"></i> Histórico dos Últimos 5 Dias (Leituras Diárias)
+              </span>
+            </div>
+            <div id="pf-history-container" style="padding: 10px;">
+              <div style="text-align: center; color: #94a3b8; font-size: 11.5px; padding: 12px;">
+                Carregando histórico diário da estação...
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Status & Fontes Oficiais -->
         <div class="weather-footer-sources">
           <div class="weather-status-bar">
@@ -272,7 +479,8 @@ export class WeatherUI {
             <strong>Fontes Oficiais:</strong><br>
             &bull; <a href="${WEATHER_CONFIG.DEFESA_CIVIL_RS.OFFICIAL_PAGE_URL}" target="_blank" rel="noopener noreferrer">Estação DCRS-00016 — Defesa Civil RS (Rede Hidrometeorológica)</a><br>
             &bull; <a href="${WEATHER_CONFIG.DEFESA_CIVIL_RS.API_DOC_URL}" target="_blank" rel="noopener noreferrer">Documentação Oficial da API GraphQL da Defesa Civil RS</a><br>
-            &bull; <a href="https://www.cptec.inpe.br" target="_blank" rel="noopener noreferrer">CPTEC/INPE — Centro de Previsão de Tempo e Estudos Climáticos</a>
+            &bull; <a href="https://www.cptec.inpe.br" target="_blank" rel="noopener noreferrer">CPTEC/INPE — Centro de Previsão de Tempo e Estudos Climáticos</a><br>
+            &bull; <a href="https://wdg.plugfield.com.br/doc-api/index.html" target="_blank" rel="noopener noreferrer">Rede Meteorológica Plugfield (16 Estações Oficiais de Passo Fundo)</a>
           </div>
         </div>
       </div>
@@ -287,29 +495,42 @@ export class WeatherUI {
     // Alternância de Sub-Abas
     const btnDrs = document.getElementById('btn-subtab-drs');
     const btnCptec = document.getElementById('btn-subtab-cptec');
+    const btnPlugfield = document.getElementById('btn-subtab-plugfield');
     const paneDrs = document.getElementById('weather-subtab-content-drs');
     const paneCptec = document.getElementById('weather-subtab-content-cptec');
+    const panePlugfield = document.getElementById('weather-subtab-content-plugfield');
     const sourceBadge = document.getElementById('weather-source-badge');
 
-    if (btnDrs && btnCptec) {
+    if (btnDrs && btnCptec && btnPlugfield) {
       btnDrs.addEventListener('click', () => {
-        this.currentSubTab = 'drs';
-        btnDrs.classList.add('active');
-        btnCptec.classList.remove('active');
-        if (paneDrs) paneDrs.style.display = 'block';
-        if (paneCptec) paneCptec.style.display = 'none';
-        if (sourceBadge) sourceBadge.textContent = 'Fonte: Defesa Civil RS';
-        this.renderDrsInteractiveChart();
+        this.switchSubTab('drs');
       });
 
       btnCptec.addEventListener('click', () => {
-        this.currentSubTab = 'cptec';
-        btnCptec.classList.add('active');
-        btnDrs.classList.remove('active');
-        if (paneDrs) paneDrs.style.display = 'none';
-        if (paneCptec) paneCptec.style.display = 'block';
-        if (sourceBadge) sourceBadge.textContent = 'Fonte: CPTEC/INPE';
-        this.renderCptecCharts();
+        this.switchSubTab('cptec');
+      });
+
+      btnPlugfield.addEventListener('click', () => {
+        this.switchSubTab('plugfield');
+      });
+    }
+
+    // Seletor de Estação Plugfield
+    const selectPf = document.getElementById('plugfield-station-select');
+    if (selectPf) {
+      selectPf.addEventListener('change', (e) => {
+        const id = parseInt(e.target.value, 10);
+        if (id) {
+          this.selectPlugfieldStation(id);
+        }
+      });
+    }
+
+    // Botão "Ver no mapa" Plugfield
+    const btnFocusPf = document.getElementById('btn-focus-plugfield-map');
+    if (btnFocusPf) {
+      btnFocusPf.addEventListener('click', () => {
+        this.focusPlugfieldStationOnMap(this.selectedPlugfieldId);
       });
     }
 
@@ -343,6 +564,53 @@ export class WeatherUI {
     });
   }
 
+  switchSubTab(subtab) {
+    this.currentSubTab = subtab;
+    const btnDrs = document.getElementById('btn-subtab-drs');
+    const btnCptec = document.getElementById('btn-subtab-cptec');
+    const btnPlugfield = document.getElementById('btn-subtab-plugfield');
+    const paneDrs = document.getElementById('weather-subtab-content-drs');
+    const paneCptec = document.getElementById('weather-subtab-content-cptec');
+    const panePlugfield = document.getElementById('weather-subtab-content-plugfield');
+    const sourceBadge = document.getElementById('weather-source-badge');
+
+    if (!btnDrs || !btnCptec || !btnPlugfield) return;
+
+    btnDrs.classList.remove('active');
+    btnCptec.classList.remove('active');
+    btnPlugfield.classList.remove('active');
+    if (paneDrs) paneDrs.style.display = 'none';
+    if (paneCptec) paneCptec.style.display = 'none';
+    if (panePlugfield) panePlugfield.style.display = 'none';
+
+    if (subtab === 'drs') {
+      btnDrs.classList.add('active');
+      if (paneDrs) paneDrs.style.display = 'block';
+      if (sourceBadge) {
+        sourceBadge.textContent = 'Fonte: Defesa Civil RS (DCRS-00016)';
+        sourceBadge.style.color = '#38bdf8';
+      }
+    } else if (subtab === 'cptec') {
+      btnCptec.classList.add('active');
+      if (paneCptec) paneCptec.style.display = 'block';
+      if (sourceBadge) {
+        sourceBadge.textContent = 'Fonte: CPTEC / INPE & Open-Meteo';
+        sourceBadge.style.color = '#eab308';
+      }
+    } else if (subtab === 'plugfield') {
+      btnPlugfield.classList.add('active');
+      if (panePlugfield) panePlugfield.style.display = 'block';
+      if (sourceBadge) {
+        sourceBadge.textContent = 'Fonte: Rede Meteorológica Plugfield (16 Estações)';
+        sourceBadge.style.color = '#10b981';
+      }
+    }
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
   focusStationOnMap() {
     if (window.webGis && window.webGis.mapEngine) {
       const lat = this.drsData?.lat || -28.2470;
@@ -363,9 +631,241 @@ export class WeatherUI {
     this.isLoading = true;
     await Promise.all([
       this.loadDefesaCivilRSData(),
-      this.loadCptecData()
+      this.loadCptecData(),
+      this.loadPlugfieldData()
     ]);
     this.isLoading = false;
+  }
+
+  async loadPlugfieldData() {
+    try {
+      const stations = await PlugfieldService.getAllStations();
+      if (stations && stations.length > 0) {
+        this.plugfieldStations = stations;
+        this.renderPlugfieldUI();
+      }
+    } catch (err) {
+      console.warn('[WeatherUI] Erro ao carregar dados Plugfield:', err);
+    }
+  }
+
+  renderPlugfieldUI() {
+    if (!this.plugfieldStations || this.plugfieldStations.length === 0) return;
+
+    // Preencher select de estações
+    const select = document.getElementById('plugfield-station-select');
+    if (select) {
+      const currentVal = parseInt(select.value, 10) || this.selectedPlugfieldId;
+      select.innerHTML = this.plugfieldStations.map(st => `
+        <option value="${st.deviceId}" ${st.deviceId === currentVal ? 'selected' : ''}>
+          ${st.name} (ID: ${st.deviceId})${st.isOnline ? '' : ' [Offline]'}
+        </option>
+      `).join('');
+    }
+
+    this.selectPlugfieldStation(this.selectedPlugfieldId);
+  }
+
+  selectPlugfieldStation(deviceId) {
+    this.selectedPlugfieldId = deviceId;
+    const st = (this.plugfieldStations && this.plugfieldStations.length > 0)
+      ? (this.plugfieldStations.find(s => s.deviceId === deviceId) || this.plugfieldStations[0])
+      : PLUGFIELD_STATIONS_CONFIG.find(s => s.deviceId === deviceId);
+
+    if (!st) return;
+
+    // Atualizar Badge de Status
+    const statusText = document.getElementById('pf-status-text');
+    const statusDot = document.getElementById('pf-status-dot');
+    if (statusText) {
+      statusText.textContent = st.isOnline
+        ? `Online • Atualizado ${st.lastUpdate ? new Date(st.lastUpdate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'recentemente'}`
+        : 'Sem comunicação recente';
+    }
+    if (statusDot) {
+      statusDot.className = `weather-status-dot ${st.isOnline ? 'online' : 'offline'}`;
+    }
+
+    // Métricas
+    const m = st.metrics || {};
+    
+    // 1. Temp
+    const elTemp = document.getElementById('pf-temp-atual');
+    const elTempMinMax = document.getElementById('pf-temp-minmax');
+    if (elTemp) {
+      elTemp.textContent = m.temperature !== null && m.temperature !== undefined ? `${m.temperature.toFixed(1)} °C` : '-- °C';
+    }
+    if (elTempMinMax) {
+      const tMin = m.tempMin !== null && m.tempMin !== undefined ? `${m.tempMin.toFixed(1)} °C` : '--';
+      const tMax = m.tempMax !== null && m.tempMax !== undefined ? `${m.tempMax.toFixed(1)} °C` : '--';
+      elTempMinMax.textContent = `Mín: ${tMin} | Máx: ${tMax}`;
+    }
+
+    // 2. Precipitação
+    const elRain = document.getElementById('pf-rain-day');
+    const elRainMonth = document.getElementById('pf-rain-month');
+    if (elRain) {
+      elRain.textContent = m.rain !== null && m.rain !== undefined ? `${m.rain.toFixed(1)} mm` : '-- mm';
+    }
+    if (elRainMonth) {
+      elRainMonth.textContent = m.rainAccumMonthly !== null && m.rainAccumMonthly !== undefined
+        ? `Acumulado Mês: ${m.rainAccumMonthly.toFixed(1)} mm`
+        : 'Acumulado Mês: Não informado';
+    }
+
+    // 3. Vento
+    const elWind = document.getElementById('pf-wind-val');
+    const elWindSub = document.getElementById('pf-wind-sub');
+    if (elWind) {
+      elWind.textContent = m.windSpeed !== null && m.windSpeed !== undefined ? `${m.windSpeed.toFixed(1)} km/h` : '-- km/h';
+    }
+    if (elWindSub) {
+      const gust = m.windGust !== null && m.windGust !== undefined ? `${m.windGust.toFixed(1)} km/h` : '--';
+      const dir = m.windDirectionText || (m.windDirection !== null && m.windDirection !== undefined ? `${m.windDirection}°` : '--');
+      elWindSub.textContent = `Rajada: ${gust} | Dir: ${dir}`;
+    }
+
+    // 4. Pressão
+    const elPressure = document.getElementById('pf-pressure-val');
+    if (elPressure) {
+      elPressure.textContent = m.pressure !== null && m.pressure !== undefined ? `${m.pressure.toFixed(1)} hPa` : '-- hPa';
+    }
+
+    // 5. Nível do Rio (levelAdditional)
+    const elRiver = document.getElementById('pf-river-level-val');
+    const elRiverSub = document.getElementById('pf-river-sub');
+    if (elRiver) {
+      if (m.riverLevel !== null && m.riverLevel !== undefined) {
+        elRiver.textContent = `${m.riverLevel.toFixed(1)} cm`;
+        elRiver.style.fontSize = '20px';
+        elRiver.style.color = '#06b6d4';
+        if (elRiverSub) elRiverSub.textContent = 'Sensor telemétrico de nível de água (levelAdditional)';
+      } else {
+        elRiver.textContent = 'Dado não disponível para esta estação';
+        elRiver.style.fontSize = '13px';
+        elRiver.style.color = '#94a3b8';
+        if (elRiverSub) elRiverSub.textContent = 'Esta estação não possui sensor de nível ativo';
+      }
+    }
+
+    // 6. Média mensal
+    const elAvg = document.getElementById('pf-temp-monthly-avg');
+    if (elAvg) {
+      elAvg.textContent = 'Média mensal indisponível — série histórica insuficiente.';
+    }
+
+    // Localização
+    const elLocTitle = document.getElementById('pf-loc-title');
+    const elLocCoords = document.getElementById('pf-loc-coords');
+    if (elLocTitle) {
+      elLocTitle.textContent = `${st.name} — Bairro: ${st.neighborhood || 'Passo Fundo'}`;
+    }
+    if (elLocCoords) {
+      elLocCoords.textContent = `Coordenadas: Lat ${st.lat.toFixed(5)}, Lon ${st.lon.toFixed(5)} | Alt: ${st.altitude ? st.altitude + ' m' : 'N/A'}`;
+    }
+
+    // Carregar histórico de 5 dias
+    this.loadPlugfieldStationHistory(deviceId);
+  }
+
+  async loadPlugfieldStationHistory(deviceId) {
+    const container = document.getElementById('pf-history-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div style="text-align: center; color: #94a3b8; font-size: 11.5px; padding: 12px;">
+        <i class="lucide-loader spinning" style="margin-right: 6px;"></i> Carregando leituras diárias dos últimos 5 dias...
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      const history = await PlugfieldService.getStationDailyHistory(deviceId);
+      if (!history || history.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: #94a3b8; font-size: 11.5px; padding: 12px;">
+            Nenhum dado diário retornado pela API para esta estação no período recente.
+          </div>
+        `;
+        return;
+      }
+
+      // Renderizar tabela de histórico
+      let html = `
+        <div style="overflow-x: auto;">
+          <table class="plugfield-history-table" style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center;">
+            <thead>
+              <tr style="background: rgba(255, 255, 255, 0.05); color: #38bdf8; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                <th style="padding: 6px; text-align: left;">Data</th>
+                <th style="padding: 6px;">Mín / Máx (°C)</th>
+                <th style="padding: 6px;">Chuva (mm)</th>
+                <th style="padding: 6px;">Vento Máx</th>
+                <th style="padding: 6px;">Umid. (%)</th>
+                <th style="padding: 6px;">Pressão</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      history.forEach(d => {
+        const dateStr = d.date ? new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : (d.dateFormatted || '--');
+        const minT = d.tempMin !== null && d.tempMin !== undefined ? `${d.tempMin.toFixed(1)}°` : '--';
+        const maxT = d.tempMax !== null && d.tempMax !== undefined ? `${d.tempMax.toFixed(1)}°` : '--';
+        const rain = d.rain !== null && d.rain !== undefined ? `${d.rain.toFixed(1)}` : '0.0';
+        const wind = d.windMax !== null && d.windMax !== undefined ? `${d.windMax.toFixed(1)} km/h` : '--';
+        const hum = d.humidityMin !== null && d.humidityMax !== null ? `${d.humidityMin}-${d.humidityMax}%` : (d.humidity !== null ? `${d.humidity}%` : '--');
+        const press = d.pressure !== null && d.pressure !== undefined ? `${d.pressure.toFixed(0)}` : '--';
+
+        html += `
+          <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.04); color: #e2e8f0;">
+            <td style="padding: 6px; text-align: left; font-weight: 600; color: #38bdf8;">${dateStr}</td>
+            <td style="padding: 6px;">${minT} / ${maxT}</td>
+            <td style="padding: 6px; color: ${parseFloat(rain) > 0 ? '#38bdf8' : '#94a3b8'}; font-weight: ${parseFloat(rain) > 0 ? '700' : '400'};">${rain}</td>
+            <td style="padding: 6px;">${wind}</td>
+            <td style="padding: 6px;">${hum}</td>
+            <td style="padding: 6px;">${press}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    } catch (err) {
+      console.warn('[WeatherUI] Erro ao carregar histórico diário:', err);
+      container.innerHTML = `
+        <div style="text-align: center; color: #ef4444; font-size: 11.5px; padding: 12px;">
+          Falha ao obter histórico da estação. Tente novamente mais tarde.
+        </div>
+      `;
+    }
+  }
+
+  focusPlugfieldStationOnMap(deviceId) {
+    const st = (this.plugfieldStations && this.plugfieldStations.length > 0)
+      ? (this.plugfieldStations.find(s => s.deviceId === deviceId) || this.plugfieldStations[0])
+      : PLUGFIELD_STATIONS_CONFIG.find(s => s.deviceId === deviceId);
+
+    if (st && window.webGis && window.webGis.mapEngine) {
+      const olMap = window.webGis.mapEngine.getOlMap();
+      if (olMap) {
+        const view = olMap.getView();
+        view.animate({
+          center: window.ol.proj.fromLonLat([st.lon, st.lat]),
+          zoom: 16,
+          duration: 800
+        });
+
+        // Se o gerenciador de camadas estiver disponível, certifique-se de que a camada de estações está ligada
+        if (window.webGis.layerManager) {
+          window.webGis.layerManager.setLayerVisibility('estacoes_plugfield', true);
+        }
+      }
+    }
   }
 
   startRealtimeSubscription() {

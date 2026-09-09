@@ -358,6 +358,43 @@ export const LAYERS_CONFIG = [
     searchFields: ['estacao_cod', 'nome_estacao']
   },
   {
+    id: 'estacoes_plugfield',
+    name: 'Rede Meteorológica Plugfield (16 Estações)',
+    fileName: 'Estacoes_Plugfield.geojson',
+    source: 'Rede Oficial Plugfield / Passo Fundo',
+    refDate: 'Tempo Real',
+    group: 'hidrografia',
+    geometryType: 'Point',
+    defaultVisible: true,
+    defaultOpacity: 1.0,
+    zIndex: 94,
+    isCore: true,
+    isLazy: false,
+    style: {
+      isCustomIcon: true,
+      iconType: 'estacao_plugfield',
+      pointColor: '#10b981',
+      pointRadius: 9.0,
+      strokeColor: '#ffffff',
+      strokeWidth: 2.2,
+      previewColor: '#10b981'
+    },
+    popupConfig: {
+      titleField: 'nome_estacao',
+      defaultTitle: 'ESTAÇÃO METEOROLÓGICA PLUGFIELD',
+      titlePrefix: '',
+      fields: [
+        { key: 'nome_estacao', label: 'Nome da Estação' },
+        { key: 'deviceId', label: 'ID do Dispositivo (Plugfield)' },
+        { key: 'tipo', label: 'Classificação Territorial' },
+        { key: 'provedor', label: 'Rede / Provedor', defaultValue: 'Rede Plugfield' },
+        { key: 'municipio', label: 'Município', defaultValue: 'Passo Fundo / RS' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['nome_estacao', 'deviceId']
+  },
+  {
     id: 'rio_passo_fundo',
     name: 'Rio Passo Fundo (Curso Principal)',
     fileName: 'Rio Passo Fundo.geojson',
