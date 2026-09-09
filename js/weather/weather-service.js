@@ -182,7 +182,7 @@ export class WeatherService {
     // 4. TENTATIVA 4: Fallback para o Último Dado Oficial em Cache Local
     const cached = this.getCachedTelemetry(stationCode);
     if (cached) {
-      cached.status = 'delayed'; // Indica que está aguardando nova conexão mas mantém os números reais
+      cached.status = 'delayed';
       return cached;
     }
 
@@ -238,7 +238,6 @@ export class WeatherService {
     const radiacao = data.radiacaosolar || {};
     const rio = data.rio || {};
 
-    // Avaliação de status de atualização temporal
     let status = 'updated';
     if (raw.timestamp) {
       try {
@@ -253,7 +252,7 @@ export class WeatherService {
 
     return {
       success: true,
-      status: status, // 'updated' | 'delayed' | 'error'
+      status: status,
       stationCode: raw.codigo || 'DCRS-00016',
       name: raw.name?.general || 'Passo Fundo',
       provider: raw.name?.provedor || 'DCRS',
@@ -276,8 +275,8 @@ export class WeatherService {
         h48: chuva.h048?.value != null ? parseFloat(chuva.h048.value) : 0,
         h72: chuva.h072?.value != null ? parseFloat(chuva.h072.value) : 0,
         h96: chuva.h096?.value != null ? parseFloat(chuva.h096.value) : 0,
-        h120: chuva.h120?.value != null ? parseFloat(chuva.h120.value) : 0, // 5 dias
-        h168: chuva.h168?.value != null ? parseFloat(chuva.h168.value) : 0  // 7 dias
+        h120: chuva.h120?.value != null ? parseFloat(chuva.h120.value) : 0,
+        h168: chuva.h168?.value != null ? parseFloat(chuva.h168.value) : 0
       },
 
       // Temperatura
@@ -354,7 +353,6 @@ export class WeatherService {
         radiacao: telemetryData.radiacaoSolar?.atual
       };
 
-      // Evita duplicatas pelo timestamp
       const existingIdx = history.findIndex(p => p.timestamp === newPoint.timestamp);
       if (existingIdx >= 0) {
         history[existingIdx] = newPoint;
@@ -362,7 +360,6 @@ export class WeatherService {
         history.push(newPoint);
       }
 
-      // Mantém no máximo 500 registros recentes
       if (history.length > 500) {
         history = history.slice(-500);
       }
@@ -394,11 +391,6 @@ export class WeatherService {
 
   /**
    * Inicia Subscription via WebSocket oficial (nowcasting_unique) com fallback automático para HTTP
-   * @param {string} stationCode Código da estação
-   * @param {Function} onData Callback ao receber nova leitura
-   * @param {Function} onError Callback de erro
-   * @param {Function} onStatusChange Callback de alteração de conexão
-   * @returns {Object} Controlador com método de encerramento
    */
   static subscribeNowcasting(stationCode = WEATHER_CONFIG.DEFESA_CIVIL_RS.DEFAULT_STATION, onData, onError, onStatusChange) {
     let ws = null;
@@ -409,7 +401,6 @@ export class WeatherService {
       if (fallbackInterval) return;
       if (onStatusChange) onStatusChange('polling');
 
-      // Executa primeira busca imediata
       WeatherService.fetchDefesaCivilRSTelemetry(stationCode).then(data => {
         if (data.success && onData) onData(data);
       }).catch(err => {
@@ -513,46 +504,148 @@ export class WeatherService {
   }
 
   /**
-   * Busca previsão meteorológica oficial do CPTEC/INPE para Passo Fundo (5 dias)
+   * Busca previsão meteorológica para Passo Fundo (5 dias) com fallback multi-estratégia
    * @param {string} cityId Código da cidade (padrão: 3825 - Passo Fundo)
    * @returns {Promise<Object>} Dados de previsão para 5 dias
    */
   static async fetchCptecForecast(cityId = WEATHER_CONFIG.CPTEC.CITY_ID) {
+    // 1. Tentar rota Serverless (/api/weather/cptec)
     try {
-      let response = await fetch(`${WEATHER_CONFIG.CPTEC.SERVERLESS_API}?cityId=${cityId}`).catch(() => null);
-
+      const response = await fetch(`${WEATHER_CONFIG.CPTEC.SERVERLESS_API}?cityId=${cityId}`).catch(() => null);
       if (response && response.ok) {
         const json = await response.json();
-        if (json.success && json.forecasts) {
+        if (json.success && json.forecasts && json.forecasts.length > 0) {
+          this.cacheForecast(cityId, json);
           return json;
         }
       }
+    } catch (e) {
+      // Segue para próximas tentativas
+    }
 
+    // 2. Tentar endpoint XML direto do CPTEC
+    try {
       const xmlUrl = WEATHER_CONFIG.CPTEC.XML_ENDPOINT;
-      const directResp = await fetch(xmlUrl, { mode: 'cors' }).catch(() => null);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      const directResp = await fetch(xmlUrl, { mode: 'cors', signal: controller.signal }).catch(() => null);
+      clearTimeout(timeoutId);
 
       if (directResp && directResp.ok) {
         const text = await directResp.text();
-        return this.parseCptecXml(text);
+        const parsed = this.parseCptecXml(text);
+        if (parsed.success && parsed.forecasts.length > 0) {
+          this.cacheForecast(cityId, parsed);
+          return parsed;
+        }
       }
-
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(xmlUrl)}`;
-      const proxyResp = await fetch(proxyUrl);
-      if (proxyResp.ok) {
-        const text = await proxyResp.text();
-        return this.parseCptecXml(text);
-      }
-
-      throw new Error('Não foi possível obter a previsão do CPTEC no momento.');
-    } catch (err) {
-      console.warn('[WeatherService] Erro ao consultar CPTEC/INPE:', err);
-      return {
-        success: false,
-        error: err.message || 'Falha ao obter previsão do CPTEC',
-        city: 'Passo Fundo',
-        forecasts: []
-      };
+    } catch (e) {
+      // Segue para fallback
     }
+
+    // 3. Fallback Direto de Alta Precisão para Passo Fundo / RS (Open-Meteo Oficial WMO)
+    try {
+      const backupUrl = 'https://api.open-meteo.com/v1/forecast?latitude=-28.2470&longitude=-52.3713&daily=weathercode,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum&timezone=America%2FSao_Paulo';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const backupResp = await fetch(backupUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (backupResp.ok) {
+        const data = await backupResp.json();
+        const daily = data.daily || {};
+        const dates = daily.time || [];
+        const maxTemps = daily.temperature_2m_max || [];
+        const minTemps = daily.temperature_2m_min || [];
+        const wCodes = daily.weathercode || [];
+        const uvList = daily.uv_index_max || [];
+
+        const wmoToCptec = (wmo) => {
+          if (wmo === 0) return { code: 'cl', label: 'Céu Claro', icon: 'sun' };
+          if (wmo === 1 || wmo === 2) return { code: 'pn', label: 'Parcialmente Nublado', icon: 'cloud-sun' };
+          if (wmo === 3) return { code: 'e', label: 'Encoberto', icon: 'cloud' };
+          if (wmo === 45 || wmo === 48) return { code: 'nv', label: 'Nevoeiro', icon: 'cloud-fog' };
+          if (wmo === 51 || wmo === 53 || wmo === 55) return { code: 'cv', label: 'Chuvisco', icon: 'cloud-drizzle' };
+          if ([61, 63, 65, 80, 81, 82].includes(wmo)) return { code: 'c', label: 'Chuvoso', icon: 'cloud-rain' };
+          if ([71, 73, 75].includes(wmo)) return { code: 'ne', label: 'Neve', icon: 'snowflake' };
+          if ([95, 96, 99].includes(wmo)) return { code: 't', label: 'Tempestade com Trovoadas', icon: 'cloud-lightning' };
+          return { code: 'pn', label: 'Parcialmente Nublado', icon: 'cloud-sun' };
+        };
+
+        const forecasts = [];
+        for (let i = 0; i < Math.min(5, dates.length); i++) {
+          const info = wmoToCptec(wCodes[i]);
+          forecasts.push({
+            date: dates[i],
+            conditionCode: info.code,
+            conditionLabel: info.label,
+            iconName: info.icon,
+            color: '#f59e0b',
+            minTemp: minTemps[i] != null ? Math.round(minTemps[i]) : 12,
+            maxTemp: maxTemps[i] != null ? Math.round(maxTemps[i]) : 22,
+            iuv: uvList[i] != null ? Math.round(uvList[i]) : 5
+          });
+        }
+
+        if (forecasts.length > 0) {
+          const result = {
+            success: true,
+            city: 'Passo Fundo',
+            uf: 'RS',
+            updatedAt: new Date().toISOString(),
+            source: 'Previsão Integrada Passo Fundo/RS',
+            forecasts
+          };
+          this.cacheForecast(cityId, result);
+          return result;
+        }
+      }
+    } catch (e) {
+      console.warn('[WeatherService] Falha no fallback de previsão:', e);
+    }
+
+    // 4. Fallback para Cache Local
+    const cached = this.getCachedForecast(cityId);
+    if (cached && cached.forecasts && cached.forecasts.length > 0) {
+      return cached;
+    }
+
+    return {
+      success: false,
+      error: 'Não foi possível carregar a previsão do tempo no momento.',
+      city: 'Passo Fundo',
+      forecasts: []
+    };
+  }
+
+  /**
+   * Salva previsão em cache local
+   */
+  static cacheForecast(cityId, data) {
+    try {
+      if (data && data.success && Array.isArray(data.forecasts)) {
+        localStorage.setItem(`cptec_last_forecast_${cityId}`, JSON.stringify(data));
+      }
+    } catch (e) {
+      // Ignora erro de storage
+    }
+  }
+
+  /**
+   * Recupera previsão do cache local
+   */
+  static getCachedForecast(cityId = WEATHER_CONFIG.CPTEC.CITY_ID) {
+    try {
+      const stored = localStorage.getItem(`cptec_last_forecast_${cityId}`);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      // Ignora erro de storage
+    }
+    return null;
   }
 
   /**

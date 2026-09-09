@@ -35,6 +35,11 @@ export class WeatherUI {
       this.updateDrsUI(cachedDrs);
     }
 
+    const cachedCptec = WeatherService.getCachedForecast(WEATHER_CONFIG.CPTEC.CITY_ID);
+    if (cachedCptec) {
+      this.updateCptecUI(cachedCptec);
+    }
+
     await this.refreshAllData();
     this.startRealtimeSubscription();
   }
@@ -799,16 +804,21 @@ export class WeatherUI {
   }
 
   async loadCptecData() {
-    const grid = document.getElementById('cptec-5days-grid');
     const data = await WeatherService.fetchCptecForecast(WEATHER_CONFIG.CPTEC.CITY_ID);
+    this.updateCptecUI(data);
+  }
+
+  updateCptecUI(data) {
+    if (!data) return;
     this.cptecData = data;
+    const grid = document.getElementById('cptec-5days-grid');
 
     if (!data.success || !data.forecasts || data.forecasts.length === 0) {
-      if (grid) {
+      if (grid && (!this.alignedCptecForecasts || this.alignedCptecForecasts.length === 0)) {
         grid.innerHTML = `
           <div style="grid-column: 1 / -1; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--dc-hazard-red); padding: 14px; border-radius: var(--radius-md); font-size: 12px; color: #fca5a5; text-align: center;">
             <i class="lucide-alert-circle" style="font-size: 20px; display: block; margin: 0 auto 6px;"></i>
-            Não foi possível carregar a previsão do CPTEC/INPE no momento.<br>
+            Não foi possível carregar a previsão do tempo no momento.<br>
             <span style="font-size: 11px; opacity: 0.8;">Tente novamente em instantes.</span>
           </div>
         `;
