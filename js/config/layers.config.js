@@ -662,7 +662,7 @@ export const LAYERS_CONFIG = [
     style: {
       fillColor: 'rgba(0, 0, 0, 0)',
       strokeColor: '#B71C1C',
-      strokeWidth: 1.8,
+      strokeWidth: 2.16,
       strokeDash: [8, 5],
       previewColor: '#B71C1C'
     },
