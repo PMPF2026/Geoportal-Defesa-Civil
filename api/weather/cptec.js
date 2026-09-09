@@ -57,6 +57,7 @@ module.exports = async function handler(req, res) {
           conditionCode: tempo,
           minTemp: minima,
           maxTemp: maxima,
+          precip: 0,
           iuv: iuv
         });
       }
@@ -88,6 +89,7 @@ module.exports = async function handler(req, res) {
       const minTemps = daily.temperature_2m_min || [];
       const wCodes = daily.weathercode || [];
       const uvList = daily.uv_index_max || [];
+      const precipList = daily.precipitation_sum || [];
 
       const wmoToCptec = (wmo) => {
         if (wmo === 0) return 'cl'; // Céu claro
@@ -108,6 +110,7 @@ module.exports = async function handler(req, res) {
           conditionCode: wmoToCptec(wCodes[i]),
           minTemp: minTemps[i] != null ? Math.round(minTemps[i]) : 12,
           maxTemp: maxTemps[i] != null ? Math.round(maxTemps[i]) : 22,
+          precip: precipList[i] != null ? parseFloat(precipList[i].toFixed(1)) : 0,
           iuv: uvList[i] != null ? Math.round(uvList[i]) : 5
         });
       }

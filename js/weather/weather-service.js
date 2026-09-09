@@ -561,6 +561,7 @@ export class WeatherService {
         const minTemps = daily.temperature_2m_min || [];
         const wCodes = daily.weathercode || [];
         const uvList = daily.uv_index_max || [];
+        const precipList = daily.precipitation_sum || [];
 
         const wmoToCptec = (wmo) => {
           if (wmo === 0) return { code: 'cl', label: 'Céu Claro', icon: 'sun' };
@@ -585,6 +586,7 @@ export class WeatherService {
             color: '#f59e0b',
             minTemp: minTemps[i] != null ? Math.round(minTemps[i]) : 12,
             maxTemp: maxTemps[i] != null ? Math.round(maxTemps[i]) : 22,
+            precip: precipList[i] != null ? parseFloat(precipList[i].toFixed(1)) : 0,
             iuv: uvList[i] != null ? Math.round(uvList[i]) : 5
           });
         }

@@ -250,6 +250,16 @@ export class WeatherUI {
               <canvas id="chart-cptec-temps"></canvas>
             </div>
           </div>
+
+          <!-- Gráfico de Precipitação Prevista (5 Dias) em Barras Azuis -->
+          <div class="weather-chart-box" style="margin-top: 10px;">
+            <div class="weather-chart-header-row">
+              <span style="font-size: 12px; font-weight: 700; color: #ffffff;"><i class="lucide-cloud-rain" style="color: #38bdf8;"></i> Precipitação Prevista para 5 Dias (mm)</span>
+            </div>
+            <div class="weather-chart-canvas-wrapper">
+              <canvas id="chart-cptec-rain"></canvas>
+            </div>
+          </div>
         </div>
 
         <!-- Status & Fontes Oficiais -->
@@ -957,6 +967,7 @@ export class WeatherUI {
         color: '#f59e0b',
         minTemp: Math.round(minTemp),
         maxTemp: Math.round(maxTemp),
+        precip: rawForecasts[0]?.precip != null ? rawForecasts[0].precip : 0,
         iuv: 0
       };
 
@@ -973,13 +984,10 @@ export class WeatherUI {
   }
 
   renderCptecCharts() {
-    const canvas = document.getElementById('chart-cptec-temps');
+    const canvasTemps = document.getElementById('chart-cptec-temps');
+    const canvasRain = document.getElementById('chart-cptec-rain');
     const forecastList = this.alignedCptecForecasts || this.cptecData?.forecasts || [];
-    if (!canvas || !window.Chart || forecastList.length === 0) return;
-
-    if (this.charts.cptecTemps) {
-      this.charts.cptecTemps.destroy();
-    }
+    if (!window.Chart || forecastList.length === 0) return;
 
     const pad = (n) => String(n).padStart(2, '0');
     const labels = forecastList.map((f, idx) => {
@@ -989,61 +997,119 @@ export class WeatherUI {
 
     const maxTemps = forecastList.map(f => f.maxTemp);
     const minTemps = forecastList.map(f => f.minTemp);
+    const rainData = forecastList.map(f => (f.precip != null ? f.precip : 0));
 
-    const ctx = canvas.getContext('2d');
-    this.charts.cptecTemps = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Temp. Máxima (°C)',
-            data: maxTemps,
-            borderColor: '#f87171',
-            backgroundColor: 'rgba(248, 113, 113, 0.15)',
-            fill: false,
-            tension: 0.35,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#f87171'
+    // 1. Gráfico de Curva de Temperaturas Previstas (°C)
+    if (canvasTemps) {
+      if (this.charts.cptecTemps) {
+        this.charts.cptecTemps.destroy();
+      }
+      const ctxTemps = canvasTemps.getContext('2d');
+      this.charts.cptecTemps = new Chart(ctxTemps, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Temp. Máxima (°C)',
+              data: maxTemps,
+              borderColor: '#f87171',
+              backgroundColor: 'rgba(248, 113, 113, 0.15)',
+              fill: false,
+              tension: 0.35,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#f87171'
+            },
+            {
+              label: 'Temp. Mínima (°C)',
+              data: minTemps,
+              borderColor: '#60a5fa',
+              backgroundColor: 'rgba(96, 165, 250, 0.15)',
+              fill: false,
+              tension: 0.35,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#60a5fa'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#ffffff', font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (item) => `${item.dataset.label}: ${item.raw} °C`
+              }
+            }
           },
-          {
-            label: 'Temp. Mínima (°C)',
-            data: minTemps,
-            borderColor: '#60a5fa',
-            backgroundColor: 'rgba(96, 165, 250, 0.15)',
-            fill: false,
-            tension: 0.35,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#60a5fa'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: '#ffffff', font: { size: 11 } }
-          },
-          tooltip: {
-            callbacks: {
-              label: (item) => `${item.dataset.label}: ${item.raw} °C`
+          scales: {
+            x: {
+              ticks: { color: '#94a3b8', font: { size: 10.5 } },
+              grid: { display: false }
+            },
+            y: {
+              ticks: { color: '#94a3b8', font: { size: 10 } },
+              grid: { color: 'rgba(255, 255, 255, 0.08)' }
             }
           }
+        }
+      });
+    }
+
+    // 2. Gráfico de Precipitação Prevista (mm) em Barras Azuis
+    if (canvasRain) {
+      if (this.charts.cptecRain) {
+        this.charts.cptecRain.destroy();
+      }
+      const ctxRain = canvasRain.getContext('2d');
+      this.charts.cptecRain = new Chart(ctxRain, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Precipitação Prevista (mm)',
+              data: rainData,
+              backgroundColor: 'rgba(56, 189, 248, 0.75)',
+              borderColor: '#38bdf8',
+              hoverBackgroundColor: 'rgba(2, 132, 199, 0.95)',
+              hoverBorderColor: '#0284c7',
+              borderWidth: 1.5,
+              borderRadius: 4
+            }
+          ]
         },
-        scales: {
-          x: {
-            ticks: { color: '#94a3b8', font: { size: 10.5 } },
-            grid: { display: false }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#ffffff', font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (item) => `Precipitação Prevista: ${item.raw} mm`
+              }
+            }
           },
-          y: {
-            ticks: { color: '#94a3b8', font: { size: 10 } },
-            grid: { color: 'rgba(255, 255, 255, 0.08)' }
+          scales: {
+            x: {
+              ticks: { color: '#94a3b8', font: { size: 10.5 } },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#94a3b8', font: { size: 10 } },
+              grid: { color: 'rgba(255, 255, 255, 0.08)' }
+            }
           }
         }
-      }
-    });
+      });
+    }
   }
 }
