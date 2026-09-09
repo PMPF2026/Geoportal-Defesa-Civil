@@ -157,6 +157,18 @@
   border-color: #38bdf8;
 }
 
+.plugfield-charts-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .plugfield-charts-grid-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .plugfield-history-table {
   width: 100%;
   border-collapse: collapse;

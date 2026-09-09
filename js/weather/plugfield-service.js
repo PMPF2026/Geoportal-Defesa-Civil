@@ -66,6 +66,67 @@ export class PlugfieldService {
   }
 
   /**
+   * Alias de compatibilidade para fetchAllStations
+   */
+  static async getAllStations() {
+    return this.fetchAllStations();
+  }
+
+  /**
+   * Retorna do cache local síncrono para inicialização instantânea da interface
+   */
+  static getCachedStations() {
+    return this.getLocalCache('all_stations') || this.getAnyLocalCache('all_stations');
+  }
+
+  /**
+   * Obtém histórico dos últimos 5 dias normalizado para gráficos e tabelas
+   * @param {number} deviceId 
+   */
+  static async getStationDailyHistory(deviceId) {
+    const res = await this.fetchStationDetailsAndHistory(deviceId);
+    if (!res || !res.history5Days || !Array.isArray(res.history5Days)) {
+      return [];
+    }
+
+    return res.history5Days.map(item => {
+      const rawDate = item.localDate || item.date || item.day || '';
+      let dateLabel = rawDate;
+      if (typeof rawDate === 'string' && rawDate.includes('/')) {
+        const parts = rawDate.split('/');
+        if (parts.length >= 2) dateLabel = `${parts[0]}/${parts[1]}`;
+      } else if (typeof rawDate === 'string' && rawDate.includes('-')) {
+        const parts = rawDate.split('-');
+        if (parts.length >= 3) dateLabel = `${parts[2].slice(0, 2)}/${parts[1]}`;
+      }
+
+      const tempAvg = item.temp != null ? parseFloat(item.temp) : (item.tempAvg != null ? parseFloat(item.tempAvg) : null);
+      const tempMin = item.tempMin != null ? parseFloat(item.tempMin) : (item.minTemp != null ? parseFloat(item.minTemp) : null);
+      const tempMax = item.tempMax != null ? parseFloat(item.tempMax) : (item.maxTemp != null ? parseFloat(item.maxTemp) : null);
+      const rain = item.rainAccum != null ? parseFloat(item.rainAccum) : (item.rain != null ? parseFloat(item.rain) : 0);
+      const windAvg = item.wind != null ? parseFloat(item.wind) : (item.windAvg != null ? parseFloat(item.windAvg) : null);
+      const windMax = item.windBurst != null ? parseFloat(item.windBurst) : (item.winbMax != null ? parseFloat(item.winbMax) : (item.windMax != null ? parseFloat(item.windMax) : null));
+      const press = item.pressure != null ? parseFloat(item.pressure) : null;
+      const river = item.levelAdditional != null && item.levelAdditional !== '' ? parseFloat(item.levelAdditional) : null;
+      const hum = item.humidity != null ? parseFloat(item.humidity) : null;
+
+      return {
+        date: dateLabel,
+        fullDate: rawDate,
+        tempAvg: (tempAvg != null && !isNaN(tempAvg)) ? tempAvg : null,
+        tempMin: (tempMin != null && !isNaN(tempMin)) ? tempMin : null,
+        tempMax: (tempMax != null && !isNaN(tempMax)) ? tempMax : null,
+        rainAccum: (!isNaN(rain) && rain >= 0) ? rain : 0,
+        windAvg: (windAvg != null && !isNaN(windAvg)) ? windAvg : null,
+        windMax: (windMax != null && !isNaN(windMax)) ? windMax : null,
+        pressure: (press != null && !isNaN(press)) ? press : null,
+        riverLevel: (river != null && !isNaN(river)) ? river : null,
+        humidity: (hum != null && !isNaN(hum)) ? hum : null
+      };
+    });
+  }
+
+  /**
    * Obtém dados detalhados e histórico dos últimos 5 dias de uma estação
    * @param {number} deviceId 
    */

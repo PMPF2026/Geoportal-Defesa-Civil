@@ -292,6 +292,7 @@ export class ExportReportTool {
 
     // Linhas formatadas da tabela de 16 estações Plugfield
     let plugfieldRowsHtml = '';
+    let plugfieldChartsHtml = '';
     if (plugfieldStations && plugfieldStations.length > 0) {
       plugfieldRowsHtml = plugfieldStations.map(st => {
         const m = st.metrics || {};
@@ -321,6 +322,16 @@ export class ExportReportTool {
           </tr>
         `;
       }).join('');
+
+      // Obter histórico de 5 dias da estação de referência
+      try {
+        const refStationId = window.webGis?.weatherUI?.selectedPlugfieldId || 4283;
+        const refStation = plugfieldStations.find(s => s.deviceId === refStationId) || plugfieldStations[0];
+        const refHistory = await PlugfieldService.getStationDailyHistory(refStation.deviceId);
+        plugfieldChartsHtml = this.generatePlugfieldReportChartsHtml(refStation, refHistory);
+      } catch (err) {
+        console.warn('[ExportReport] Erro ao obter histórico de 5 dias para gráficos:', err);
+      }
     }
 
     // 5. Abrir janela do relatório
@@ -693,6 +704,8 @@ export class ExportReportTool {
           <div style="font-size: 10.5px; color: #64748b; margin-top: 0; margin-bottom: 18px;">
             *Nota: Média mensal de temperatura indisponível — série histórica insuficiente. Para estações sem sensor de nível ativo é registrado "Dado não disponível para esta estação".
           </div>
+
+          ${plugfieldChartsHtml}
         ` : `
           <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; color: #64748b; font-size: 12px;">
             Dados da Rede Meteorológica Plugfield em processamento ou indisponíveis no momento da consulta.
@@ -1193,5 +1206,181 @@ export class ExportReportTool {
 
     reportWindow.document.close();
     Notification.success('Boletim de Situação gerado com sucesso!');
+  }
+
+  /**
+   * Gera gráficos vetoriais SVG nítidos e compatíveis com impressão/PDF para o relatório
+   */
+  generatePlugfieldReportChartsHtml(refStation, refHistory) {
+    if (!refHistory || refHistory.length === 0) return '';
+
+    const width = 420;
+    const height = 135;
+    const padding = { top: 22, right: 15, bottom: 24, left: 38 };
+    const chartW = width - padding.left - padding.right;
+    const chartH = height - padding.top - padding.bottom;
+    const n = refHistory.length;
+
+    const getX = (i) => padding.left + (i / Math.max(1, n - 1)) * chartW;
+
+    // 1. Gráfico de Temperatura (Linha)
+    const avgs = refHistory.map(d => d.tempAvg).filter(v => v !== null && !isNaN(v));
+    const mins = refHistory.map(d => d.tempMin).filter(v => v !== null && !isNaN(v));
+    const maxs = refHistory.map(d => d.tempMax).filter(v => v !== null && !isNaN(v));
+    const allTemps = [...avgs, ...mins, ...maxs];
+    const minTemp = allTemps.length ? Math.floor(Math.min(...allTemps) - 2) : 10;
+    const maxTemp = allTemps.length ? Math.ceil(Math.max(...allTemps) + 2) : 30;
+    const tempRange = maxTemp - minTemp || 1;
+    const getYTemp = (val) => padding.top + chartH - ((val - minTemp) / tempRange) * chartH;
+
+    const pointsTempAvg = refHistory.map((d, i) => d.tempAvg != null ? `${getX(i)},${getYTemp(d.tempAvg)}` : '').filter(Boolean).join(' ');
+    const pointsTempMin = refHistory.map((d, i) => d.tempMin != null ? `${getX(i)},${getYTemp(d.tempMin)}` : '').filter(Boolean).join(' ');
+    const pointsTempMax = refHistory.map((d, i) => d.tempMax != null ? `${getX(i)},${getYTemp(d.tempMax)}` : '').filter(Boolean).join(' ');
+
+    const svgTemp = `
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+        <text x="10" y="15" font-size="10.5" font-weight="bold" fill="#0f172a">Temperatura — Últimos 5 Dias (°C)</text>
+        <line x1="${padding.left}" y1="${padding.top + chartH}" x2="${width - padding.right}" y2="${padding.top + chartH}" stroke="#cbd5e1" stroke-width="1"/>
+        ${pointsTempMin ? `<polyline fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3 3" points="${pointsTempMin}"/>` : ''}
+        ${pointsTempMax ? `<polyline fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3 3" points="${pointsTempMax}"/>` : ''}
+        ${pointsTempAvg ? `<polyline fill="none" stroke="#f97316" stroke-width="2.2" points="${pointsTempAvg}"/>` : ''}
+        ${refHistory.map((d, i) => `
+          ${d.tempAvg != null ? `<circle cx="${getX(i)}" cy="${getYTemp(d.tempAvg)}" r="3" fill="#f97316"/>` : ''}
+          <text x="${getX(i)}" y="${padding.top + chartH + 14}" font-size="9" fill="#64748b" text-anchor="middle">${d.date}</text>
+          ${d.tempAvg != null ? `<text x="${getX(i)}" y="${getYTemp(d.tempAvg) - 5}" font-size="8.5" font-weight="bold" fill="#f97316" text-anchor="middle">${d.tempAvg.toFixed(1)}°</text>` : ''}
+        `).join('')}
+        <text x="${padding.left - 4}" y="${padding.top + 8}" font-size="8.5" fill="#94a3b8" text-anchor="end">${maxTemp}°</text>
+        <text x="${padding.left - 4}" y="${padding.top + chartH}" font-size="8.5" fill="#94a3b8" text-anchor="end">${minTemp}°</text>
+      </svg>
+    `;
+
+    // 2. Gráfico de Precipitação (Barras)
+    const rains = refHistory.map(d => d.rainAccum || 0);
+    const maxRain = Math.max(...rains, 5);
+    const getYRain = (val) => padding.top + chartH - (val / maxRain) * chartH;
+    const barWidth = Math.min(26, (chartW / n) * 0.55);
+
+    const svgRain = `
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+        <text x="10" y="15" font-size="10.5" font-weight="bold" fill="#0f172a">Precipitação — Últimos 5 Dias (mm)</text>
+        <line x1="${padding.left}" y1="${padding.top + chartH}" x2="${width - padding.right}" y2="${padding.top + chartH}" stroke="#cbd5e1" stroke-width="1"/>
+        ${refHistory.map((d, i) => {
+          const r = d.rainAccum || 0;
+          const y = getYRain(r);
+          const h = (padding.top + chartH) - y;
+          const x = getX(i) - barWidth / 2;
+          return `
+            <rect x="${x}" y="${y}" width="${barWidth}" height="${Math.max(1, h)}" fill="#38bdf8" rx="2"/>
+            <text x="${getX(i)}" y="${padding.top + chartH + 14}" font-size="9" fill="#64748b" text-anchor="middle">${d.date}</text>
+            <text x="${getX(i)}" y="${Math.max(padding.top + 10, y - 4)}" font-size="8.5" font-weight="bold" fill="${r > 0 ? '#0284c7' : '#94a3b8'}" text-anchor="middle">${r.toFixed(1)}</text>
+          `;
+        }).join('')}
+        <text x="${padding.left - 4}" y="${padding.top + 8}" font-size="8.5" fill="#94a3b8" text-anchor="end">${maxRain.toFixed(0)}</text>
+        <text x="${padding.left - 4}" y="${padding.top + chartH}" font-size="8.5" fill="#94a3b8" text-anchor="end">0</text>
+      </svg>
+    `;
+
+    // 3. Gráfico de Vento (Linha)
+    const winds = refHistory.map(d => d.windAvg).filter(v => v !== null && !isNaN(v));
+    const gusts = refHistory.map(d => d.windMax).filter(v => v !== null && !isNaN(v));
+    const allWinds = [...winds, ...gusts];
+    const maxWind = allWinds.length ? Math.ceil(Math.max(...allWinds) + 5) : 30;
+    const getYWind = (val) => padding.top + chartH - (val / maxWind) * chartH;
+    const pointsWindAvg = refHistory.map((d, i) => d.windAvg != null ? `${getX(i)},${getYWind(d.windAvg)}` : '').filter(Boolean).join(' ');
+    const pointsWindGust = refHistory.map((d, i) => d.windMax != null ? `${getX(i)},${getYWind(d.windMax)}` : '').filter(Boolean).join(' ');
+
+    const svgWind = `
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+        <text x="10" y="15" font-size="10.5" font-weight="bold" fill="#0f172a">Vento — Últimos 5 Dias (km/h)</text>
+        <line x1="${padding.left}" y1="${padding.top + chartH}" x2="${width - padding.right}" y2="${padding.top + chartH}" stroke="#cbd5e1" stroke-width="1"/>
+        ${pointsWindGust ? `<polyline fill="none" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="3 3" points="${pointsWindGust}"/>` : ''}
+        ${pointsWindAvg ? `<polyline fill="none" stroke="#a855f7" stroke-width="2.2" points="${pointsWindAvg}"/>` : ''}
+        ${refHistory.map((d, i) => `
+          ${d.windAvg != null ? `<circle cx="${getX(i)}" cy="${getYWind(d.windAvg)}" r="3" fill="#a855f7"/>` : ''}
+          <text x="${getX(i)}" y="${padding.top + chartH + 14}" font-size="9" fill="#64748b" text-anchor="middle">${d.date}</text>
+          ${d.windAvg != null ? `<text x="${getX(i)}" y="${getYWind(d.windAvg) - 5}" font-size="8.5" font-weight="bold" fill="#a855f7" text-anchor="middle">${d.windAvg.toFixed(0)}</text>` : ''}
+        `).join('')}
+        <text x="${padding.left - 4}" y="${padding.top + 8}" font-size="8.5" fill="#94a3b8" text-anchor="end">${maxWind}</text>
+        <text x="${padding.left - 4}" y="${padding.top + chartH}" font-size="8.5" fill="#94a3b8" text-anchor="end">0</text>
+      </svg>
+    `;
+
+    // 4. Gráfico de Pressão (Linha)
+    const hasPressure = refHistory.some(d => d.pressure != null && !isNaN(d.pressure));
+    let svgPressure = '';
+    if (hasPressure) {
+      const pressures = refHistory.map(d => d.pressure).filter(v => v !== null && !isNaN(v));
+      const minPress = Math.floor(Math.min(...pressures) - 2);
+      const maxPress = Math.ceil(Math.max(...pressures) + 2);
+      const pressRange = maxPress - minPress || 1;
+      const getYPress = (val) => padding.top + chartH - ((val - minPress) / pressRange) * chartH;
+      const pointsPress = refHistory.map((d, i) => d.pressure != null ? `${getX(i)},${getYPress(d.pressure)}` : '').filter(Boolean).join(' ');
+
+      svgPressure = `
+        <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+          <text x="10" y="15" font-size="10.5" font-weight="bold" fill="#0f172a">Pressão Atmosférica — Últimos 5 Dias (hPa)</text>
+          <line x1="${padding.left}" y1="${padding.top + chartH}" x2="${width - padding.right}" y2="${padding.top + chartH}" stroke="#cbd5e1" stroke-width="1"/>
+          ${pointsPress ? `<polyline fill="none" stroke="#64748b" stroke-width="2" points="${pointsPress}"/>` : ''}
+          ${refHistory.map((d, i) => `
+            ${d.pressure != null ? `<circle cx="${getX(i)}" cy="${getYPress(d.pressure)}" r="3" fill="#64748b"/>` : ''}
+            <text x="${getX(i)}" y="${padding.top + chartH + 14}" font-size="9" fill="#64748b" text-anchor="middle">${d.date}</text>
+            ${d.pressure != null ? `<text x="${getX(i)}" y="${getYPress(d.pressure) - 5}" font-size="8.5" fill="#475569" text-anchor="middle">${d.pressure.toFixed(0)}</text>` : ''}
+          `).join('')}
+          <text x="${padding.left - 4}" y="${padding.top + 8}" font-size="8.5" fill="#94a3b8" text-anchor="end">${maxPress}</text>
+          <text x="${padding.left - 4}" y="${padding.top + chartH}" font-size="8.5" fill="#94a3b8" text-anchor="end">${minPress}</text>
+        </svg>
+      `;
+    } else {
+      svgPressure = `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; height:${height}px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:11px; text-align:center; padding:10px;">
+          Dados históricos de pressão indisponíveis para esta estação.
+        </div>
+      `;
+    }
+
+    // 5. Gráfico de Nível do Rio (quando aplicável)
+    const hasRiver = (refStation && refStation.metrics && refStation.metrics.riverLevel != null) ||
+                    refHistory.some(d => d.riverLevel != null && !isNaN(d.riverLevel));
+    let svgRiver = '';
+    if (hasRiver) {
+      const riverVals = refHistory.map(d => d.riverLevel).filter(v => v !== null && !isNaN(v));
+      const minRiver = riverVals.length ? Math.floor(Math.min(...riverVals) - 5) : 0;
+      const maxRiver = riverVals.length ? Math.ceil(Math.max(...riverVals) + 5) : 100;
+      const riverRange = maxRiver - minRiver || 1;
+      const getYRiver = (val) => padding.top + chartH - ((val - minRiver) / riverRange) * chartH;
+      const pointsRiver = refHistory.map((d, i) => d.riverLevel != null ? `${getX(i)},${getYRiver(d.riverLevel)}` : '').filter(Boolean).join(' ');
+
+      svgRiver = `
+        <div style="margin-top:10px;">
+          <svg width="100%" height="${height}" viewBox="0 0 ${width * 2 + 10} ${height}" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+            <text x="10" y="15" font-size="10.5" font-weight="bold" fill="#0f172a">Nível do Sensor Fluviométrico — Últimos 5 Dias (cm / m)</text>
+            <line x1="${padding.left}" y1="${padding.top + chartH}" x2="${(width * 2 + 10) - padding.right}" y2="${padding.top + chartH}" stroke="#cbd5e1" stroke-width="1"/>
+            ${pointsRiver ? `<polyline fill="none" stroke="#06b6d4" stroke-width="2.5" points="${pointsRiver}"/>` : ''}
+            ${refHistory.map((d, i) => `
+              ${d.riverLevel != null ? `<circle cx="${getX(i)}" cy="${getYRiver(d.riverLevel)}" r="3.5" fill="#06b6d4"/>` : ''}
+              <text x="${getX(i)}" y="${padding.top + chartH + 14}" font-size="9" fill="#64748b" text-anchor="middle">${d.date}</text>
+              ${d.riverLevel != null ? `<text x="${getX(i)}" y="${getYRiver(d.riverLevel) - 5}" font-size="8.5" font-weight="bold" fill="#0891b2" text-anchor="middle">${d.riverLevel.toFixed(1)} cm</text>` : ''}
+            `).join('')}
+          </svg>
+        </div>
+      `;
+    }
+
+    return `
+      <div style="margin-top: 14px; margin-bottom: 18px; page-break-inside: avoid;">
+        <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+          Gráficos Meteorológicos Consolidados (Últimos 5 Dias) — Estação de Referência: ${refStation.name} (#${refStation.deviceId})
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>${svgTemp}</div>
+          <div>${svgRain}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <div>${svgWind}</div>
+          <div>${svgPressure}</div>
+        </div>
+        ${svgRiver}
+      </div>
+    `;
   }
 }

@@ -454,11 +454,82 @@ export class WeatherUI {
             </button>
           </div>
 
-          <!-- Histórico dos Últimos 5 Dias -->
-          <div class="weather-chart-box" style="margin-top: 10px;">
+          <!-- Seção de Gráficos Individuais da Rede Plugfield (Últimos 5 Dias) -->
+          <div class="plugfield-charts-section" style="margin-top: 14px;">
+            <div class="weather-chart-header-row" style="margin-bottom: 8px;">
+              <span style="font-size: 12.5px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+                <i class="lucide-line-chart" style="color: #10b981;"></i> Gráficos Individuais da Estação — Últimos 5 Dias
+              </span>
+            </div>
+
+            <!-- Linha 1: Temperatura | Precipitação -->
+            <div class="plugfield-charts-grid-row">
+              <div class="weather-chart-box">
+                <div class="weather-chart-header-row">
+                  <span style="font-size: 11.5px; font-weight: 700; color: #f97316;">
+                    <i class="lucide-thermometer"></i> Temperatura — Últimos 5 Dias (°C)
+                  </span>
+                </div>
+                <div style="height: 180px; position: relative; padding: 4px;">
+                  <canvas id="chart-pf-temp"></canvas>
+                </div>
+              </div>
+
+              <div class="weather-chart-box">
+                <div class="weather-chart-header-row">
+                  <span style="font-size: 11.5px; font-weight: 700; color: #38bdf8;">
+                    <i class="lucide-cloud-rain"></i> Precipitação — Últimos 5 Dias (mm)
+                  </span>
+                </div>
+                <div style="height: 180px; position: relative; padding: 4px;">
+                  <canvas id="chart-pf-rain"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Linha 2: Vento | Pressão Atmosférica -->
+            <div class="plugfield-charts-grid-row" style="margin-top: 10px;">
+              <div class="weather-chart-box">
+                <div class="weather-chart-header-row">
+                  <span style="font-size: 11.5px; font-weight: 700; color: #c084fc;">
+                    <i class="lucide-wind"></i> Vento — Últimos 5 Dias (km/h)
+                  </span>
+                </div>
+                <div style="height: 180px; position: relative; padding: 4px;">
+                  <canvas id="chart-pf-wind"></canvas>
+                </div>
+              </div>
+
+              <div class="weather-chart-box">
+                <div class="weather-chart-header-row">
+                  <span style="font-size: 11.5px; font-weight: 700; color: #94a3b8;">
+                    <i class="lucide-gauge"></i> Pressão Atmosférica — Últimos 5 Dias (hPa)
+                  </span>
+                </div>
+                <div id="pf-pressure-chart-container" style="height: 180px; position: relative; padding: 4px;">
+                  <canvas id="chart-pf-pressure"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Linha 3: Nível do Rio (quando aplicável) -->
+            <div class="weather-chart-box" id="pf-river-chart-box" style="margin-top: 10px; display: none;">
+              <div class="weather-chart-header-row">
+                <span style="font-size: 11.5px; font-weight: 700; color: #06b6d4;">
+                  <i class="lucide-waves"></i> Nível do Rio — Últimos 5 Dias (m)
+                </span>
+              </div>
+              <div id="pf-river-chart-container" style="height: 180px; position: relative; padding: 4px;">
+                <canvas id="chart-pf-river"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Histórico dos Últimos 5 Dias (Tabela Detalhada) -->
+          <div class="weather-chart-box" style="margin-top: 12px;">
             <div class="weather-chart-header-row">
               <span style="font-size: 12px; font-weight: 700; color: #ffffff;">
-                <i class="lucide-history" style="color: #38bdf8;"></i> Histórico dos Últimos 5 Dias (Leituras Diárias)
+                <i class="lucide-history" style="color: #38bdf8;"></i> Leituras Diárias Detalhadas (Últimos 5 Dias)
               </span>
             </div>
             <div id="pf-history-container" style="padding: 10px;">
@@ -779,6 +850,10 @@ export class WeatherUI {
     `;
     if (window.lucide) window.lucide.createIcons();
 
+    const st = (this.plugfieldStations && this.plugfieldStations.length > 0)
+      ? (this.plugfieldStations.find(s => s.deviceId === deviceId) || this.plugfieldStations[0])
+      : PLUGFIELD_STATIONS_CONFIG.find(s => s.deviceId === deviceId);
+
     try {
       const history = await PlugfieldService.getStationDailyHistory(deviceId);
       if (!history || history.length === 0) {
@@ -808,12 +883,12 @@ export class WeatherUI {
       `;
 
       history.forEach(d => {
-        const dateStr = d.date ? new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : (d.dateFormatted || '--');
+        const dateStr = d.date || d.fullDate || '--';
         const minT = d.tempMin !== null && d.tempMin !== undefined ? `${d.tempMin.toFixed(1)}°` : '--';
         const maxT = d.tempMax !== null && d.tempMax !== undefined ? `${d.tempMax.toFixed(1)}°` : '--';
-        const rain = d.rain !== null && d.rain !== undefined ? `${d.rain.toFixed(1)}` : '0.0';
+        const rain = d.rainAccum !== null && d.rainAccum !== undefined ? `${d.rainAccum.toFixed(1)}` : '0.0';
         const wind = d.windMax !== null && d.windMax !== undefined ? `${d.windMax.toFixed(1)} km/h` : '--';
-        const hum = d.humidityMin !== null && d.humidityMax !== null ? `${d.humidityMin}-${d.humidityMax}%` : (d.humidity !== null ? `${d.humidity}%` : '--');
+        const hum = d.humidity !== null && d.humidity !== undefined ? `${d.humidity}%` : '--';
         const press = d.pressure !== null && d.pressure !== undefined ? `${d.pressure.toFixed(0)}` : '--';
 
         html += `
@@ -835,6 +910,9 @@ export class WeatherUI {
       `;
 
       container.innerHTML = html;
+
+      // Renderizar Gráficos Individuais da Estação Plugfield
+      this.renderPlugfieldCharts(history, st);
     } catch (err) {
       console.warn('[WeatherUI] Erro ao carregar histórico diário:', err);
       container.innerHTML = `
@@ -842,6 +920,256 @@ export class WeatherUI {
           Falha ao obter histórico da estação. Tente novamente mais tarde.
         </div>
       `;
+    }
+  }
+
+  renderPlugfieldCharts(history, station) {
+    if (!window.Chart || !history || history.length === 0) return;
+
+    const labels = history.map(d => d.date);
+
+    // 1. Gráfico de Temperatura — Linha (Média, Mínima, Máxima em °C)
+    const canvasTemp = document.getElementById('chart-pf-temp');
+    if (canvasTemp) {
+      if (this.charts.pfTemp) this.charts.pfTemp.destroy();
+
+      const avgData = history.map(d => d.tempAvg);
+      const minData = history.map(d => d.tempMin);
+      const maxData = history.map(d => d.tempMax);
+
+      const ctx = canvasTemp.getContext('2d');
+      this.charts.pfTemp = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Temp. Média (°C)',
+              data: avgData,
+              borderColor: '#f97316',
+              backgroundColor: 'rgba(249, 115, 22, 0.15)',
+              tension: 0.3,
+              fill: false,
+              pointRadius: 4,
+              borderWidth: 2
+            },
+            {
+              label: 'Temp. Mínima (°C)',
+              data: minData,
+              borderColor: '#38bdf8',
+              backgroundColor: 'transparent',
+              borderDash: [4, 4],
+              tension: 0.3,
+              pointRadius: 3,
+              borderWidth: 1.5
+            },
+            {
+              label: 'Temp. Máxima (°C)',
+              data: maxData,
+              borderColor: '#ef4444',
+              backgroundColor: 'transparent',
+              borderDash: [4, 4],
+              tension: 0.3,
+              pointRadius: 3,
+              borderWidth: 1.5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#ffffff', font: { size: 10 } } },
+            tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${item.raw != null ? item.raw + ' °C' : 'N/D'}` } }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+          }
+        }
+      });
+    }
+
+    // 2. Gráfico de Precipitação — Barras (rainAccum em mm)
+    const canvasRain = document.getElementById('chart-pf-rain');
+    if (canvasRain) {
+      if (this.charts.pfRain) this.charts.pfRain.destroy();
+
+      const rainData = history.map(d => d.rainAccum);
+      const ctx = canvasRain.getContext('2d');
+      this.charts.pfRain = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Precipitação Diária (mm)',
+              data: rainData,
+              backgroundColor: 'rgba(56, 189, 248, 0.75)',
+              borderColor: '#38bdf8',
+              borderWidth: 1.5,
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#ffffff', font: { size: 10 } } },
+            tooltip: { callbacks: { label: (item) => `Precipitação: ${item.raw} mm` } }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+          }
+        }
+      });
+    }
+
+    // 3. Gráfico de Vento — Linha (Vento Médio e Rajada Máxima em km/h)
+    const canvasWind = document.getElementById('chart-pf-wind');
+    if (canvasWind) {
+      if (this.charts.pfWind) this.charts.pfWind.destroy();
+
+      const windData = history.map(d => d.windAvg);
+      const gustData = history.map(d => d.windMax);
+      const ctx = canvasWind.getContext('2d');
+      this.charts.pfWind = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Vento Médio (km/h)',
+              data: windData,
+              borderColor: '#c084fc',
+              backgroundColor: 'rgba(192, 132, 252, 0.15)',
+              tension: 0.3,
+              pointRadius: 4,
+              borderWidth: 2
+            },
+            {
+              label: 'Rajada Máxima (km/h)',
+              data: gustData,
+              borderColor: '#f43f5e',
+              backgroundColor: 'transparent',
+              borderDash: [3, 3],
+              tension: 0.3,
+              pointRadius: 3,
+              borderWidth: 1.5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#ffffff', font: { size: 10 } } },
+            tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${item.raw != null ? item.raw + ' km/h' : 'N/D'}` } }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+          }
+        }
+      });
+    }
+
+    // 4. Gráfico de Pressão Atmosférica — Linha (hPa)
+    const pressContainer = document.getElementById('pf-pressure-chart-container');
+    const hasPressureData = history.some(d => d.pressure != null && !isNaN(d.pressure));
+    if (pressContainer) {
+      if (!hasPressureData) {
+        pressContainer.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 11px; text-align: center; padding: 10px;">
+            Dados históricos de pressão indisponíveis para esta estação.
+          </div>
+        `;
+      } else {
+        pressContainer.innerHTML = `<canvas id="chart-pf-pressure"></canvas>`;
+        const canvasPress = document.getElementById('chart-pf-pressure');
+        if (this.charts.pfPressure) this.charts.pfPressure.destroy();
+        const pressData = history.map(d => d.pressure);
+        const ctx = canvasPress.getContext('2d');
+        this.charts.pfPressure = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Pressão (hPa)',
+                data: pressData,
+                borderColor: '#94a3b8',
+                backgroundColor: 'rgba(148, 163, 184, 0.15)',
+                tension: 0.2,
+                pointRadius: 4,
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#ffffff', font: { size: 10 } } },
+              tooltip: { callbacks: { label: (item) => `Pressão: ${item.raw} hPa` } }
+            },
+            scales: {
+              x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+              y: { ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+            }
+          }
+        });
+      }
+    }
+
+    // 5. Gráfico de Nível do Rio — Linha (m / cm)
+    const riverBox = document.getElementById('pf-river-chart-box');
+    const hasRiverSensor = (station && station.metrics && station.metrics.riverLevel != null) ||
+                          history.some(d => d.riverLevel != null && !isNaN(d.riverLevel));
+    if (riverBox) {
+      if (hasRiverSensor) {
+        riverBox.style.display = 'block';
+        const riverContainer = document.getElementById('pf-river-chart-container');
+        riverContainer.innerHTML = `<canvas id="chart-pf-river"></canvas>`;
+        const canvasRiver = document.getElementById('chart-pf-river');
+        if (this.charts.pfRiver) this.charts.pfRiver.destroy();
+        const riverData = history.map(d => d.riverLevel);
+        const ctx = canvasRiver.getContext('2d');
+        this.charts.pfRiver = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Nível do Sensor (cm / m)',
+                data: riverData,
+                borderColor: '#06b6d4',
+                backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#ffffff', font: { size: 10 } } },
+              tooltip: { callbacks: { label: (item) => `Nível: ${item.raw} cm` } }
+            },
+            scales: {
+              x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+              y: { ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+            }
+          }
+        });
+      } else {
+        riverBox.style.display = 'none';
+      }
     }
   }
 

@@ -269,13 +269,15 @@ module.exports = async function handler(req, res) {
         stationName: STATION_NAMES_MAP[devIdNum] || `Estação ${devIdNum}`,
         period: { begin, end },
         days: dailyList.map(item => ({
-          localDate: item.localDate,
+          localDate: item.localDate || item.date,
           temp: item.temp != null ? parseFloat(item.temp) : null,
           tempMin: item.tempMin != null ? parseFloat(item.tempMin) : null,
           tempMax: item.tempMax != null ? parseFloat(item.tempMax) : null,
-          rainAccum: item.rainAccum != null ? parseFloat(item.rainAccum) : 0,
+          rainAccum: item.rainAccum != null ? parseFloat(item.rainAccum) : (item.rain != null ? parseFloat(item.rain) : 0),
           wind: item.wind != null ? parseFloat(item.wind) : null,
-          windBurst: item.windBurst != null ? parseFloat(item.windBurst) : null,
+          windBurst: item.windBurst != null ? parseFloat(item.windBurst) : (item.winbMax != null ? parseFloat(item.winbMax) : null),
+          pressure: item.pressure != null ? parseFloat(item.pressure) : null,
+          levelAdditional: item.levelAdditional != null && item.levelAdditional !== '' ? parseFloat(item.levelAdditional) : null,
           humidity: item.humidity != null ? parseFloat(item.humidity) : null,
           radiation: item.radiation != null ? parseFloat(item.radiation) : null,
           evapo: item.evapo != null ? parseFloat(item.evapo) : null
