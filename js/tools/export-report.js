@@ -7,6 +7,7 @@ import { formatDateTime, formatNumber, formatArea } from '../utils/formatters.js
 import { Notification } from '../ui/notification.js';
 import { LAYERS_CONFIG } from '../config/layers.config.js';
 import { WeatherService } from '../weather/weather-service.js';
+import { PlugfieldService } from '../weather/plugfield-service.js';
 
 export class ExportReportTool {
   constructor(mapEngine, layerManager, statsEngine) {
@@ -216,6 +217,14 @@ export class ExportReportTool {
       console.warn('[ExportReport] Erro ao consultar telemetria meteorológica para o boletim:', err);
     }
 
+    // 4.2. Consultar dados da Rede Meteorológica Plugfield (16 Estações Oficiais)
+    let plugfieldStations = [];
+    try {
+      plugfieldStations = await PlugfieldService.getAllStations();
+    } catch (err) {
+      console.warn('[ExportReport] Erro ao consultar Rede Plugfield para o boletim:', err);
+    }
+
     // Função para converter graus de vento em direção cardeal
     const getWindDirectionLabel = (deg) => {
       if (deg == null || isNaN(deg)) return '';
@@ -279,6 +288,39 @@ export class ExportReportTool {
           </tr>
         `;
       }
+    }
+
+    // Linhas formatadas da tabela de 16 estações Plugfield
+    let plugfieldRowsHtml = '';
+    if (plugfieldStations && plugfieldStations.length > 0) {
+      plugfieldRowsHtml = plugfieldStations.map(st => {
+        const m = st.metrics || {};
+        const temp = m.temperature != null ? `${m.temperature.toFixed(1).replace('.', ',')} °C` : '--';
+        const minMax = (m.tempMin != null && m.tempMax != null) ? `${m.tempMin.toFixed(1)}° / ${m.tempMax.toFixed(1)}°` : '--';
+        const rainDay = m.rain != null ? `${m.rain.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
+        const rainMonth = m.rainAccumMonthly != null ? `${m.rainAccumMonthly.toFixed(1).replace('.', ',')} mm` : 'N/D';
+        const wind = m.windSpeed != null ? `${m.windSpeed.toFixed(1).replace('.', ',')} km/h` : '--';
+        const gust = m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--';
+        const windDir = m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--');
+        const press = m.pressure != null ? `${m.pressure.toFixed(0)} hPa` : '--';
+        const river = m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Dado não disponível para esta estação';
+        const statusBadge = st.isOnline ? '<span style="color:#16a34a; font-weight:700;">Online</span>' : '<span style="color:#dc2626;">Offline</span>';
+
+        return `
+          <tr>
+            <td><strong>${st.name}</strong> <span style="color:#64748b; font-size:10px;">(#${st.deviceId})</span></td>
+            <td>${st.neighborhood || 'Passo Fundo'}</td>
+            <td><strong>${temp}</strong></td>
+            <td>${minMax}</td>
+            <td style="color:${parseFloat(m.rain) > 0 ? '#0284c7' : 'inherit'}; font-weight:${parseFloat(m.rain) > 0 ? '700' : 'normal'};">${rainDay}</td>
+            <td>${rainMonth}</td>
+            <td>${wind} (Raj: ${gust}, ${windDir})</td>
+            <td>${press}</td>
+            <td style="font-size:10px; color:${m.riverLevel != null ? '#0891b2' : '#64748b'};">${river}</td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     // 5. Abrir janela do relatório
@@ -614,6 +656,46 @@ export class ExportReportTool {
           <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 12px 16px; margin-bottom: 18px; color: #9f1239; font-size: 12px;">
             <strong>Estação meteorológica:</strong> Passo Fundo — DCRS-00016<br>
             <strong>Dados meteorológicos:</strong> indisponíveis no momento da emissão (tentativa registrada em ${dataEmissao}).
+          </div>
+        `}
+
+        <!-- 2.1 REDE METEOROLÓGICA PLUGFIELD (16 ESTAÇÕES) -->
+        <h4 style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 18px 0 8px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+          <span>REDE METEOROLÓGICA PLUGFIELD (16 ESTAÇÕES OFICIAIS DE PASSO FUNDO)</span>
+          <span style="font-size: 11px; font-weight: 600; color: #10b981; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 4px;">16 ESTAÇÕES MONITORADAS</span>
+        </h4>
+        <div style="font-size: 11.5px; color: #475569; margin-bottom: 8px;">
+          <strong>Dados meteorológicos consultados em:</strong> ${dataEmissao} &bull; Fonte: API Oficial Plugfield
+        </div>
+
+        ${plugfieldRowsHtml ? `
+          <div style="overflow-x: auto; margin-bottom: 16px;">
+            <table class="kpi-table" style="font-size: 11px; margin-bottom: 6px;">
+              <thead>
+                <tr>
+                  <th>Estação (ID)</th>
+                  <th>Bairro / Local</th>
+                  <th>Temp Atual</th>
+                  <th>Mín / Máx</th>
+                  <th>Chuva Hoje</th>
+                  <th>Acum. Mês</th>
+                  <th>Vento / Rajada / Dir</th>
+                  <th>Pressão</th>
+                  <th>Nível do Rio</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${plugfieldRowsHtml}
+              </tbody>
+            </table>
+          </div>
+          <div style="font-size: 10.5px; color: #64748b; margin-top: 0; margin-bottom: 18px;">
+            *Nota: Média mensal de temperatura indisponível — série histórica insuficiente. Para estações sem sensor de nível ativo é registrado "Dado não disponível para esta estação".
+          </div>
+        ` : `
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; color: #64748b; font-size: 12px;">
+            Dados da Rede Meteorológica Plugfield em processamento ou indisponíveis no momento da consulta.
           </div>
         `}
 
