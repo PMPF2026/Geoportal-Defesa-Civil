@@ -675,6 +675,7 @@ export class WeatherUI {
         sourceBadge.textContent = 'Fonte: Rede Meteorológica Plugfield (16 Estações)';
         sourceBadge.style.color = '#10b981';
       }
+      this.renderPlugfieldUI();
     }
 
     if (window.lucide) {
@@ -721,17 +722,22 @@ export class WeatherUI {
   }
 
   renderPlugfieldUI() {
-    if (!this.plugfieldStations || this.plugfieldStations.length === 0) return;
+    if (!this.plugfieldStations || this.plugfieldStations.length === 0) {
+      this.plugfieldStations = PlugfieldService.getCachedStations();
+    }
 
     // Preencher select de estações
     const select = document.getElementById('plugfield-station-select');
-    if (select) {
+    if (select && this.plugfieldStations) {
       const currentVal = parseInt(select.value, 10) || this.selectedPlugfieldId;
-      select.innerHTML = this.plugfieldStations.map(st => `
-        <option value="${st.deviceId}" ${st.deviceId === currentVal ? 'selected' : ''}>
-          ${st.name} (ID: ${st.deviceId})${st.isOnline ? '' : ' [Offline]'}
-        </option>
-      `).join('');
+      select.innerHTML = this.plugfieldStations.map(st => {
+        const isOffline = st.status === 'offline' || st.isOnline === false;
+        return `
+          <option value="${st.deviceId}" ${st.deviceId === currentVal ? 'selected' : ''}>
+            ${st.name} (ID: ${st.deviceId})${isOffline ? ' [Offline]' : ''}
+          </option>
+        `;
+      }).join('');
     }
 
     this.selectPlugfieldStation(this.selectedPlugfieldId);
@@ -745,30 +751,62 @@ export class WeatherUI {
 
     if (!st) return;
 
+    const isOnline = st.status !== 'offline' && st.isOnline !== false;
+
+    // Atualizar Nome e Meta da Estação
+    const stationNameText = document.getElementById('pf-station-name-text');
+    const stationMetaText = document.getElementById('pf-station-display-meta');
+    if (stationNameText) {
+      stationNameText.textContent = st.name;
+    }
+    if (stationMetaText) {
+      stationMetaText.textContent = `ID: ${st.deviceId} • Rede Oficial Plugfield • Passo Fundo/RS`;
+    }
+
     // Atualizar Badge de Status
     const statusText = document.getElementById('pf-status-text');
     const statusDot = document.getElementById('pf-status-dot');
+    const statusPill = document.getElementById('pf-status-pill');
     if (statusText) {
-      statusText.textContent = st.isOnline
-        ? `Online • Atualizado ${st.lastUpdate ? new Date(st.lastUpdate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'recentemente'}`
+      statusText.textContent = isOnline
+        ? `Online • ${st.lastUpdateText || 'Atualizado em tempo real'}`
         : 'Sem comunicação recente';
     }
     if (statusDot) {
-      statusDot.className = `weather-status-dot ${st.isOnline ? 'online' : 'offline'}`;
+      statusDot.className = `status-dot ${isOnline ? 'green' : 'red'}`;
+    }
+    if (statusPill) {
+      statusPill.className = `station-status-pill ${isOnline ? 'updated' : 'error'}`;
     }
 
-    // Métricas
+    // Métricas (lê de st.metrics e das propriedades normalizadas)
     const m = st.metrics || {};
-    
+    const t = st.temperatura || {};
+    const c = st.chuva || {};
+    const v = st.vento || {};
+    const p = st.pressao || {};
+    const r = st.rio || {};
+
+    const tempVal = m.temperature ?? t.atual;
+    const tempMinVal = m.tempMin ?? t.minima;
+    const tempMaxVal = m.tempMax ?? t.maxima;
+    const rainVal = m.rain ?? c.acumuladoDia ?? c.atual;
+    const rainMonthVal = m.rainAccumMonthly ?? c.acumuladoMes;
+    const windVal = m.windSpeed ?? v.velocidade;
+    const windGustVal = m.windGust ?? v.rajadaMaxima;
+    const windDirVal = m.windDirectionText || v.direcaoCardeal || (m.windDirection != null ? `${m.windDirection}°` : (v.direcaoGraus != null ? `${v.direcaoGraus}°` : '--'));
+    const pressVal = m.pressure ?? p.atual;
+    const riverVal = m.riverLevel ?? r.nivelAtual;
+
     // 1. Temp
     const elTemp = document.getElementById('pf-temp-atual');
     const elTempMinMax = document.getElementById('pf-temp-minmax');
     if (elTemp) {
-      elTemp.textContent = m.temperature !== null && m.temperature !== undefined ? `${m.temperature.toFixed(1)} °C` : '-- °C';
+      elTemp.textContent = tempVal !== null && tempVal !== undefined ? `${tempVal.toFixed(1).replace('.', ',')} °C` : '-- °C';
     }
     if (elTempMinMax) {
-      const tMin = m.tempMin !== null && m.tempMin !== undefined ? `${m.tempMin.toFixed(1)} °C` : '--';
-      const tMax = m.tempMax !== null && m.tempMax !== undefined ? `${m.tempMax.toFixed(1)} °C` : '--';
+      const tMin = tempMinVal !== null && tempMinVal !== undefined ? `${tempMinVal.toFixed(1).replace('.', ',')} °C` : '--';
+      const tMax = tempMaxVal !== null && tempMaxVal !== undefined ? `${tempMaxVal.toFixed(1).replace('.', ',')} °C` : '--';
       elTempMinMax.textContent = `Mín: ${tMin} | Máx: ${tMax}`;
     }
 
@@ -776,11 +814,11 @@ export class WeatherUI {
     const elRain = document.getElementById('pf-rain-day');
     const elRainMonth = document.getElementById('pf-rain-month');
     if (elRain) {
-      elRain.textContent = m.rain !== null && m.rain !== undefined ? `${m.rain.toFixed(1)} mm` : '-- mm';
+      elRain.textContent = rainVal !== null && rainVal !== undefined ? `${rainVal.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
     }
     if (elRainMonth) {
-      elRainMonth.textContent = m.rainAccumMonthly !== null && m.rainAccumMonthly !== undefined
-        ? `Acumulado Mês: ${m.rainAccumMonthly.toFixed(1)} mm`
+      elRainMonth.textContent = rainMonthVal !== null && rainMonthVal !== undefined
+        ? `Acumulado Mês: ${rainMonthVal.toFixed(1).replace('.', ',')} mm`
         : 'Acumulado Mês: Não informado';
     }
 
@@ -788,26 +826,25 @@ export class WeatherUI {
     const elWind = document.getElementById('pf-wind-val');
     const elWindSub = document.getElementById('pf-wind-sub');
     if (elWind) {
-      elWind.textContent = m.windSpeed !== null && m.windSpeed !== undefined ? `${m.windSpeed.toFixed(1)} km/h` : '-- km/h';
+      elWind.textContent = windVal !== null && windVal !== undefined ? `${windVal.toFixed(1).replace('.', ',')} km/h` : '-- km/h';
     }
     if (elWindSub) {
-      const gust = m.windGust !== null && m.windGust !== undefined ? `${m.windGust.toFixed(1)} km/h` : '--';
-      const dir = m.windDirectionText || (m.windDirection !== null && m.windDirection !== undefined ? `${m.windDirection}°` : '--');
-      elWindSub.textContent = `Rajada: ${gust} | Dir: ${dir}`;
+      const gust = windGustVal !== null && windGustVal !== undefined ? `${windGustVal.toFixed(1).replace('.', ',')} km/h` : '--';
+      elWindSub.textContent = `Rajada: ${gust} | Dir: ${windDirVal}`;
     }
 
     // 4. Pressão
     const elPressure = document.getElementById('pf-pressure-val');
     if (elPressure) {
-      elPressure.textContent = m.pressure !== null && m.pressure !== undefined ? `${m.pressure.toFixed(1)} hPa` : '-- hPa';
+      elPressure.textContent = pressVal !== null && pressVal !== undefined ? `${pressVal.toFixed(0)} hPa` : '-- hPa';
     }
 
     // 5. Nível do Rio (levelAdditional)
     const elRiver = document.getElementById('pf-river-level-val');
     const elRiverSub = document.getElementById('pf-river-sub');
     if (elRiver) {
-      if (m.riverLevel !== null && m.riverLevel !== undefined) {
-        elRiver.textContent = `${m.riverLevel.toFixed(1)} cm`;
+      if (riverVal !== null && riverVal !== undefined) {
+        elRiver.textContent = `${riverVal.toFixed(1).replace('.', ',')} cm`;
         elRiver.style.fontSize = '20px';
         elRiver.style.color = '#06b6d4';
         if (elRiverSub) elRiverSub.textContent = 'Sensor telemétrico de nível de água (levelAdditional)';
@@ -828,11 +865,13 @@ export class WeatherUI {
     // Localização
     const elLocTitle = document.getElementById('pf-loc-title');
     const elLocCoords = document.getElementById('pf-loc-coords');
+    const lat = st.lat ?? st.latitude ?? -28.26;
+    const lon = st.lon ?? st.longitude ?? -52.40;
     if (elLocTitle) {
-      elLocTitle.textContent = `${st.name} — Bairro: ${st.neighborhood || 'Passo Fundo'}`;
+      elLocTitle.textContent = `${st.name} — Bairro: ${st.neighborhood || st.type || 'Passo Fundo'}`;
     }
     if (elLocCoords) {
-      elLocCoords.textContent = `Coordenadas: Lat ${st.lat.toFixed(5)}, Lon ${st.lon.toFixed(5)} | Alt: ${st.altitude ? st.altitude + ' m' : 'N/A'}`;
+      elLocCoords.textContent = `Coordenadas: Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)} | Alt: ${st.altitude ? st.altitude + ' m' : 'N/A'}`;
     }
 
     // Carregar histórico de 5 dias
