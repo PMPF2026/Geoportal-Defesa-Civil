@@ -6,6 +6,7 @@
 import { formatNumber, formatArea, formatDistance, escapeHtml } from '../utils/formatters.js';
 import { toUTM22S } from '../utils/projection.js';
 import { Notification } from './notification.js';
+import { PlugfieldService } from '../weather/plugfield-service.js';
 
 export class PopupUI {
   constructor(mapEngine, layerManager) {
@@ -101,7 +102,34 @@ export class PopupUI {
       `;
     }
 
-    // 4. Build Attribute Rows
+    // 4. Se for estação Plugfield, injeta telemetria em tempo real
+    if (layerConfig.id === 'estacoes_plugfield' || props['deviceId']) {
+      const devId = parseInt(props['deviceId'], 10);
+      const cachedStations = (typeof PlugfieldService !== 'undefined' && PlugfieldService.getCachedStations)
+        ? PlugfieldService.getCachedStations()
+        : null;
+      const st = cachedStations ? cachedStations.find(s => s.deviceId === devId) : null;
+
+      if (st) {
+        const m = st.metrics || {};
+        props['status_comunicacao'] = st.isOnline ? 'Online (em tempo real)' : (st.status === 'delayed' ? 'Comunicação atrasada' : 'Sem comunicação recente');
+        props['temperatura_atual'] = m.temperature != null ? `${m.temperature.toFixed(1).replace('.', ',')} °C` : '--';
+        props['temperatura_min_max'] = (m.tempMin != null || m.tempMax != null)
+          ? `${m.tempMin != null ? m.tempMin.toFixed(1).replace('.', ',') + ' °C' : '--'} / ${m.tempMax != null ? m.tempMax.toFixed(1).replace('.', ',') + ' °C' : '--'}`
+          : '--';
+        props['umidade_atual'] = m.humidity != null ? `${m.humidity.toFixed(0)} %` : '--';
+        props['chuva_hoje'] = m.rain != null ? `${m.rain.toFixed(1).replace('.', ',')} mm` : '--';
+        props['chuva_mes'] = m.rainAccumMonthly != null ? `${m.rainAccumMonthly.toFixed(1).replace('.', ',')} mm` : '--';
+        props['vento_atual'] = m.windSpeed != null ? `${m.windSpeed.toFixed(1).replace('.', ',')} km/h` : '--';
+        props['rajada_maxima'] = m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--';
+        props['direcao_vento'] = m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--');
+        props['pressao_atual'] = m.pressure != null ? `${m.pressure.toFixed(0)} hPa` : '--';
+        props['nivel_rio'] = m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Não monitorado nesta estação';
+        props['ultima_atualizacao'] = st.lastUpdateText || 'Sem comunicação recente';
+      }
+    }
+
+    // 5. Build Attribute Rows
     let rowsHtml = '';
     const fieldsToRender = pConfig.fields || Object.keys(props).filter(k => !k.startsWith('_') && k !== 'geometry').map(k => ({ key: k, label: k }));
 
@@ -117,7 +145,13 @@ export class PopupUI {
         }
       }
 
-      if (val === undefined || val === null || val === '') return;
+      if (val === undefined || val === null || val === '') {
+        if (field.defaultValue !== undefined) {
+          val = field.defaultValue;
+        } else {
+          return;
+        }
+      }
 
       // Destaque visual para Distância até a calha do Rio Passo Fundo (1 casa decimal)
       if (field.key === 'dist_rio_m' || field.format === 'distance_m') {

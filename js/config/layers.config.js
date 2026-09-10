@@ -387,6 +387,18 @@ export const LAYERS_CONFIG = [
         { key: 'nome_estacao', label: 'Nome da Estação' },
         { key: 'deviceId', label: 'ID do Dispositivo (Plugfield)' },
         { key: 'tipo', label: 'Classificação Territorial' },
+        { key: 'status_comunicacao', label: 'Status Operacional', defaultValue: 'Consultando...' },
+        { key: 'temperatura_atual', label: 'Temperatura Atual', defaultValue: '--' },
+        { key: 'temperatura_min_max', label: 'Mínima / Máxima', defaultValue: '--' },
+        { key: 'umidade_atual', label: 'Umidade Relativa', defaultValue: '--' },
+        { key: 'chuva_hoje', label: 'Chuva Hoje (Acumulado)', defaultValue: '--' },
+        { key: 'chuva_mes', label: 'Chuva no Mês', defaultValue: '--' },
+        { key: 'vento_atual', label: 'Velocidade do Vento', defaultValue: '--' },
+        { key: 'rajada_maxima', label: 'Rajada Máxima', defaultValue: '--' },
+        { key: 'direcao_vento', label: 'Direção do Vento', defaultValue: '--' },
+        { key: 'pressao_atual', label: 'Pressão Atmosférica', defaultValue: '--' },
+        { key: 'nivel_rio', label: 'Nível do Rio (levelAdditional)', defaultValue: 'Não monitorado nesta estação' },
+        { key: 'ultima_atualizacao', label: 'Última Atualização', defaultValue: 'Sem comunicação recente' },
         { key: 'provedor', label: 'Rede / Provedor', defaultValue: 'Rede Plugfield' },
         { key: 'municipio', label: 'Município', defaultValue: 'Passo Fundo / RS' }
       ]

@@ -57,6 +57,84 @@ const STATION_NAMES_MAP = {
   2041: 'Veneza'
 };
 
+const STATION_TERRITORIAL_MAP = {
+  4283: 'Urbana / Perimetral',
+  4253: 'Rural / Bacia Hidrográfica',
+  4798: 'Urbana / Administrativa',
+  4416: 'Rural / Setor Leste',
+  3009: 'Rural / Agrícola',
+  4931: 'Rural / Bacia Hidrográfica',
+  4965: 'Urbana / Victor Issler',
+  4678: 'Urbana / Centro',
+  2856: 'Rural / Bacia Hidrográfica',
+  4712: 'Urbana / Bela Vista',
+  4713: 'Rural / Setor Norte',
+  4714: 'Rural / Bacia Hidrográfica',
+  4717: 'Urbana / Camponesa',
+  4431: 'Urbana / Eixo Central',
+  10994: 'Universitária / Campus Atitus',
+  2041: 'Urbana / Vila Veneza'
+};
+
+// Cache de access_token obtido via autenticação oficial (não expira segundo a especificação Plugfield)
+let sessionAccessToken = null;
+
+/**
+ * Constrói os cabeçalhos de autenticação oficiais da Plugfield
+ * 1. x-api-key: recebida via variável de ambiente PLUGFIELD_API_KEY
+ * 2. Authorization: recebida via PLUGFIELD_ACCESS_TOKEN (ou obtida via POST /login com credenciais do ambiente)
+ */
+async function buildAuthHeaders() {
+  const apiKey = process.env.PLUGFIELD_API_KEY || '';
+  let accessToken = process.env.PLUGFIELD_ACCESS_TOKEN || process.env.PLUGFIELD_TOKEN || sessionAccessToken || '';
+
+  // Se o access_token não foi fornecido diretamente mas existem credenciais de login no ambiente, realiza o login oficial
+  if (!accessToken && apiKey && process.env.PLUGFIELD_USERNAME && process.env.PLUGFIELD_PASSWORD) {
+    try {
+      const loginResp = await fetch(`${BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          username: process.env.PLUGFIELD_USERNAME,
+          password: process.env.PLUGFIELD_PASSWORD
+        })
+      });
+
+      if (loginResp.ok) {
+        const loginData = await loginResp.json();
+        if (loginData && loginData.access_token) {
+          sessionAccessToken = loginData.access_token;
+          accessToken = sessionAccessToken;
+        }
+      } else {
+        console.warn('[Plugfield Proxy] Falha na autenticação POST /login: HTTP', loginResp.status);
+      }
+    } catch (e) {
+      console.warn('[Plugfield Proxy] Erro ao autenticar em POST /login:', e.message);
+    }
+  }
+
+  const headers = {
+    'Accept': 'application/json',
+    'User-Agent': 'Portal-Defesa-Civil-Passo-Fundo/2.0'
+  };
+
+  if (apiKey) {
+    headers['x-api-key'] = apiKey;
+  }
+
+  if (accessToken) {
+    headers['Authorization'] = accessToken;
+    headers['authorization'] = accessToken;
+  }
+
+  return headers;
+}
+
 module.exports = async function handler(req, res) {
   // Configuração rigorosa de cabeçalhos CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -67,12 +145,12 @@ module.exports = async function handler(req, res) {
     return res.status(204).end();
   }
 
-  const apiKey = process.env.PLUGFIELD_API_KEY || '';
   const { action = 'devices', deviceId, begin, end, page = '1' } = req.query;
-
   const now = Date.now();
 
   try {
+    const headers = await buildAuthHeaders();
+
     // 1. AÇÃO: Listar todas as estações (/device?page=1)
     if (action === 'devices') {
       if (cacheStore.devices.data && (now - cacheStore.devices.timestamp < CACHE_TTL_MS)) {
@@ -82,14 +160,6 @@ module.exports = async function handler(req, res) {
           source: 'cache_server',
           data: cacheStore.devices.data
         });
-      }
-
-      const headers = {
-        'Accept': 'application/json',
-        'User-Agent': 'Portal-Defesa-Civil-Passo-Fundo/2.0'
-      };
-      if (apiKey) {
-        headers['x-api-key'] = apiKey;
       }
 
       const response = await fetch(`${BASE_URL}/device?page=${page}`, {
@@ -106,7 +176,10 @@ module.exports = async function handler(req, res) {
       }
 
       const rawJson = await response.json();
-      const rawStations = Array.isArray(rawJson) ? rawJson : (rawJson.data || []);
+      // Especificação OpenAPI 3.0 Plugfield: lista retornada na chave "deviceList"
+      const rawStations = Array.isArray(rawJson)
+        ? rawJson
+        : (rawJson.deviceList || rawJson.data || rawJson.devices || []);
 
       // Filtra e normaliza apenas as 16 estações habilitadas de Passo Fundo
       const filteredStations = rawStations
@@ -116,15 +189,18 @@ module.exports = async function handler(req, res) {
         })
         .map(st => {
           const idNum = parseInt(st.id || st.deviceId || 0, 10);
+          const dash = st.dashboard || {};
           return {
             id: idNum,
             deviceId: idNum,
             name: STATION_NAMES_MAP[idNum] || st.name || st.deviceName || `Estação ${idNum}`,
-            latitude: st.latitude != null ? parseFloat(st.latitude) : null,
-            longitude: st.longitude != null ? parseFloat(st.longitude) : null,
-            sensors: st.sensors || [],
-            dashboard: st.dashboard || {},
-            timestamp: st.timestamp || (st.dashboard ? st.dashboard.timestamp : null)
+            type: STATION_TERRITORIAL_MAP[idNum] || 'Estação Meteorológica',
+            latitude: st.latitude != null && st.latitude !== '' ? parseFloat(st.latitude) : null,
+            longitude: st.longitude != null && st.longitude !== '' ? parseFloat(st.longitude) : null,
+            altitude: st.altitude != null && st.altitude !== '' ? parseFloat(st.altitude) : null,
+            sensors: st.sensorList || st.sensors || [],
+            dashboard: dash,
+            lastUpdateTimestamp: st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null)
           };
         });
 
@@ -134,9 +210,11 @@ module.exports = async function handler(req, res) {
         updatedAt: new Date().toISOString()
       };
 
-      // Atualiza cache
-      cacheStore.devices.data = resultPayload;
-      cacheStore.devices.timestamp = now;
+      // Atualiza cache somente se houver estações válidas
+      if (filteredStations.length > 0) {
+        cacheStore.devices.data = resultPayload;
+        cacheStore.devices.timestamp = now;
+      }
 
       return res.status(200).json({
         success: true,
@@ -166,14 +244,6 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const headers = {
-        'Accept': 'application/json',
-        'User-Agent': 'Portal-Defesa-Civil-Passo-Fundo/2.0'
-      };
-      if (apiKey) {
-        headers['x-api-key'] = apiKey;
-      }
-
       const response = await fetch(`${BASE_URL}/device/${devIdNum}`, {
         headers,
         method: 'GET'
@@ -188,14 +258,18 @@ module.exports = async function handler(req, res) {
       }
 
       const raw = await response.json();
+      const dash = raw.dashboard || {};
       const payload = {
         id: devIdNum,
         deviceId: devIdNum,
         name: STATION_NAMES_MAP[devIdNum] || raw.name || `Estação ${devIdNum}`,
-        latitude: raw.latitude != null ? parseFloat(raw.latitude) : null,
-        longitude: raw.longitude != null ? parseFloat(raw.longitude) : null,
-        sensors: raw.sensors || [],
-        dashboard: raw.dashboard || {},
+        type: STATION_TERRITORIAL_MAP[devIdNum] || 'Estação Meteorológica',
+        latitude: raw.latitude != null && raw.latitude !== '' ? parseFloat(raw.latitude) : null,
+        longitude: raw.longitude != null && raw.longitude !== '' ? parseFloat(raw.longitude) : null,
+        altitude: raw.altitude != null && raw.altitude !== '' ? parseFloat(raw.altitude) : null,
+        sensors: raw.sensorList || raw.sensors || [],
+        dashboard: dash,
+        lastUpdateTimestamp: raw.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null),
         updatedAt: new Date().toISOString()
       };
 
@@ -239,14 +313,6 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const headers = {
-        'Accept': 'application/json',
-        'User-Agent': 'Portal-Defesa-Civil-Passo-Fundo/2.0'
-      };
-      if (apiKey) {
-        headers['x-api-key'] = apiKey;
-      }
-
       const url = `${BASE_URL}/data/daily?device=${devIdNum}&begin=${encodeURIComponent(begin)}&end=${encodeURIComponent(end)}`;
       const response = await fetch(url, {
         headers,
@@ -269,18 +335,18 @@ module.exports = async function handler(req, res) {
         stationName: STATION_NAMES_MAP[devIdNum] || `Estação ${devIdNum}`,
         period: { begin, end },
         days: dailyList.map(item => ({
-          localDate: item.localDate || item.date,
-          temp: item.temp != null ? parseFloat(item.temp) : null,
-          tempMin: item.tempMin != null ? parseFloat(item.tempMin) : null,
-          tempMax: item.tempMax != null ? parseFloat(item.tempMax) : null,
-          rainAccum: item.rainAccum != null ? parseFloat(item.rainAccum) : (item.rain != null ? parseFloat(item.rain) : 0),
-          wind: item.wind != null ? parseFloat(item.wind) : null,
-          windBurst: item.windBurst != null ? parseFloat(item.windBurst) : (item.winbMax != null ? parseFloat(item.winbMax) : null),
-          pressure: item.pressure != null ? parseFloat(item.pressure) : null,
+          localDate: item.localDate || item.date || null,
+          temp: item.temp != null && item.temp !== '' ? parseFloat(item.temp) : null,
+          tempMin: item.tempMin != null && item.tempMin !== '' ? parseFloat(item.tempMin) : null,
+          tempMax: item.tempMax != null && item.tempMax !== '' ? parseFloat(item.tempMax) : null,
+          rainAccum: item.rainAccum != null && item.rainAccum !== '' ? parseFloat(item.rainAccum) : (item.rain != null && item.rain !== '' ? parseFloat(item.rain) : 0),
+          wind: item.wind != null && item.wind !== '' ? parseFloat(item.wind) : null,
+          windBurst: item.windBurst != null && item.windBurst !== '' ? parseFloat(item.windBurst) : (item.winbMax != null && item.winbMax !== '' ? parseFloat(item.winbMax) : null),
+          pressure: item.pressure != null && item.pressure !== '' ? parseFloat(item.pressure) : null,
           levelAdditional: item.levelAdditional != null && item.levelAdditional !== '' ? parseFloat(item.levelAdditional) : null,
-          humidity: item.humidity != null ? parseFloat(item.humidity) : null,
-          radiation: item.radiation != null ? parseFloat(item.radiation) : null,
-          evapo: item.evapo != null ? parseFloat(item.evapo) : null
+          humidity: item.humidity != null && item.humidity !== '' ? parseFloat(item.humidity) : null,
+          radiation: item.radiation != null && item.radiation !== '' ? parseFloat(item.radiation) : null,
+          evapo: item.evapo != null && item.evapo !== '' ? parseFloat(item.evapo) : null
         })),
         updatedAt: new Date().toISOString()
       };

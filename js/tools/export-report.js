@@ -298,7 +298,7 @@ export class ExportReportTool {
         const m = st.metrics || {};
         const temp = m.temperature != null ? `${m.temperature.toFixed(1).replace('.', ',')} °C` : '--';
         const minMax = (m.tempMin != null && m.tempMax != null) ? `${m.tempMin.toFixed(1)}° / ${m.tempMax.toFixed(1)}°` : '--';
-        const rainDay = m.rain != null ? `${m.rain.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
+        const rainDay = m.rain != null ? `${m.rain.toFixed(1).replace('.', ',')} mm` : '--';
         const rainMonth = m.rainAccumMonthly != null ? `${m.rainAccumMonthly.toFixed(1).replace('.', ',')} mm` : 'N/D';
         const wind = m.windSpeed != null ? `${m.windSpeed.toFixed(1).replace('.', ',')} km/h` : '--';
         const gust = m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--';

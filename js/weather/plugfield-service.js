@@ -24,7 +24,7 @@ export const PLUGFIELD_STATIONS_CONFIG = [
 
 export class PlugfieldService {
   static API_ENDPOINT = '/api/weather/plugfield';
-  static CACHE_KEY_PREFIX = 'pf_cache_';
+  static CACHE_KEY_PREFIX = 'pf_real_v3_';
   static CACHE_TTL_MS = 6 * 60 * 1000; // 6 minutos
 
   /**
@@ -34,6 +34,7 @@ export class PlugfieldService {
     // 1. Tentar ler do cache local
     const cached = this.getLocalCache('all_stations');
     if (cached && cached.length > 0) {
+      this.updateMapLayerWithTelemetry(cached);
       return cached;
     }
 
@@ -53,16 +54,21 @@ export class PlugfieldService {
 
       // Salva no cache
       this.setLocalCache('all_stations', normalizedStations);
+      this.updateMapLayerWithTelemetry(normalizedStations);
       return normalizedStations;
     } catch (err) {
       console.warn('[PlugfieldService] Consulta à API em andamento/offline. Utilizando base operacional:', err);
       // Fallback para último cache existente mesmo que expirado
       const fallback = this.getAnyLocalCache('all_stations');
-      if (fallback && fallback.length > 0) return fallback;
+      if (fallback && fallback.length > 0) {
+        this.updateMapLayerWithTelemetry(fallback);
+        return fallback;
+      }
 
-      // Retorna lista padrão operacional com telemetria inicial
+      // Retorna lista padrão operacional com telemetria nula (sem mock)
       const defaultStations = this.getDefaultEmptyStations();
       this.setLocalCache('all_stations', defaultStations);
+      this.updateMapLayerWithTelemetry(defaultStations);
       return defaultStations;
     }
   }
@@ -82,13 +88,73 @@ export class PlugfieldService {
   }
 
   /**
-   * Obtém histórico dos últimos 5 dias normalizado para gráficos e tabelas
+   * Atualiza a camada GeoJSON do mapa 'estacoes_plugfield' com as leituras em tempo real e coordenadas oficiais
+   * @param {Array<Object>} stations
+   * @param {Object} [layerManager]
+   */
+  static updateMapLayerWithTelemetry(stations, layerManager) {
+    if (!stations || !Array.isArray(stations) || stations.length === 0) return;
+    const lm = layerManager || window.webGis?.layerManager;
+    if (!lm || typeof lm.getLayer !== 'function') return;
+
+    const layer = lm.getLayer('estacoes_plugfield');
+    if (!layer || typeof layer.getSource !== 'function') return;
+
+    const source = layer.getSource();
+    if (!source || typeof source.getFeatures !== 'function') return;
+
+    const features = source.getFeatures();
+    if (!features || features.length === 0) return;
+
+    const stMap = new Map();
+    stations.forEach(s => stMap.set(s.deviceId, s));
+
+    features.forEach(f => {
+      const devId = parseInt(f.get('deviceId'), 10);
+      const st = stMap.get(devId);
+      if (!st) return;
+
+      // 1. Atualiza coordenadas caso a API tenha fornecido dados válidos
+      if (st.lat != null && st.lon != null && !isNaN(st.lat) && !isNaN(st.lon)) {
+        const geom = f.getGeometry();
+        if (geom && typeof geom.setCoordinates === 'function' && typeof ol !== 'undefined' && ol.proj) {
+          const mapCoord = ol.proj.fromLonLat([st.lon, st.lat]);
+          geom.setCoordinates(mapCoord);
+        }
+      }
+
+      // 2. Atualiza propriedades de telemetria em tempo real no GeoJSON da camada
+      const m = st.metrics || {};
+      const isOnline = st.isOnline;
+      f.set('status_comunicacao', isOnline ? 'Online (em tempo real)' : (st.status === 'delayed' ? 'Comunicação atrasada' : 'Sem comunicação recente'));
+      f.set('temperatura_atual', m.temperature != null ? `${m.temperature.toFixed(1).replace('.', ',')} °C` : '--');
+      f.set('temperatura_min_max', (m.tempMin != null || m.tempMax != null)
+        ? `${m.tempMin != null ? m.tempMin.toFixed(1).replace('.', ',') + ' °C' : '--'} / ${m.tempMax != null ? m.tempMax.toFixed(1).replace('.', ',') + ' °C' : '--'}`
+        : '--');
+      f.set('umidade_atual', m.humidity != null ? `${m.humidity.toFixed(0)} %` : '--');
+      f.set('chuva_hoje', m.rain != null ? `${m.rain.toFixed(1).replace('.', ',')} mm` : '--');
+      f.set('chuva_mes', m.rainAccumMonthly != null ? `${m.rainAccumMonthly.toFixed(1).replace('.', ',')} mm` : '--');
+      f.set('vento_atual', m.windSpeed != null ? `${m.windSpeed.toFixed(1).replace('.', ',')} km/h` : '--');
+      f.set('rajada_maxima', m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--');
+      f.set('direcao_vento', m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--'));
+      f.set('pressao_atual', m.pressure != null ? `${m.pressure.toFixed(0)} hPa` : '--');
+      f.set('nivel_rio', m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Não monitorado nesta estação');
+      f.set('ultima_atualizacao', st.lastUpdateText || 'Sem comunicação recente');
+    });
+
+    if (typeof source.changed === 'function') {
+      source.changed();
+    }
+  }
+
+  /**
+   * Obtém histórico dos últimos 5 dias normalizado para gráficos e tabelas (Sem mock artificial)
    * @param {number} deviceId 
    */
   static async getStationDailyHistory(deviceId) {
     const res = await this.fetchStationDetailsAndHistory(deviceId);
     if (!res || !res.history5Days || !Array.isArray(res.history5Days) || res.history5Days.length === 0) {
-      return this.generateDefault5DayHistory(deviceId);
+      return [];
     }
 
     return res.history5Days.map(item => {
@@ -102,28 +168,28 @@ export class PlugfieldService {
         if (parts.length >= 3) dateLabel = `${parts[2].slice(0, 2)}/${parts[1]}`;
       }
 
-      const tempAvg = item.temp != null ? parseFloat(item.temp) : (item.tempAvg != null ? parseFloat(item.tempAvg) : null);
-      const tempMin = item.tempMin != null ? parseFloat(item.tempMin) : (item.minTemp != null ? parseFloat(item.minTemp) : null);
-      const tempMax = item.tempMax != null ? parseFloat(item.tempMax) : (item.maxTemp != null ? parseFloat(item.maxTemp) : null);
-      const rain = item.rainAccum != null ? parseFloat(item.rainAccum) : (item.rain != null ? parseFloat(item.rain) : 0);
-      const windAvg = item.wind != null ? parseFloat(item.wind) : (item.windAvg != null ? parseFloat(item.windAvg) : null);
-      const windMax = item.windBurst != null ? parseFloat(item.windBurst) : (item.winbMax != null ? parseFloat(item.winbMax) : (item.windMax != null ? parseFloat(item.windMax) : null));
-      const press = item.pressure != null ? parseFloat(item.pressure) : null;
-      const river = item.levelAdditional != null && item.levelAdditional !== '' ? parseFloat(item.levelAdditional) : null;
-      const hum = item.humidity != null ? parseFloat(item.humidity) : null;
+      const tempAvg = item.temp != null && !isNaN(parseFloat(item.temp)) ? parseFloat(item.temp) : (item.tempAvg != null && !isNaN(parseFloat(item.tempAvg)) ? parseFloat(item.tempAvg) : null);
+      const tempMin = item.tempMin != null && !isNaN(parseFloat(item.tempMin)) ? parseFloat(item.tempMin) : (item.minTemp != null && !isNaN(parseFloat(item.minTemp)) ? parseFloat(item.minTemp) : null);
+      const tempMax = item.tempMax != null && !isNaN(parseFloat(item.tempMax)) ? parseFloat(item.tempMax) : (item.maxTemp != null && !isNaN(parseFloat(item.maxTemp)) ? parseFloat(item.maxTemp) : null);
+      const rain = item.rainAccum != null && !isNaN(parseFloat(item.rainAccum)) ? parseFloat(item.rainAccum) : (item.rain != null && !isNaN(parseFloat(item.rain)) ? parseFloat(item.rain) : (item.rainDay != null && !isNaN(parseFloat(item.rainDay)) ? parseFloat(item.rainDay) : null));
+      const windAvg = item.wind != null && !isNaN(parseFloat(item.wind)) ? parseFloat(item.wind) : (item.windAvg != null && !isNaN(parseFloat(item.windAvg)) ? parseFloat(item.windAvg) : null);
+      const windMax = item.windBurst != null && !isNaN(parseFloat(item.windBurst)) ? parseFloat(item.windBurst) : (item.winbMax != null && !isNaN(parseFloat(item.winbMax)) ? parseFloat(item.winbMax) : (item.windMax != null && !isNaN(parseFloat(item.windMax)) ? parseFloat(item.windMax) : null));
+      const press = item.pressure != null && !isNaN(parseFloat(item.pressure)) ? parseFloat(item.pressure) : (item.pres != null && !isNaN(parseFloat(item.pres)) ? parseFloat(item.pres) : (item.prre != null && !isNaN(parseFloat(item.prre)) ? parseFloat(item.prre) : null));
+      const river = item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)) ? parseFloat(item.levelAdditional) : null;
+      const hum = item.humidity != null && !isNaN(parseFloat(item.humidity)) ? parseFloat(item.humidity) : (item.humi != null && !isNaN(parseFloat(item.humi)) ? parseFloat(item.humi) : null);
 
       return {
         date: dateLabel,
         fullDate: rawDate,
-        tempAvg: (tempAvg != null && !isNaN(tempAvg)) ? tempAvg : null,
-        tempMin: (tempMin != null && !isNaN(tempMin)) ? tempMin : null,
-        tempMax: (tempMax != null && !isNaN(tempMax)) ? tempMax : null,
-        rainAccum: (!isNaN(rain) && rain >= 0) ? rain : 0,
-        windAvg: (windAvg != null && !isNaN(windAvg)) ? windAvg : null,
-        windMax: (windMax != null && !isNaN(windMax)) ? windMax : null,
-        pressure: (press != null && !isNaN(press)) ? press : null,
-        riverLevel: (river != null && !isNaN(river)) ? river : null,
-        humidity: (hum != null && !isNaN(hum)) ? hum : null
+        tempAvg: tempAvg,
+        tempMin: tempMin,
+        tempMax: tempMax,
+        rainAccum: rain,
+        windAvg: windAvg,
+        windMax: windMax,
+        pressure: press,
+        riverLevel: river,
+        humidity: hum
       };
     });
   }
@@ -182,7 +248,7 @@ export class PlugfieldService {
   }
 
   /**
-   * Mescla as 16 estações configuradas com os dados retornados pela API
+   * Mescla as 16 estações configuradas com os dados retornados pela API oficial (Zero Mock)
    */
   static mergeAndNormalizeStations(apiStations) {
     const apiMap = new Map();
@@ -204,34 +270,78 @@ export class PlugfieldService {
         }
       }
 
-      // Status temporal de atualização
-      let status = 'updated';
-      let formattedDate = 'Atualizado em tempo real';
-      const ts = apiData?.timestamp || dash.timestamp;
+      // Leituras numéricas reais conforme a especificação oficial da Plugfield
+      const tempAtual = (dash.temp != null && !isNaN(parseFloat(dash.temp))) ? parseFloat(dash.temp) : null;
+      const tempMin = (dash.tempMin != null && !isNaN(parseFloat(dash.tempMin))) ? parseFloat(dash.tempMin) : null;
+      const tempMax = (dash.tempMax != null && !isNaN(parseFloat(dash.tempMax))) ? parseFloat(dash.tempMax) : null;
+      const rainDay = (dash.rainDay != null && !isNaN(parseFloat(dash.rainDay)))
+        ? parseFloat(dash.rainDay)
+        : ((dash.rain != null && !isNaN(parseFloat(dash.rain))) ? parseFloat(dash.rain) : null);
+      const rainMonth = (dash.rainMonth != null && !isNaN(parseFloat(dash.rainMonth)))
+        ? parseFloat(dash.rainMonth)
+        : ((dash.rainAccumMonthly != null && !isNaN(parseFloat(dash.rainAccumMonthly))) ? parseFloat(dash.rainAccumMonthly) : null);
+      const humi = (dash.humi != null && !isNaN(parseFloat(dash.humi)))
+        ? parseFloat(dash.humi)
+        : ((dash.humidity != null && !isNaN(parseFloat(dash.humidity))) ? parseFloat(dash.humidity) : null);
+      const windSpd = (dash.wind != null && !isNaN(parseFloat(dash.wind))) ? parseFloat(dash.wind) : null;
+      const windGst = (dash.winbMax != null && !isNaN(parseFloat(dash.winbMax)))
+        ? parseFloat(dash.winbMax)
+        : ((dash.winb != null && !isNaN(parseFloat(dash.winb))) ? parseFloat(dash.winb) : null);
+      const windDir = (dash.dire != null && !isNaN(parseFloat(dash.dire)))
+        ? parseFloat(dash.dire)
+        : ((dash.direction != null && !isNaN(parseFloat(dash.direction))) ? parseFloat(dash.direction) : null);
+      const windDirText = dash.direString || dash.directionString || null;
+      const press = (dash.pres != null && !isNaN(parseFloat(dash.pres)))
+        ? parseFloat(dash.pres)
+        : ((dash.prre != null && !isNaN(parseFloat(dash.prre)))
+          ? parseFloat(dash.prre)
+          : ((dash.pressure != null && !isNaN(parseFloat(dash.pressure))) ? parseFloat(dash.pressure) : null));
+      const solr = (dash.solr != null && !isNaN(parseFloat(dash.solr)))
+        ? parseFloat(dash.solr)
+        : ((dash.radiation != null && !isNaN(parseFloat(dash.radiation))) ? parseFloat(dash.radiation) : null);
+
+      // Status temporal de comunicação baseado no timestamp oficial
+      let isOnline = false;
+      let status = 'offline';
+      let formattedDate = 'Sem comunicação recente';
+      let parsedTimestamp = null;
+      const ts = apiData?.lastUpdateTimestamp || dash.lastUpdateTimestamp || apiData?.timestamp || dash.timestamp;
+
       if (ts) {
         try {
-          const d = new Date(typeof ts === 'number' ? ts : parseInt(ts, 10));
-          const diffMinutes = (Date.now() - d.getTime()) / (1000 * 60);
-          if (diffMinutes > 180) {
-            status = 'delayed';
+          const d = new Date(typeof ts === 'number' ? ts : (parseInt(ts, 10) || ts));
+          if (!isNaN(d.getTime())) {
+            parsedTimestamp = d.getTime();
+            const diffMinutes = (Date.now() - d.getTime()) / (1000 * 60);
+            if (diffMinutes <= 180) {
+              isOnline = true;
+              status = 'updated';
+            } else {
+              isOnline = false;
+              status = 'delayed';
+            }
+            const pad = (n) => String(n).padStart(2, '0');
+            formattedDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
           }
-          const pad = (n) => String(n).padStart(2, '0');
-          formattedDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
         } catch {
-          status = 'updated';
+          // ignore
         }
+      } else if (tempAtual !== null) {
+        isOnline = true;
+        status = 'updated';
+        formattedDate = 'Atualizado em tempo real';
       }
 
-      const tempAtual = dash.temp != null ? parseFloat(dash.temp) : (21.4 + ((cfg.deviceId % 5) * 0.4));
-      const tempMin = dash.tempMin != null ? parseFloat(dash.tempMin) : (16.2 + ((cfg.deviceId % 4) * 0.3));
-      const tempMax = dash.tempMax != null ? parseFloat(dash.tempMax) : (25.8 + ((cfg.deviceId % 3) * 0.5));
-      const rainDay = dash.rain != null ? parseFloat(dash.rain) : (dash.rainAccum != null ? parseFloat(dash.rainAccum) : 0.0);
-      const rainMonth = dash.rainAccumMonthly != null ? parseFloat(dash.rainAccumMonthly) : 48.2;
-      const windSpd = dash.wind != null ? parseFloat(dash.wind) : (11.5 + ((cfg.deviceId % 6) * 0.8));
-      const windGst = dash.winbMax != null ? parseFloat(dash.winbMax) : (windSpd + 7.2);
-      const windDir = dash.direction != null ? parseFloat(dash.direction) : 135;
-      const windDirText = dash.directionString || 'SE';
-      const press = dash.pressure != null ? parseFloat(dash.pressure) : 938;
+      // Prioridade absoluta para as coordenadas geográficas oficiais retornadas pela API
+      const officialLat = (apiData?.latitude != null && !isNaN(parseFloat(apiData.latitude)))
+        ? parseFloat(apiData.latitude)
+        : cfg.lat;
+      const officialLon = (apiData?.longitude != null && !isNaN(parseFloat(apiData.longitude)))
+        ? parseFloat(apiData.longitude)
+        : cfg.lon;
+      const officialAlt = (apiData?.altitude != null && !isNaN(parseFloat(apiData.altitude)))
+        ? parseFloat(apiData.altitude)
+        : (cfg.altitude || null);
 
       const metrics = {
         temperature: tempAtual,
@@ -245,24 +355,24 @@ export class PlugfieldService {
         windDirectionText: windDirText,
         pressure: press,
         riverLevel: riverLevel,
-        humidity: dash.humidity != null ? parseFloat(dash.humidity) : 74,
-        solarRadiation: dash.radiation != null ? parseFloat(dash.radiation) : 420
+        humidity: humi,
+        solarRadiation: solr
       };
 
       return {
         deviceId: cfg.deviceId,
         id: cfg.deviceId,
-        name: cfg.name,
-        type: cfg.type,
+        name: apiData?.name || cfg.name,
+        type: apiData?.type || cfg.type,
         neighborhood: cfg.type,
         status: status,
-        isOnline: true,
-        lat: apiData?.latitude != null ? apiData.latitude : cfg.lat,
-        lon: apiData?.longitude != null ? apiData.longitude : cfg.lon,
-        altitude: apiData?.altitude != null ? apiData.altitude : 680,
-        lastUpdate: ts || Date.now(),
+        isOnline: isOnline,
+        lat: officialLat,
+        lon: officialLon,
+        altitude: officialAlt,
+        lastUpdate: parsedTimestamp || (isOnline ? Date.now() : null),
         lastUpdateText: formattedDate,
-        timestamp: ts || Date.now(),
+        timestamp: parsedTimestamp || (isOnline ? Date.now() : null),
         metrics: metrics,
 
         // Compatibilidade com subestruturas
@@ -291,43 +401,70 @@ export class PlugfieldService {
           nivelAtual: riverLevel,
           mensagem: hasRiverSensor ? null : 'Dado não disponível para esta estação'
         },
-        umidade: metrics.humidity,
-        radiacao: metrics.solarRadiation
+        umidade: humi,
+        radiacao: solr
       };
     });
   }
 
   static getDefaultEmptyStations() {
-    return this.mergeAndNormalizeStations([]);
-  }
-
-  static generateDefault5DayHistory(deviceId) {
-    const pad = (n) => String(n).padStart(2, '0');
-    const history = [];
-    const now = new Date();
-
-    for (let i = 4; i >= 0; i--) {
-      const d = new Date(now.getTime() - (i * 24 * 60 * 60 * 1000));
-      const dateLabel = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
-      const fullDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-      const baseTemp = 20.0 + ((deviceId % 5) * 0.3) - (i * 0.4);
-
-      history.push({
-        date: dateLabel,
-        fullDate: fullDate,
-        tempAvg: parseFloat(baseTemp.toFixed(1)),
-        tempMin: parseFloat((baseTemp - 4.5).toFixed(1)),
-        tempMax: parseFloat((baseTemp + 4.8).toFixed(1)),
-        rainAccum: i === 2 ? 4.2 : 0.0,
-        windAvg: parseFloat((10.5 + (i * 0.8)).toFixed(1)),
-        windMax: parseFloat((18.0 + (i * 1.2)).toFixed(1)),
-        pressure: 938 + (i % 3),
+    return PLUGFIELD_STATIONS_CONFIG.map(cfg => ({
+      deviceId: cfg.deviceId,
+      id: cfg.deviceId,
+      name: cfg.name,
+      type: cfg.type,
+      neighborhood: cfg.type,
+      status: 'offline',
+      isOnline: false,
+      lat: cfg.lat,
+      lon: cfg.lon,
+      altitude: null,
+      lastUpdate: null,
+      lastUpdateText: 'Sem comunicação recente',
+      timestamp: null,
+      metrics: {
+        temperature: null,
+        tempMin: null,
+        tempMax: null,
+        rain: null,
+        rainAccumMonthly: null,
+        windSpeed: null,
+        windGust: null,
+        windDirection: null,
+        windDirectionText: null,
+        pressure: null,
         riverLevel: null,
-        humidity: 70 + (i * 2)
-      });
-    }
-
-    return history;
+        humidity: null,
+        solarRadiation: null
+      },
+      temperatura: {
+        atual: null,
+        minima: null,
+        maxima: null,
+        mediaMensalInfo: 'Média mensal indisponível — série histórica insuficiente.'
+      },
+      chuva: {
+        atual: null,
+        acumuladoDia: null,
+        acumuladoMes: null
+      },
+      vento: {
+        velocidade: null,
+        rajadaMaxima: null,
+        direcaoGraus: null,
+        direcaoCardeal: null
+      },
+      pressao: {
+        atual: null
+      },
+      rio: {
+        disponivel: false,
+        nivelAtual: null,
+        mensagem: 'Dado não disponível para esta estação'
+      },
+      umidade: null,
+      radiacao: null
+    }));
   }
 
   static getLocalCache(key) {

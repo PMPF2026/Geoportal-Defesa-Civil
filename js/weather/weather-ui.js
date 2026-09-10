@@ -715,6 +715,7 @@ export class WeatherUI {
       if (stations && stations.length > 0) {
         this.plugfieldStations = stations;
         this.renderPlugfieldUI();
+        PlugfieldService.updateMapLayerWithTelemetry(stations);
       }
     } catch (err) {
       console.warn('[WeatherUI] Erro ao carregar dados Plugfield:', err);
@@ -750,6 +751,30 @@ export class WeatherUI {
       : PLUGFIELD_STATIONS_CONFIG.find(s => s.deviceId === deviceId);
 
     if (!st) return;
+
+    // Reset imediato para evitar resíduo visual da estação anterior
+    const elTemp = document.getElementById('pf-temp-atual');
+    const elTempMinMax = document.getElementById('pf-temp-minmax');
+    const elRain = document.getElementById('pf-rain-day');
+    const elRainMonth = document.getElementById('pf-rain-month');
+    const elWind = document.getElementById('pf-wind-val');
+    const elWindSub = document.getElementById('pf-wind-sub');
+    const elPressure = document.getElementById('pf-pressure-val');
+    const elRiver = document.getElementById('pf-river-level-val');
+    const elRiverSub = document.getElementById('pf-river-sub');
+
+    if (elTemp) elTemp.textContent = '-- °C';
+    if (elTempMinMax) elTempMinMax.textContent = 'Mín: -- | Máx: --';
+    if (elRain) elRain.textContent = '-- mm';
+    if (elRainMonth) elRainMonth.textContent = 'Acumulado Mês: --';
+    if (elWind) elWind.textContent = '-- km/h';
+    if (elWindSub) elWindSub.textContent = 'Rajada: -- | Dir: --';
+    if (elPressure) elPressure.textContent = '-- hPa';
+    if (elRiver) {
+      elRiver.textContent = '--';
+      elRiver.style.fontSize = '14px';
+      elRiver.style.color = '#94a3b8';
+    }
 
     const isOnline = st.status !== 'offline' && st.isOnline !== false;
 
@@ -799,8 +824,6 @@ export class WeatherUI {
     const riverVal = m.riverLevel ?? r.nivelAtual;
 
     // 1. Temp
-    const elTemp = document.getElementById('pf-temp-atual');
-    const elTempMinMax = document.getElementById('pf-temp-minmax');
     if (elTemp) {
       elTemp.textContent = tempVal !== null && tempVal !== undefined ? `${tempVal.toFixed(1).replace('.', ',')} °C` : '-- °C';
     }
@@ -811,10 +834,12 @@ export class WeatherUI {
     }
 
     // 2. Precipitação
-    const elRain = document.getElementById('pf-rain-day');
-    const elRainMonth = document.getElementById('pf-rain-month');
     if (elRain) {
-      elRain.textContent = rainVal !== null && rainVal !== undefined ? `${rainVal.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
+      if (rainVal !== null && rainVal !== undefined) {
+        elRain.textContent = `${rainVal.toFixed(1).replace('.', ',')} mm`;
+      } else {
+        elRain.textContent = isOnline ? '0,0 mm' : '-- mm';
+      }
     }
     if (elRainMonth) {
       elRainMonth.textContent = rainMonthVal !== null && rainMonthVal !== undefined
@@ -823,8 +848,6 @@ export class WeatherUI {
     }
 
     // 3. Vento
-    const elWind = document.getElementById('pf-wind-val');
-    const elWindSub = document.getElementById('pf-wind-sub');
     if (elWind) {
       elWind.textContent = windVal !== null && windVal !== undefined ? `${windVal.toFixed(1).replace('.', ',')} km/h` : '-- km/h';
     }
@@ -834,14 +857,11 @@ export class WeatherUI {
     }
 
     // 4. Pressão
-    const elPressure = document.getElementById('pf-pressure-val');
     if (elPressure) {
       elPressure.textContent = pressVal !== null && pressVal !== undefined ? `${pressVal.toFixed(0)} hPa` : '-- hPa';
     }
 
     // 5. Nível do Rio (levelAdditional)
-    const elRiver = document.getElementById('pf-river-level-val');
-    const elRiverSub = document.getElementById('pf-river-sub');
     if (elRiver) {
       if (riverVal !== null && riverVal !== undefined) {
         elRiver.textContent = `${riverVal.toFixed(1).replace('.', ',')} cm`;
@@ -925,7 +945,7 @@ export class WeatherUI {
         const dateStr = d.date || d.fullDate || '--';
         const minT = d.tempMin !== null && d.tempMin !== undefined ? `${d.tempMin.toFixed(1)}°` : '--';
         const maxT = d.tempMax !== null && d.tempMax !== undefined ? `${d.tempMax.toFixed(1)}°` : '--';
-        const rain = d.rainAccum !== null && d.rainAccum !== undefined ? `${d.rainAccum.toFixed(1)}` : '0.0';
+        const rain = d.rainAccum !== null && d.rainAccum !== undefined ? `${d.rainAccum.toFixed(1)}` : '--';
         const wind = d.windMax !== null && d.windMax !== undefined ? `${d.windMax.toFixed(1)} km/h` : '--';
         const hum = d.humidity !== null && d.humidity !== undefined ? `${d.humidity}%` : '--';
         const press = d.pressure !== null && d.pressure !== undefined ? `${d.pressure.toFixed(0)}` : '--';
