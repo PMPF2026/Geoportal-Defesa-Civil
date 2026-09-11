@@ -39,25 +39,18 @@ export const LAYER_GROUPS = [
     title: '5. Divisão Territorial & Limites',
     iconClass: 'territory',
     iconName: 'map-pin',
-    description: 'Limite municipal, distritos, bairros, setores censitários do IBGE e RS'
-  },
-  {
-    id: 'planejamento_urbano',
-    title: '6. Planejamento & Ordenamento Urbano',
-    iconClass: 'urban',
-    iconName: 'building-2',
-    description: 'Perímetro do plano diretor e macrozoneamento municipal'
+    description: 'Limite municipal, perímetro do plano diretor, distritos, bairros, setores censitários do IBGE e RS'
   },
   {
     id: 'populacao',
-    title: '7. População & Vulnerabilidade Social',
+    title: '6. População & Vulnerabilidade Social',
     iconClass: 'population',
     iconName: 'users',
     description: 'Distribuição, densidade demográfica setorial e domicílios (Censo IBGE 2022)'
   },
   {
     id: 'ortofotos',
-    title: '8. Ortofotos – Levantamento Aerofotogramétrico',
+    title: '7. Ortofotos – Levantamento Aerofotogramétrico',
     iconClass: 'ortho',
     iconName: 'camera',
     description: 'Levantamento aerofotogramétrico de alta resolução (Julho/2026 - SIRGAS 2000 UTM 22S / Web Mercator)',
@@ -65,7 +58,7 @@ export const LAYER_GROUPS = [
   },
   {
     id: 'mapeamento_sgb',
-    title: '9. Mapeamento & Diagnóstico SGB',
+    title: '8. Mapeamento & Diagnóstico SGB',
     iconClass: 'sgb',
     iconName: 'mountain',
     description: 'Mapeamento oficial de domicílios e setores de risco geológico (Serviço Geológico do Brasil - SGB, 2025)',
@@ -504,7 +497,7 @@ export const LAYERS_CONFIG = [
     searchable: false
   },
 
-  // ================= 3. SISTEMA VIÁRIO =================
+  // ================= 4. SISTEMA VIÁRIO =================
   {
     id: 'rodovia_federal',
     name: 'Rodovia Federal (BR)',
@@ -699,7 +692,7 @@ export const LAYERS_CONFIG = [
     searchFields: ['NM_LOG', 'NM_TIP_LOG']
   },
 
-  // ================= 4. DIVISÃO TERRITORIAL =================
+  // ================= 5. DIVISÃO TERRITORIAL & LIMITES =================
   {
     id: 'limite_territorial',
     name: 'Limite Territorial Passo Fundo',
@@ -868,14 +861,13 @@ export const LAYERS_CONFIG = [
     searchFields: ['NM_MUN', 'CD_MUN']
   },
 
-  // ================= 5. PLANEJAMENTO URBANO =================
   {
     id: 'limite_plano_diretor',
     name: 'Limite do Plano Diretor',
     fileName: 'Limite Plano Diretor.geojson',
     source: 'Plano Diretor / Prefeitura de Passo Fundo',
     refDate: '2024',
-    group: 'planejamento_urbano',
+    group: 'divisao_territorial',
     geometryType: 'MultiPolygon',
     defaultVisible: false,
     defaultOpacity: 0.8,
@@ -900,7 +892,7 @@ export const LAYERS_CONFIG = [
     searchable: false
   },
 
-  // ================= 6. POPULAÇÃO =================
+  // ================= 6. POPULAÇÃO & VULNERABILIDADE SOCIAL =================
   {
     id: 'densidade_populacional',
     name: 'Densidade Populacional (Setores)',
@@ -1260,7 +1252,7 @@ export const LAYERS_CONFIG = [
     searchFields: ['id']
   },
 
-  // ================= ORTOFOTOS – LEVANTAMENTO AEROFOTOGRAMÉTRICO =================
+  // ================= 7. ORTOFOTOS – LEVANTAMENTO AEROFOTOGRAMÉTRICO =================
   {
     id: 'ortofotos_rio_passo_fundo',
     name: 'Ortofotos Rio Passo Fundo',
@@ -1344,7 +1336,7 @@ export const LAYERS_CONFIG = [
     searchable: false
   },
 
-  // ================= 9. MAPEAMENTO & DIAGNÓSTICO SGB =================
+  // ================= 8. MAPEAMENTO & DIAGNÓSTICO SGB =================
   {
     id: 'mapeamento_sgb_2025',
     name: 'Mapeamento de Áreas de Risco — Serviço Geológico do Brasil (SGB, 2025)',
