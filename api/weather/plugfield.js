@@ -78,6 +78,9 @@ const STATION_TERRITORIAL_MAP = {
 
 // Cache de access_token obtido via autenticação oficial (não expira segundo a especificação Plugfield)
 let sessionAccessToken = null;
+let sessionUser = null;
+let lastLoginStatus = null;
+let lastLoginError = null;
 
 function getPlugfieldCredentials() {
   const apiKey = (
@@ -125,22 +128,27 @@ async function buildAuthHeaders() {
         body: JSON.stringify({ username, password })
       });
 
+      lastLoginStatus = loginResp.status;
       if (loginResp.ok) {
         const loginData = await loginResp.json();
         if (loginData && loginData.access_token) {
           sessionAccessToken = loginData.access_token;
+          sessionUser = loginData.user || null;
           accessToken = sessionAccessToken;
         }
       } else {
+        try { lastLoginError = (await loginResp.text()).slice(0, 300); } catch {}
         console.warn('[Plugfield Proxy] Falha na autenticação POST /login: HTTP', loginResp.status);
       }
     } catch (e) {
+      lastLoginError = e.message;
       console.warn('[Plugfield Proxy] Erro ao autenticar em POST /login:', e.message);
     }
   }
 
   const headers = {
     'Accept': 'application/json',
+    'Content-Type': 'application/json',
     'User-Agent': 'Portal-Defesa-Civil-Passo-Fundo/2.0'
   };
 
@@ -150,7 +158,6 @@ async function buildAuthHeaders() {
 
   if (accessToken) {
     headers['Authorization'] = accessToken;
-    headers['authorization'] = accessToken;
   }
 
   return { headers, apiKey, accessToken };
@@ -159,41 +166,95 @@ async function buildAuthHeaders() {
 /**
  * Executa requisições à Plugfield testando variações de cabeçalho em caso de 401 ou 403
  */
-async function fetchPlugfieldWithFallback(url, initialHeaders, apiKey) {
+async function fetchPlugfieldWithFallback(url, initialHeaders, apiKey, accessToken) {
   let response = await fetch(url, { headers: initialHeaders, method: 'GET' });
   if (response.ok) return response;
 
   // Se retornou 401 ou 403:
-  if ((response.status === 401 || response.status === 403) && apiKey) {
-    // Tentativa A: Se não tinha Authorization, tenta com Authorization: apiKey
-    if (!initialHeaders['Authorization']) {
-      const authKeyHeaders = {
-        ...initialHeaders,
-        'Authorization': apiKey,
-        'authorization': apiKey
-      };
-      const respA = await fetch(url, { headers: authKeyHeaders, method: 'GET' });
-      if (respA.ok) return respA;
+  if (response.status === 401 || response.status === 403) {
+    // Variação 1: Se temos accessToken, testa Authorization: Bearer <accessToken>
+    if (accessToken) {
+      const bearerHeaders = { ...initialHeaders, 'Authorization': `Bearer ${accessToken}` };
+      const r1 = await fetch(url, { headers: bearerHeaders, method: 'GET' });
+      if (r1.ok) return r1;
 
-      // Tentativa B: Authorization: Bearer <apiKey>
-      const bearerHeaders = {
-        ...initialHeaders,
-        'Authorization': `Bearer ${apiKey}`,
-        'authorization': `Bearer ${apiKey}`
-      };
-      const respB = await fetch(url, { headers: bearerHeaders, method: 'GET' });
-      if (respB.ok) return respB;
-    } else {
-      // Tentativa C: Se tinha Authorization e falhou, tenta SOMENTE com x-api-key
-      const onlyKeyHeaders = { ...initialHeaders };
-      delete onlyKeyHeaders['Authorization'];
-      delete onlyKeyHeaders['authorization'];
-      const respC = await fetch(url, { headers: onlyKeyHeaders, method: 'GET' });
-      if (respC.ok) return respC;
+      // Variação 2: lowercase authorization: <accessToken>
+      const lowerHeaders = { ...initialHeaders };
+      delete lowerHeaders['Authorization'];
+      lowerHeaders['authorization'] = accessToken;
+      const r2 = await fetch(url, { headers: lowerHeaders, method: 'GET' });
+      if (r2.ok) return r2;
+
+      // Variação 3: lowercase authorization: Bearer <accessToken>
+      const lowerBearer = { ...initialHeaders };
+      delete lowerBearer['Authorization'];
+      lowerBearer['authorization'] = `Bearer ${accessToken}`;
+      const r3 = await fetch(url, { headers: lowerBearer, method: 'GET' });
+      if (r3.ok) return r3;
+    }
+
+    // Variação 4: Se a URL possui parâmetro de query (?page=1), testa sem query
+    if (url.includes('?page=')) {
+      const baseOnly = url.split('?')[0];
+      const rPage = await fetch(baseOnly, { headers: initialHeaders, method: 'GET' });
+      if (rPage.ok) return rPage;
+    }
+
+    // Variação 5: Tenta apenas x-api-key (sem Authorization)
+    if (apiKey) {
+      const onlyKey = { ...initialHeaders };
+      delete onlyKey['Authorization'];
+      delete onlyKey['authorization'];
+      const rKey = await fetch(url, { headers: onlyKey, method: 'GET' });
+      if (rKey.ok) return rKey;
+
+      // Variação 6: Authorization: apiKey
+      const authKey = { ...initialHeaders, 'Authorization': apiKey };
+      const rAuth = await fetch(url, { headers: authKey, method: 'GET' });
+      if (rAuth.ok) return rAuth;
     }
   }
 
   return response;
+}
+
+function extractRiverLevelFromPayload(dash, sensors) {
+  let riverLevel = null;
+  let hasRiverSensor = false;
+
+  if (dash?.sc != null && dash.sc !== '' && !isNaN(parseFloat(dash.sc))) {
+    riverLevel = parseFloat(dash.sc);
+    hasRiverSensor = true;
+  } else if (dash?.riverLevel != null && dash.riverLevel !== '' && !isNaN(parseFloat(dash.riverLevel))) {
+    riverLevel = parseFloat(dash.riverLevel);
+    hasRiverSensor = true;
+  } else if (dash?.levelAdditional != null && dash.levelAdditional !== '' && !isNaN(parseFloat(dash.levelAdditional))) {
+    riverLevel = parseFloat(dash.levelAdditional);
+    hasRiverSensor = true;
+  } else if (dash?.lastSensorData?.sensorDataList && Array.isArray(dash.lastSensorData.sensorDataList)) {
+    const scSensor = dash.lastSensorData.sensorDataList.find(s =>
+      s.sensorCode === 'sc' ||
+      s.sensorId === 380 ||
+      (s.sensorName && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.sensorName))
+    );
+    if (scSensor && scSensor.dataValue != null && !isNaN(parseFloat(scSensor.dataValue))) {
+      riverLevel = parseFloat(scSensor.dataValue);
+      hasRiverSensor = true;
+    }
+  }
+
+  if (!hasRiverSensor && Array.isArray(sensors)) {
+    const hasSensorDef = sensors.some(s =>
+      s.code === 'sc' ||
+      s.id === 380 ||
+      (s.name && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.name))
+    );
+    if (hasSensorDef) {
+      hasRiverSensor = true;
+    }
+  }
+
+  return { riverLevel, hasRiverSensor };
 }
 
 module.exports = async function handler(req, res) {
@@ -222,6 +283,11 @@ module.exports = async function handler(req, res) {
         apiKeyLength: creds.apiKey ? creds.apiKey.length : 0,
         hasAccessToken: !!creds.accessToken,
         hasLoginCredentials: !!(creds.username && creds.password),
+        loginStatus: lastLoginStatus,
+        loginUser: sessionUser ? { id: sessionUser.id, username: sessionUser.username } : null,
+        loginError: lastLoginError,
+        tokenLength: accessToken ? accessToken.length : 0,
+        tokenType: accessToken ? (accessToken.startsWith('ey') ? 'jwt' : 'opaque') : null,
         configuredEnvKeys: Object.keys(process.env).filter(k => k.toUpperCase().includes('PLUG') || k.toUpperCase().includes('API')),
         timestamp: new Date().toISOString()
       });
@@ -238,7 +304,7 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device?page=${page}`, headers, apiKey);
+      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device?page=${page}`, headers, apiKey, accessToken);
 
       if (!response.ok) {
         let details = null;
@@ -270,6 +336,12 @@ module.exports = async function handler(req, res) {
         .map(st => {
           const idNum = parseInt(st.id || st.deviceId || 0, 10);
           const dash = st.dashboard || {};
+          const sensors = st.sensorList || st.sensors || [];
+          const { riverLevel, hasRiverSensor } = extractRiverLevelFromPayload(dash, sensors);
+          if (riverLevel !== null) {
+            dash.riverLevel = riverLevel;
+            dash.sc = riverLevel;
+          }
           return {
             id: idNum,
             deviceId: idNum,
@@ -278,8 +350,10 @@ module.exports = async function handler(req, res) {
             latitude: st.latitude != null && st.latitude !== '' ? parseFloat(st.latitude) : null,
             longitude: st.longitude != null && st.longitude !== '' ? parseFloat(st.longitude) : null,
             altitude: st.altitude != null && st.altitude !== '' ? parseFloat(st.altitude) : null,
-            sensors: st.sensorList || st.sensors || [],
+            sensors: sensors,
             dashboard: dash,
+            hasRiverSensor: hasRiverSensor,
+            riverLevel: riverLevel,
             lastUpdateTimestamp: st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null)
           };
         });
@@ -324,7 +398,7 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device/${devIdNum}`, headers, apiKey);
+      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device/${devIdNum}`, headers, apiKey, accessToken);
 
       if (!response.ok) {
         let details = null;
@@ -342,6 +416,12 @@ module.exports = async function handler(req, res) {
 
       const raw = await response.json();
       const dash = raw.dashboard || {};
+      const sensors = raw.sensorList || raw.sensors || [];
+      const { riverLevel, hasRiverSensor } = extractRiverLevelFromPayload(dash, sensors);
+      if (riverLevel !== null) {
+        dash.riverLevel = riverLevel;
+        dash.sc = riverLevel;
+      }
       const payload = {
         id: devIdNum,
         deviceId: devIdNum,
@@ -350,8 +430,10 @@ module.exports = async function handler(req, res) {
         latitude: raw.latitude != null && raw.latitude !== '' ? parseFloat(raw.latitude) : null,
         longitude: raw.longitude != null && raw.longitude !== '' ? parseFloat(raw.longitude) : null,
         altitude: raw.altitude != null && raw.altitude !== '' ? parseFloat(raw.altitude) : null,
-        sensors: raw.sensorList || raw.sensors || [],
+        sensors: sensors,
         dashboard: dash,
+        hasRiverSensor: hasRiverSensor,
+        riverLevel: riverLevel,
         lastUpdateTimestamp: raw.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null),
         updatedAt: new Date().toISOString()
       };
@@ -397,7 +479,7 @@ module.exports = async function handler(req, res) {
       }
 
       const url = `${BASE_URL}/data/daily?device=${devIdNum}&begin=${encodeURIComponent(begin)}&end=${encodeURIComponent(end)}`;
-      const response = await fetchPlugfieldWithFallback(url, headers, apiKey);
+      const response = await fetchPlugfieldWithFallback(url, headers, apiKey, accessToken);
 
       if (!response.ok) {
         let details = null;
@@ -428,8 +510,27 @@ module.exports = async function handler(req, res) {
           rainAccum: item.rainAccum != null && item.rainAccum !== '' ? parseFloat(item.rainAccum) : (item.rain != null && item.rain !== '' ? parseFloat(item.rain) : 0),
           wind: item.wind != null && item.wind !== '' ? parseFloat(item.wind) : null,
           windBurst: item.windBurst != null && item.windBurst !== '' ? parseFloat(item.windBurst) : (item.winbMax != null && item.winbMax !== '' ? parseFloat(item.winbMax) : null),
-          pressure: item.pressure != null && item.pressure !== '' ? parseFloat(item.pressure) : null,
-          levelAdditional: item.levelAdditional != null && item.levelAdditional !== '' ? parseFloat(item.levelAdditional) : null,
+          pressure: (item.prre != null && item.prre !== '' && !isNaN(parseFloat(item.prre)))
+            ? parseFloat(item.prre)
+            : ((item.pressureRelative != null && item.pressureRelative !== '' && !isNaN(parseFloat(item.pressureRelative)))
+              ? parseFloat(item.pressureRelative)
+              : ((item.relativePressure != null && item.relativePressure !== '' && !isNaN(parseFloat(item.relativePressure)))
+                ? parseFloat(item.relativePressure)
+                : null)),
+          levelAdditional: (item.sc != null && item.sc !== '' && !isNaN(parseFloat(item.sc)))
+            ? parseFloat(item.sc)
+            : ((item.riverLevel != null && item.riverLevel !== '' && !isNaN(parseFloat(item.riverLevel)))
+              ? parseFloat(item.riverLevel)
+              : ((item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)))
+                ? parseFloat(item.levelAdditional)
+                : null)),
+          riverLevel: (item.sc != null && item.sc !== '' && !isNaN(parseFloat(item.sc)))
+            ? parseFloat(item.sc)
+            : ((item.riverLevel != null && item.riverLevel !== '' && !isNaN(parseFloat(item.riverLevel)))
+              ? parseFloat(item.riverLevel)
+              : ((item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)))
+                ? parseFloat(item.levelAdditional)
+                : null)),
           humidity: item.humidity != null && item.humidity !== '' ? parseFloat(item.humidity) : null,
           radiation: item.radiation != null && item.radiation !== '' ? parseFloat(item.radiation) : null,
           evapo: item.evapo != null && item.evapo !== '' ? parseFloat(item.evapo) : null
