@@ -79,17 +79,41 @@ const STATION_TERRITORIAL_MAP = {
 // Cache de access_token obtido via autenticação oficial (não expira segundo a especificação Plugfield)
 let sessionAccessToken = null;
 
+function getPlugfieldCredentials() {
+  const apiKey = (
+    process.env.PLUGFIELD_API_KEY ||
+    process.env.PLUGFIELD_KEY ||
+    process.env.PLUGFIELD_APIKEY ||
+    process.env.PLUGFIELD_TOKEN ||
+    process.env.PLUGFIELD_ACCESS_TOKEN ||
+    process.env.API_KEY ||
+    process.env.X_API_KEY ||
+    ''
+  ).trim().replace(/^["']|["']$/g, '');
+
+  let accessToken = (
+    process.env.PLUGFIELD_ACCESS_TOKEN ||
+    process.env.PLUGFIELD_TOKEN ||
+    process.env.ACCESS_TOKEN ||
+    sessionAccessToken ||
+    ''
+  ).trim().replace(/^["']|["']$/g, '');
+
+  const username = (process.env.PLUGFIELD_USERNAME || process.env.PLUGFIELD_USER || process.env.PLUGFIELD_EMAIL || '').trim();
+  const password = (process.env.PLUGFIELD_PASSWORD || process.env.PLUGFIELD_PASS || '').trim();
+
+  return { apiKey, accessToken, username, password };
+}
+
 /**
- * Constrói os cabeçalhos de autenticação oficiais da Plugfield
- * 1. x-api-key: recebida via variável de ambiente PLUGFIELD_API_KEY
- * 2. Authorization: recebida via PLUGFIELD_ACCESS_TOKEN (ou obtida via POST /login com credenciais do ambiente)
+ * Constrói os cabeçalhos de autenticação oficiais da Plugfield com suporte flexível a x-api-key e Authorization
  */
 async function buildAuthHeaders() {
-  const apiKey = process.env.PLUGFIELD_API_KEY || '';
-  let accessToken = process.env.PLUGFIELD_ACCESS_TOKEN || process.env.PLUGFIELD_TOKEN || sessionAccessToken || '';
+  const creds = getPlugfieldCredentials();
+  let { apiKey, accessToken, username, password } = creds;
 
   // Se o access_token não foi fornecido diretamente mas existem credenciais de login no ambiente, realiza o login oficial
-  if (!accessToken && apiKey && process.env.PLUGFIELD_USERNAME && process.env.PLUGFIELD_PASSWORD) {
+  if (!accessToken && apiKey && username && password) {
     try {
       const loginResp = await fetch(`${BASE_URL}/login`, {
         method: 'POST',
@@ -98,10 +122,7 @@ async function buildAuthHeaders() {
           'Content-Type': 'application/json',
           'x-api-key': apiKey
         },
-        body: JSON.stringify({
-          username: process.env.PLUGFIELD_USERNAME,
-          password: process.env.PLUGFIELD_PASSWORD
-        })
+        body: JSON.stringify({ username, password })
       });
 
       if (loginResp.ok) {
@@ -130,9 +151,41 @@ async function buildAuthHeaders() {
   if (accessToken) {
     headers['Authorization'] = accessToken;
     headers['authorization'] = accessToken;
+  } else if (apiKey) {
+    // Compatibilidade: muitas contas da Plugfield aceitam a própria API Key no cabeçalho Authorization
+    headers['Authorization'] = apiKey;
+    headers['authorization'] = apiKey;
   }
 
-  return headers;
+  return { headers, apiKey, accessToken };
+}
+
+/**
+ * Executa requisições à Plugfield testando variações de cabeçalho em caso de 401
+ */
+async function fetchPlugfieldWithFallback(url, initialHeaders, apiKey) {
+  let response = await fetch(url, { headers: initialHeaders, method: 'GET' });
+  if (response.ok) return response;
+
+  // Se retornou 401 e tínhamos preenchido Authorization com a apiKey, tenta apenas com x-api-key
+  if (response.status === 401 && apiKey && initialHeaders['Authorization'] === apiKey) {
+    const onlyKeyHeaders = { ...initialHeaders };
+    delete onlyKeyHeaders['Authorization'];
+    delete onlyKeyHeaders['authorization'];
+    const resp2 = await fetch(url, { headers: onlyKeyHeaders, method: 'GET' });
+    if (resp2.ok) return resp2;
+
+    // Se ainda 401, tenta Authorization: Bearer <apiKey>
+    const bearerHeaders = {
+      ...initialHeaders,
+      'Authorization': `Bearer ${apiKey}`,
+      'authorization': `Bearer ${apiKey}`
+    };
+    const resp3 = await fetch(url, { headers: bearerHeaders, method: 'GET' });
+    if (resp3.ok) return resp3;
+  }
+
+  return response;
 }
 
 module.exports = async function handler(req, res) {
@@ -149,7 +202,22 @@ module.exports = async function handler(req, res) {
   const now = Date.now();
 
   try {
-    const headers = await buildAuthHeaders();
+    const { headers, apiKey, accessToken } = await buildAuthHeaders();
+
+    // 0. AÇÃO DE DIAGNÓSTICO: status
+    if (action === 'status' || action === 'diag') {
+      const creds = getPlugfieldCredentials();
+      return res.status(200).json({
+        success: true,
+        status: 'online',
+        hasApiKey: !!creds.apiKey,
+        apiKeyLength: creds.apiKey ? creds.apiKey.length : 0,
+        hasAccessToken: !!creds.accessToken,
+        hasLoginCredentials: !!(creds.username && creds.password),
+        configuredEnvKeys: Object.keys(process.env).filter(k => k.toUpperCase().includes('PLUG') || k.toUpperCase().includes('API')),
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // 1. AÇÃO: Listar todas as estações (/device?page=1)
     if (action === 'devices') {
@@ -162,16 +230,14 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const response = await fetch(`${BASE_URL}/device?page=${page}`, {
-        headers,
-        method: 'GET'
-      });
+      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device?page=${page}`, headers, apiKey);
 
       if (!response.ok) {
         return res.status(response.status).json({
           success: false,
           error: `Erro ao consultar /device: HTTP ${response.status}`,
-          statusCode: response.status
+          statusCode: response.status,
+          hasApiKeyConfigured: !!apiKey
         });
       }
 

@@ -732,7 +732,7 @@ export class WeatherUI {
     if (select && this.plugfieldStations) {
       const currentVal = parseInt(select.value, 10) || this.selectedPlugfieldId;
       select.innerHTML = this.plugfieldStations.map(st => {
-        const isOffline = st.status === 'offline' || st.isOnline === false;
+        const isOffline = st.status === 'offline';
         return `
           <option value="${st.deviceId}" ${st.deviceId === currentVal ? 'selected' : ''}>
             ${st.name} (ID: ${st.deviceId})${isOffline ? ' [Offline]' : ''}
@@ -776,7 +776,8 @@ export class WeatherUI {
       elRiver.style.color = '#94a3b8';
     }
 
-    const isOnline = st.status !== 'offline' && st.isOnline !== false;
+    const isOnline = st.status === 'updated' || st.status === 'online' || (st.isOnline === true && st.status !== 'offline');
+    const isWaiting = st.status === 'waiting' || (st.isOnline === null && st.status !== 'offline');
 
     // Atualizar Nome e Meta da Estação
     const stationNameText = document.getElementById('pf-station-name-text');
@@ -793,15 +794,19 @@ export class WeatherUI {
     const statusDot = document.getElementById('pf-status-dot');
     const statusPill = document.getElementById('pf-status-pill');
     if (statusText) {
-      statusText.textContent = isOnline
-        ? `Online • ${st.lastUpdateText || 'Atualizado em tempo real'}`
-        : 'Sem comunicação recente';
+      if (isOnline) {
+        statusText.textContent = `Online • ${st.lastUpdateText || 'Atualizado em tempo real'}`;
+      } else if (isWaiting) {
+        statusText.textContent = 'Conectando à estação...';
+      } else {
+        statusText.textContent = 'Sem comunicação recente';
+      }
     }
     if (statusDot) {
-      statusDot.className = `status-dot ${isOnline ? 'green' : 'red'}`;
+      statusDot.className = `status-dot ${isOnline ? 'green' : (isWaiting ? 'yellow' : 'red')}`;
     }
     if (statusPill) {
-      statusPill.className = `station-status-pill ${isOnline ? 'updated' : 'error'}`;
+      statusPill.className = `station-status-pill ${isOnline ? 'updated' : (isWaiting ? 'delayed' : 'error')}`;
     }
 
     // Métricas (lê de st.metrics e das propriedades normalizadas)

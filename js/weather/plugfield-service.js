@@ -65,9 +65,8 @@ export class PlugfieldService {
         return fallback;
       }
 
-      // Retorna lista padrão operacional com telemetria nula (sem mock)
+      // Retorna lista padrão operacional com status de conexão pendente (sem sobrescrever cache nem inventar dados)
       const defaultStations = this.getDefaultEmptyStations();
-      this.setLocalCache('all_stations', defaultStations);
       this.updateMapLayerWithTelemetry(defaultStations);
       return defaultStations;
     }
@@ -126,7 +125,7 @@ export class PlugfieldService {
       // 2. Atualiza propriedades de telemetria em tempo real no GeoJSON da camada
       const m = st.metrics || {};
       const isOnline = st.isOnline;
-      f.set('status_comunicacao', isOnline ? 'Online (em tempo real)' : (st.status === 'delayed' ? 'Comunicação atrasada' : 'Sem comunicação recente'));
+      f.set('status_comunicacao', isOnline ? 'Online (em tempo real)' : (st.status === 'delayed' ? 'Comunicação atrasada' : (st.status === 'waiting' ? 'Conectando...' : 'Sem comunicação recente')));
       f.set('temperatura_atual', m.temperature != null ? `${m.temperature.toFixed(1).replace('.', ',')} °C` : '--');
       f.set('temperatura_min_max', (m.tempMin != null || m.tempMax != null)
         ? `${m.tempMin != null ? m.tempMin.toFixed(1).replace('.', ',') + ' °C' : '--'} / ${m.tempMax != null ? m.tempMax.toFixed(1).replace('.', ',') + ' °C' : '--'}`
@@ -309,11 +308,18 @@ export class PlugfieldService {
 
       if (ts) {
         try {
-          const d = new Date(typeof ts === 'number' ? ts : (parseInt(ts, 10) || ts));
+          let numTs = typeof ts === 'number' ? ts : parseInt(ts, 10);
+          if (!isNaN(numTs)) {
+            // Se o timestamp estiver em segundos UNIX (10 dígitos), converter para milissegundos
+            if (numTs < 10000000000) {
+              numTs = numTs * 1000;
+            }
+          }
+          const d = new Date(numTs || ts);
           if (!isNaN(d.getTime())) {
             parsedTimestamp = d.getTime();
             const diffMinutes = (Date.now() - d.getTime()) / (1000 * 60);
-            if (diffMinutes <= 180) {
+            if (diffMinutes <= 360) {
               isOnline = true;
               status = 'updated';
             } else {
@@ -326,10 +332,17 @@ export class PlugfieldService {
         } catch {
           // ignore
         }
-      } else if (tempAtual !== null) {
+      }
+
+      // Se possui qualquer telemetria válida registrada, confirma status de funcionamento
+      if (tempAtual !== null || rainDay !== null || windSpd !== null || humi !== null) {
         isOnline = true;
-        status = 'updated';
-        formattedDate = 'Atualizado em tempo real';
+        if (status === 'offline') {
+          status = 'updated';
+          if (formattedDate === 'Sem comunicação recente') {
+            formattedDate = 'Atualizado em tempo real';
+          }
+        }
       }
 
       // Prioridade absoluta para as coordenadas geográficas oficiais retornadas pela API
@@ -414,13 +427,13 @@ export class PlugfieldService {
       name: cfg.name,
       type: cfg.type,
       neighborhood: cfg.type,
-      status: 'offline',
-      isOnline: false,
+      status: 'waiting',
+      isOnline: null,
       lat: cfg.lat,
       lon: cfg.lon,
       altitude: null,
       lastUpdate: null,
-      lastUpdateText: 'Sem comunicação recente',
+      lastUpdateText: 'Conectando...',
       timestamp: null,
       metrics: {
         temperature: null,
