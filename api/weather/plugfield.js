@@ -151,38 +151,46 @@ async function buildAuthHeaders() {
   if (accessToken) {
     headers['Authorization'] = accessToken;
     headers['authorization'] = accessToken;
-  } else if (apiKey) {
-    // Compatibilidade: muitas contas da Plugfield aceitam a própria API Key no cabeçalho Authorization
-    headers['Authorization'] = apiKey;
-    headers['authorization'] = apiKey;
   }
 
   return { headers, apiKey, accessToken };
 }
 
 /**
- * Executa requisições à Plugfield testando variações de cabeçalho em caso de 401
+ * Executa requisições à Plugfield testando variações de cabeçalho em caso de 401 ou 403
  */
 async function fetchPlugfieldWithFallback(url, initialHeaders, apiKey) {
   let response = await fetch(url, { headers: initialHeaders, method: 'GET' });
   if (response.ok) return response;
 
-  // Se retornou 401 e tínhamos preenchido Authorization com a apiKey, tenta apenas com x-api-key
-  if (response.status === 401 && apiKey && initialHeaders['Authorization'] === apiKey) {
-    const onlyKeyHeaders = { ...initialHeaders };
-    delete onlyKeyHeaders['Authorization'];
-    delete onlyKeyHeaders['authorization'];
-    const resp2 = await fetch(url, { headers: onlyKeyHeaders, method: 'GET' });
-    if (resp2.ok) return resp2;
+  // Se retornou 401 ou 403:
+  if ((response.status === 401 || response.status === 403) && apiKey) {
+    // Tentativa A: Se não tinha Authorization, tenta com Authorization: apiKey
+    if (!initialHeaders['Authorization']) {
+      const authKeyHeaders = {
+        ...initialHeaders,
+        'Authorization': apiKey,
+        'authorization': apiKey
+      };
+      const respA = await fetch(url, { headers: authKeyHeaders, method: 'GET' });
+      if (respA.ok) return respA;
 
-    // Se ainda 401, tenta Authorization: Bearer <apiKey>
-    const bearerHeaders = {
-      ...initialHeaders,
-      'Authorization': `Bearer ${apiKey}`,
-      'authorization': `Bearer ${apiKey}`
-    };
-    const resp3 = await fetch(url, { headers: bearerHeaders, method: 'GET' });
-    if (resp3.ok) return resp3;
+      // Tentativa B: Authorization: Bearer <apiKey>
+      const bearerHeaders = {
+        ...initialHeaders,
+        'Authorization': `Bearer ${apiKey}`,
+        'authorization': `Bearer ${apiKey}`
+      };
+      const respB = await fetch(url, { headers: bearerHeaders, method: 'GET' });
+      if (respB.ok) return respB;
+    } else {
+      // Tentativa C: Se tinha Authorization e falhou, tenta SOMENTE com x-api-key
+      const onlyKeyHeaders = { ...initialHeaders };
+      delete onlyKeyHeaders['Authorization'];
+      delete onlyKeyHeaders['authorization'];
+      const respC = await fetch(url, { headers: onlyKeyHeaders, method: 'GET' });
+      if (respC.ok) return respC;
+    }
   }
 
   return response;
@@ -233,9 +241,15 @@ module.exports = async function handler(req, res) {
       const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device?page=${page}`, headers, apiKey);
 
       if (!response.ok) {
+        let details = null;
+        try {
+          const txt = await response.text();
+          details = txt ? txt.slice(0, 300) : null;
+        } catch {}
         return res.status(response.status).json({
           success: false,
           error: `Erro ao consultar /device: HTTP ${response.status}`,
+          details,
           statusCode: response.status,
           hasApiKeyConfigured: !!apiKey
         });
@@ -310,15 +324,18 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const response = await fetch(`${BASE_URL}/device/${devIdNum}`, {
-        headers,
-        method: 'GET'
-      });
+      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device/${devIdNum}`, headers, apiKey);
 
       if (!response.ok) {
+        let details = null;
+        try {
+          const txt = await response.text();
+          details = txt ? txt.slice(0, 300) : null;
+        } catch {}
         return res.status(response.status).json({
           success: false,
           error: `Erro ao consultar /device/${devIdNum}: HTTP ${response.status}`,
+          details,
           statusCode: response.status
         });
       }
@@ -380,15 +397,18 @@ module.exports = async function handler(req, res) {
       }
 
       const url = `${BASE_URL}/data/daily?device=${devIdNum}&begin=${encodeURIComponent(begin)}&end=${encodeURIComponent(end)}`;
-      const response = await fetch(url, {
-        headers,
-        method: 'GET'
-      });
+      const response = await fetchPlugfieldWithFallback(url, headers, apiKey);
 
       if (!response.ok) {
+        let details = null;
+        try {
+          const txt = await response.text();
+          details = txt ? txt.slice(0, 300) : null;
+        } catch {}
         return res.status(response.status).json({
           success: false,
           error: `Erro ao consultar /data/daily: HTTP ${response.status}`,
+          details,
           statusCode: response.status
         });
       }
