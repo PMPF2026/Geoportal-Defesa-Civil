@@ -455,7 +455,13 @@ module.exports = async function handler(req, res) {
           rainAccum: item.rainAccum != null && item.rainAccum !== '' ? parseFloat(item.rainAccum) : (item.rain != null && item.rain !== '' ? parseFloat(item.rain) : 0),
           wind: item.wind != null && item.wind !== '' ? parseFloat(item.wind) : null,
           windBurst: item.windBurst != null && item.windBurst !== '' ? parseFloat(item.windBurst) : (item.winbMax != null && item.winbMax !== '' ? parseFloat(item.winbMax) : null),
-          pressure: item.pressure != null && item.pressure !== '' ? parseFloat(item.pressure) : null,
+          pressure: (item.prre != null && item.prre !== '' && !isNaN(parseFloat(item.prre)))
+            ? parseFloat(item.prre)
+            : ((item.pressureRelative != null && item.pressureRelative !== '' && !isNaN(parseFloat(item.pressureRelative)))
+              ? parseFloat(item.pressureRelative)
+              : ((item.relativePressure != null && item.relativePressure !== '' && !isNaN(parseFloat(item.relativePressure)))
+                ? parseFloat(item.relativePressure)
+                : null)),
           levelAdditional: item.levelAdditional != null && item.levelAdditional !== '' ? parseFloat(item.levelAdditional) : null,
           humidity: item.humidity != null && item.humidity !== '' ? parseFloat(item.humidity) : null,
           radiation: item.radiation != null && item.radiation !== '' ? parseFloat(item.radiation) : null,

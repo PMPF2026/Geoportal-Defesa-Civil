@@ -136,7 +136,7 @@ export class PlugfieldService {
       f.set('vento_atual', m.windSpeed != null ? `${m.windSpeed.toFixed(1).replace('.', ',')} km/h` : '--');
       f.set('rajada_maxima', m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--');
       f.set('direcao_vento', m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--'));
-      f.set('pressao_atual', m.pressure != null ? `${m.pressure.toFixed(0)} hPa` : '--');
+      f.set('pressao_atual', m.pressure != null ? `${m.pressure.toFixed(1).replace('.', ',')} hPa` : '--');
       f.set('nivel_rio', m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Não monitorado nesta estação');
       f.set('ultima_atualizacao', st.lastUpdateText || 'Sem comunicação recente');
     });
@@ -173,7 +173,13 @@ export class PlugfieldService {
       const rain = item.rainAccum != null && !isNaN(parseFloat(item.rainAccum)) ? parseFloat(item.rainAccum) : (item.rain != null && !isNaN(parseFloat(item.rain)) ? parseFloat(item.rain) : (item.rainDay != null && !isNaN(parseFloat(item.rainDay)) ? parseFloat(item.rainDay) : null));
       const windAvg = item.wind != null && !isNaN(parseFloat(item.wind)) ? parseFloat(item.wind) : (item.windAvg != null && !isNaN(parseFloat(item.windAvg)) ? parseFloat(item.windAvg) : null);
       const windMax = item.windBurst != null && !isNaN(parseFloat(item.windBurst)) ? parseFloat(item.windBurst) : (item.winbMax != null && !isNaN(parseFloat(item.winbMax)) ? parseFloat(item.winbMax) : (item.windMax != null && !isNaN(parseFloat(item.windMax)) ? parseFloat(item.windMax) : null));
-      const press = item.pressure != null && !isNaN(parseFloat(item.pressure)) ? parseFloat(item.pressure) : (item.pres != null && !isNaN(parseFloat(item.pres)) ? parseFloat(item.pres) : (item.prre != null && !isNaN(parseFloat(item.prre)) ? parseFloat(item.prre) : null));
+      const press = (item.prre != null && !isNaN(parseFloat(item.prre)))
+        ? parseFloat(item.prre)
+        : ((item.pressureRelative != null && !isNaN(parseFloat(item.pressureRelative)))
+          ? parseFloat(item.pressureRelative)
+          : ((item.relativePressure != null && !isNaN(parseFloat(item.relativePressure)))
+            ? parseFloat(item.relativePressure)
+            : null));
       const river = item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)) ? parseFloat(item.levelAdditional) : null;
       const hum = item.humidity != null && !isNaN(parseFloat(item.humidity)) ? parseFloat(item.humidity) : (item.humi != null && !isNaN(parseFloat(item.humi)) ? parseFloat(item.humi) : null);
 
@@ -290,11 +296,13 @@ export class PlugfieldService {
         ? parseFloat(dash.dire)
         : ((dash.direction != null && !isNaN(parseFloat(dash.direction))) ? parseFloat(dash.direction) : null);
       const windDirText = dash.direString || dash.directionString || null;
-      const press = (dash.pres != null && !isNaN(parseFloat(dash.pres)))
-        ? parseFloat(dash.pres)
-        : ((dash.prre != null && !isNaN(parseFloat(dash.prre)))
-          ? parseFloat(dash.prre)
-          : ((dash.pressure != null && !isNaN(parseFloat(dash.pressure))) ? parseFloat(dash.pressure) : null));
+      const press = (dash.prre != null && !isNaN(parseFloat(dash.prre)))
+        ? parseFloat(dash.prre)
+        : ((dash.pressureRelative != null && !isNaN(parseFloat(dash.pressureRelative)))
+          ? parseFloat(dash.pressureRelative)
+          : ((dash.relativePressure != null && !isNaN(parseFloat(dash.relativePressure)))
+            ? parseFloat(dash.relativePressure)
+            : null));
       const solr = (dash.solr != null && !isNaN(parseFloat(dash.solr)))
         ? parseFloat(dash.solr)
         : ((dash.radiation != null && !isNaN(parseFloat(dash.radiation))) ? parseFloat(dash.radiation) : null);

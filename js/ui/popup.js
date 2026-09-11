@@ -123,7 +123,7 @@ export class PopupUI {
         props['vento_atual'] = m.windSpeed != null ? `${m.windSpeed.toFixed(1).replace('.', ',')} km/h` : '--';
         props['rajada_maxima'] = m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--';
         props['direcao_vento'] = m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--');
-        props['pressao_atual'] = m.pressure != null ? `${m.pressure.toFixed(0)} hPa` : '--';
+        props['pressao_atual'] = m.pressure != null ? `${m.pressure.toFixed(1).replace('.', ',')} hPa` : '--';
         props['nivel_rio'] = m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Não monitorado nesta estação';
         props['ultima_atualizacao'] = st.lastUpdateText || 'Sem comunicação recente';
       }

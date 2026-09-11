@@ -863,7 +863,7 @@ export class WeatherUI {
 
     // 4. Pressão
     if (elPressure) {
-      elPressure.textContent = pressVal !== null && pressVal !== undefined ? `${pressVal.toFixed(0)} hPa` : '-- hPa';
+      elPressure.textContent = pressVal !== null && pressVal !== undefined ? `${pressVal.toFixed(1).replace('.', ',')} hPa` : '-- hPa';
     }
 
     // 5. Nível do Rio (levelAdditional)
@@ -953,7 +953,7 @@ export class WeatherUI {
         const rain = d.rainAccum !== null && d.rainAccum !== undefined ? `${d.rainAccum.toFixed(1)}` : '--';
         const wind = d.windMax !== null && d.windMax !== undefined ? `${d.windMax.toFixed(1)} km/h` : '--';
         const hum = d.humidity !== null && d.humidity !== undefined ? `${d.humidity}%` : '--';
-        const press = d.pressure !== null && d.pressure !== undefined ? `${d.pressure.toFixed(0)}` : '--';
+        const press = d.pressure !== null && d.pressure !== undefined ? `${d.pressure.toFixed(1).replace('.', ',')}` : '--';
 
         html += `
           <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.04); color: #e2e8f0;">
