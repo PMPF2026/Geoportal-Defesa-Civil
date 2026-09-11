@@ -936,6 +936,324 @@ export const LAYERS_CONFIG = [
     searchable: true,
     searchFields: ['CD_SETOR', 'NM_DIST']
   },
+  {
+    id: 'censo_pop_0a4',
+    name: 'População de 0 a 4 anos (Primeira Infância)',
+    fileName: 'cn22_pop03_0a4_tot_2_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop03_0a4_tot_2',
+    choroplethBreaks: [
+      { max: 0.04, color: 'rgba(254, 240, 217, 0.75)', label: '< 4,0% (Baixa proporção)' },
+      { max: 0.06, color: 'rgba(253, 204, 138, 0.75)', label: '4,0% - 6,0% (Média)' },
+      { max: 0.08, color: 'rgba(252, 141, 89, 0.75)', label: '6,0% - 8,0% (Alta)' },
+      { max: 0.10, color: 'rgba(227, 74, 51, 0.75)', label: '8,0% - 10,0% (Muito Alta)' },
+      { max: Infinity, color: 'rgba(179, 0, 0, 0.75)', label: '> 10,0% (Crítica / Vulnerabilidade)' }
+    ],
+    style: {
+      strokeColor: '#9a3412',
+      strokeWidth: 0.8,
+      previewColor: '#ea580c'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'Primeira Infância (0-4 anos) — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop03_0a4_tot_2', label: 'Proporção 0 a 4 anos', format: 'percent' },
+        { key: 'dem.v01031', label: 'Crianças de 0 a 4 anos (hab)', format: 'number' },
+        { key: 'bas.v0001', label: 'População Total do Setor (hab)', format: 'number' }
+      ]
+    },
+    description: 'Proporção e total de crianças de 0 a 4 anos (Primeira Infância) por setor censitário. Informação crítica para evacuação e resgate prioritário da Defesa Civil.',
+    searchable: true,
+    searchFields: ['id']
+  },
+  {
+    id: 'censo_pop_5a9',
+    name: 'População de 5 a 9 anos (Crianças)',
+    fileName: 'cn22_pop03_5a9_tot_2_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop03_5a9_tot_2',
+    choroplethBreaks: [
+      { max: 0.04, color: 'rgba(254, 240, 217, 0.75)', label: '< 4,0% (Baixa proporção)' },
+      { max: 0.06, color: 'rgba(253, 204, 138, 0.75)', label: '4,0% - 6,0% (Média)' },
+      { max: 0.08, color: 'rgba(252, 141, 89, 0.75)', label: '6,0% - 8,0% (Alta)' },
+      { max: 0.10, color: 'rgba(227, 74, 51, 0.75)', label: '8,0% - 10,0% (Muito Alta)' },
+      { max: Infinity, color: 'rgba(179, 0, 0, 0.75)', label: '> 10,0% (Crítica)' }
+    ],
+    style: {
+      strokeColor: '#c2410c',
+      strokeWidth: 0.8,
+      previewColor: '#f97316'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'Crianças (5-9 anos) — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop03_5a9_tot_2', label: 'Proporção 5 a 9 anos', format: 'percent' },
+        { key: 'dem.v01032', label: 'Crianças de 5 a 9 anos (hab)', format: 'number' },
+        { key: 'bas.v0001', label: 'População Total do Setor (hab)', format: 'number' }
+      ]
+    },
+    description: 'Proporção e total de crianças de 5 a 9 anos por setor censitário pelo Censo IBGE 2022.',
+    searchable: true,
+    searchFields: ['id']
+  },
+  {
+    id: 'censo_pop_10a14',
+    name: 'População de 10 a 14 anos',
+    fileName: 'cn22_pop03_10a14_tot_2_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop03_10a14_tot_2',
+    choroplethBreaks: [
+      { max: 0.04, color: 'rgba(254, 240, 217, 0.75)', label: '< 4,0%' },
+      { max: 0.06, color: 'rgba(253, 204, 138, 0.75)', label: '4,0% - 6,0%' },
+      { max: 0.08, color: 'rgba(252, 141, 89, 0.75)', label: '6,0% - 8,0%' },
+      { max: 0.10, color: 'rgba(227, 74, 51, 0.75)', label: '8,0% - 10,0%' },
+      { max: Infinity, color: 'rgba(179, 0, 0, 0.75)', label: '> 10,0%' }
+    ],
+    style: {
+      strokeColor: '#b45309',
+      strokeWidth: 0.8,
+      previewColor: '#d97706'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'População 10-14 anos — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop03_10a14_tot_2', label: 'Proporção 10 a 14 anos', format: 'percent' },
+        { key: 'dem.v01033', label: 'População de 10 a 14 anos (hab)', format: 'number' },
+        { key: 'bas.v0001', label: 'População Total do Setor (hab)', format: 'number' }
+      ]
+    },
+    description: 'Proporção e total de residentes com 10 a 14 anos por setor censitário pelo Censo IBGE 2022.',
+    searchable: true,
+    searchFields: ['id']
+  },
+  {
+    id: 'censo_pop_15a19',
+    name: 'População de 15 a 19 anos (Jovens)',
+    fileName: 'cn22_pop03_15a19_tot_2_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop03_15a19_tot_2',
+    choroplethBreaks: [
+      { max: 0.04, color: 'rgba(254, 240, 217, 0.75)', label: '< 4,0%' },
+      { max: 0.06, color: 'rgba(253, 204, 138, 0.75)', label: '4,0% - 6,0%' },
+      { max: 0.08, color: 'rgba(252, 141, 89, 0.75)', label: '6,0% - 8,0%' },
+      { max: 0.10, color: 'rgba(227, 74, 51, 0.75)', label: '8,0% - 10,0%' },
+      { max: Infinity, color: 'rgba(179, 0, 0, 0.75)', label: '> 10,0%' }
+    ],
+    style: {
+      strokeColor: '#4d7c0f',
+      strokeWidth: 0.8,
+      previewColor: '#65a30d'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'Jovens (15-19 anos) — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop03_15a19_tot_2', label: 'Proporção 15 a 19 anos', format: 'percent' },
+        { key: 'dem.v01034', label: 'População de 15 a 19 anos (hab)', format: 'number' },
+        { key: 'bas.v0001', label: 'População Total do Setor (hab)', format: 'number' }
+      ]
+    },
+    description: 'Proporção e total de jovens de 15 a 19 anos por setor censitário pelo Censo IBGE 2022.',
+    searchable: true,
+    searchFields: ['id']
+  },
+  {
+    id: 'censo_pop_20a59',
+    name: 'População de 20 a 59 anos (Adultos)',
+    fileName: 'cn22_pop03_20a59_tot_2_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop03_20a59_tot_2',
+    choroplethBreaks: [
+      { max: 0.50, color: 'rgba(237, 248, 251, 0.75)', label: '< 50,0%' },
+      { max: 0.55, color: 'rgba(178, 226, 226, 0.75)', label: '50,0% - 55,0%' },
+      { max: 0.60, color: 'rgba(102, 194, 164, 0.75)', label: '55,0% - 60,0%' },
+      { max: 0.65, color: 'rgba(44, 162, 95, 0.75)', label: '60,0% - 65,0%' },
+      { max: Infinity, color: 'rgba(0, 109, 44, 0.75)', label: '> 65,0%' }
+    ],
+    style: {
+      strokeColor: '#047857',
+      strokeWidth: 0.8,
+      previewColor: '#10b981'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'População Adulta (20-59 anos) — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop03_20a59_tot_2', label: 'Proporção 20 a 59 anos', format: 'percent' },
+        { key: 'cn22_pop03_20a59_tot_1', label: 'População de 20 a 59 anos (hab)', format: 'number' },
+        { key: 'bas.v0001', label: 'População Total do Setor (hab)', format: 'number' }
+      ]
+    },
+    description: 'Proporção e total da população adulta de 20 a 59 anos por setor censitário pelo Censo IBGE 2022.',
+    searchable: true,
+    searchFields: ['id']
+  },
+  {
+    id: 'censo_pop_m60',
+    name: 'População Idosa — 60 anos ou mais (Grupo Prioritário)',
+    fileName: 'cn22_pop03_m60_tot_2_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop03_m60_tot_2',
+    choroplethBreaks: [
+      { max: 0.12, color: 'rgba(242, 240, 247, 0.75)', label: '< 12,0% (Baixa concentração)' },
+      { max: 0.18, color: 'rgba(203, 201, 226, 0.75)', label: '12,0% - 18,0% (Média)' },
+      { max: 0.24, color: 'rgba(158, 154, 200, 0.75)', label: '18,0% - 24,0% (Alta)' },
+      { max: 0.30, color: 'rgba(117, 107, 177, 0.75)', label: '24,0% - 30,0% (Muito Alta)' },
+      { max: Infinity, color: 'rgba(84, 39, 143, 0.75)', label: '> 30,0% (Crítica / Prioritária)' }
+    ],
+    style: {
+      strokeColor: '#581c87',
+      strokeWidth: 0.8,
+      previewColor: '#7c3aed'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'População Idosa (60+ anos) — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop03_m60_tot_2', label: 'Proporção 60+ anos', format: 'percent' },
+        { key: 'cn22_pop03_m60_tot_1', label: 'População Idosa (60+ anos) (hab)', format: 'number' },
+        { key: 'bas.v0001', label: 'População Total do Setor (hab)', format: 'number' }
+      ]
+    },
+    description: 'Proporção e contingente de pessoas idosas (60+ anos) por setor censitário. Dado essencial para resgate prioritário e acolhimento em abrigos pela Defesa Civil.',
+    searchable: true,
+    searchFields: ['id']
+  },
+  {
+    id: 'censo_densidade_2022',
+    name: 'Densidade Demográfica Setorial — Censo 2022 (hab/km²)',
+    fileName: 'cn22_pop04_res_tot_kmtot_2_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop04_res_tot_kmtot_2',
+    choroplethBreaks: [
+      { max: 500, color: 'rgba(254, 240, 217, 0.75)', label: '< 500 hab/km² (Rural/Baixa)' },
+      { max: 2500, color: 'rgba(253, 204, 138, 0.75)', label: '500 - 2.500 hab/km² (Média)' },
+      { max: 5000, color: 'rgba(252, 141, 89, 0.75)', label: '2.500 - 5.000 hab/km² (Alta)' },
+      { max: 10000, color: 'rgba(227, 74, 51, 0.75)', label: '5.000 - 10.000 hab/km² (Muito Alta)' },
+      { max: Infinity, color: 'rgba(179, 0, 0, 0.75)', label: '> 10.000 hab/km² (Adensada/Vertical)' }
+    ],
+    style: {
+      strokeColor: '#991b1b',
+      strokeWidth: 0.8,
+      previewColor: '#dc2626'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'Densidade Demográfica 2022 — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop04_res_tot_kmtot_2', label: 'Densidade Demográfica (hab/km²)', format: 'number' },
+        { key: 'bas.v0001', label: 'População Residente (hab)', format: 'number' },
+        { key: 'cn22_ter01_area_tot_0', label: 'Área Territorial do Setor (km²)', format: 'number' }
+      ]
+    },
+    description: 'Densidade demográfica setorial em hab/km² com dados atualizados do Censo IBGE 2022.',
+    searchable: true,
+    searchFields: ['id']
+  },
+  {
+    id: 'censo_renda_vulnerabilidade',
+    name: 'Vulnerabilidade Social — Rendimento Médio Domiciliar (Censo 2022)',
+    fileName: 'cn22_pop05_rsp_tot_0_4314100_georedus_censo_2022.geojson',
+    source: 'IBGE - Censo Demográfico 2022 (Redus)',
+    refDate: '2022',
+    group: 'populacao',
+    geometryType: 'Polygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 28,
+    isLazy: true,
+    isChoropleth: true,
+    choroplethField: 'cn22_pop05_rsp_tot_0',
+    choroplethBreaks: [
+      { max: 2000, color: 'rgba(215, 48, 39, 0.75)', label: 'Até R$ 2.000 (Alta Vulnerabilidade Social)' },
+      { max: 3000, color: 'rgba(252, 141, 89, 0.75)', label: 'R$ 2.000 - R$ 3.000 (Média-Alta Vulnerabilidade)' },
+      { max: 4500, color: 'rgba(254, 224, 144, 0.75)', label: 'R$ 3.000 - R$ 4.500 (Média Vulnerabilidade)' },
+      { max: 7000, color: 'rgba(145, 191, 219, 0.75)', label: 'R$ 4.500 - R$ 7.000 (Média-Baixa Vulnerabilidade)' },
+      { max: Infinity, color: 'rgba(69, 117, 180, 0.75)', label: '> R$ 7.000 (Baixa Vulnerabilidade)' }
+    ],
+    style: {
+      strokeColor: '#1e3a8a',
+      strokeWidth: 0.8,
+      previewColor: '#2563eb'
+    },
+    popupConfig: {
+      titleField: 'id',
+      titlePrefix: 'Vulnerabilidade / Renda — Setor ',
+      fields: [
+        { key: 'id', label: 'Código do Setor Censitário' },
+        { key: 'cn22_pop05_rsp_tot_0', label: 'Rendimento Médio Mensal Domiciliar', format: 'currency' }
+      ]
+    },
+    description: 'Rendimento médio mensal domiciliar por setor censitário pelo Censo IBGE 2022, indicador chave de vulnerabilidade socioeconômica para a Defesa Civil.',
+    searchable: true,
+    searchFields: ['id']
+  },
 
   // ================= ORTOFOTOS – LEVANTAMENTO AEROFOTOGRAMÉTRICO =================
   {

@@ -187,6 +187,9 @@ export class PopupUI {
       } else if (field.format === 'currency') {
         const num = parseFloat(val);
         if (!isNaN(num)) formattedVal = `R$ ${formatNumber(num, 2)}`;
+      } else if (field.format === 'percent') {
+        const num = parseFloat(val);
+        if (!isNaN(num)) formattedVal = `${formatNumber(num * 100, 1)}%`;
       } else if (field.format === 'area') {
         const num = parseFloat(val);
         if (!isNaN(num)) formattedVal = formatArea(num);

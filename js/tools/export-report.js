@@ -996,6 +996,123 @@ export class ExportReportTool {
           </table>
         </div>
 
+        <!-- 8.1 ESTRUTURA ETÁRIA E GRUPOS PRIORITÁRIOS (CENSO IBGE 2022) -->
+        <h4 style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 16px 0 8px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+          <span>ESTRUTURA ETÁRIA E GRUPOS PRIORITÁRIOS DE ATENÇÃO DA DEFESA CIVIL</span>
+          <span style="font-size: 11px; font-weight: 600; color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; padding: 2px 8px; border-radius: 4px;">205.627 RESIDENTES (CENSO 2022)</span>
+        </h4>
+        <table class="kpi-table">
+          <thead>
+            <tr>
+              <th>Faixa Etária / Coorte</th>
+              <th>População Residente</th>
+              <th>Proporção Municipal</th>
+              <th>Enquadramento Operacional da Defesa Civil</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="alert-row">
+              <td><strong>Primeira Infância (0 a 4 anos)</strong></td>
+              <td><strong>12.482 crianças</strong></td>
+              <td><strong>6,1%</strong></td>
+              <td><span class="badge-alert">Prioridade Máxima — Evacuação e Resgate</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Crianças (5 a 9 anos)</strong></td>
+              <td><strong>13.200 crianças</strong></td>
+              <td><strong>6,4%</strong></td>
+              <td><span class="badge-orange">Alta Prioridade — Atendimento Infantil e Escolar</span></td>
+            </tr>
+            <tr>
+              <td><strong>Adolescentes / Pré-jovens (10 a 14 anos)</strong></td>
+              <td><strong>12.560 habitantes</strong></td>
+              <td><strong>6,1%</strong></td>
+              <td>População em idade escolar e dependência</td>
+            </tr>
+            <tr>
+              <td><strong>Jovens (15 a 19 anos)</strong></td>
+              <td><strong>12.533 habitantes</strong></td>
+              <td><strong>6,1%</strong></td>
+              <td>Juventude e apoio operacional voluntário</td>
+            </tr>
+            <tr>
+              <td><strong>Adultos (20 a 59 anos)</strong></td>
+              <td><strong>119.496 habitantes</strong></td>
+              <td><strong>58,1%</strong></td>
+              <td>População adulta economicamente ativa</td>
+            </tr>
+            <tr class="alert-row">
+              <td><strong>População Idosa (60 anos ou mais)</strong></td>
+              <td><strong style="color:#7c3aed;">35.356 idosos</strong></td>
+              <td><strong>17,2%</strong></td>
+              <td><span class="badge-alert" style="background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe;">Grupo Prioritário Crítico — Mobilidade Reduzida e Abrigamento</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>TOTAL GERAL RECENSEADO</strong></td>
+              <td><strong>205.627 habitantes</strong></td>
+              <td><strong>100,0%</strong></td>
+              <td><strong>47.838 indivíduos (23,3%) em grupos de alta atenção (0-9 e 60+ anos)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 8.2 VULNERABILIDADE SOCIAL E RENDIMENTO DOMICILIAR MÉDIO -->
+        <h4 style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 16px 0 8px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+          <span>VULNERABILIDADE SOCIAL — RENDIMENTO MÉDIO DOMICILIAR (CENSO IBGE 2022)</span>
+          <span style="font-size: 11px; font-weight: 600; color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">307 SETORES AVALIADOS</span>
+        </h4>
+        <table class="kpi-table">
+          <thead>
+            <tr>
+              <th>Faixa de Rendimento Médio Domiciliar</th>
+              <th>Qtd Setores</th>
+              <th>% Setores</th>
+              <th>Grau de Vulnerabilidade Socioeconômica</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="alert-row">
+              <td><strong>Até R$ 2.000,00</strong> (Rendimento Mínimo: R$ 595,45)</td>
+              <td><strong>25 setores</strong></td>
+              <td><strong>8,1%</strong></td>
+              <td><span class="badge-alert">Alta Vulnerabilidade — Baixa capacidade de auto-recuperação</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>De R$ 2.000,01 a R$ 3.000,00</strong></td>
+              <td><strong>107 setores</strong></td>
+              <td><strong>34,9%</strong></td>
+              <td><span class="badge-orange">Média-Alta Vulnerabilidade — Atenção prioritária da Defesa Civil</span></td>
+            </tr>
+            <tr>
+              <td><strong>De R$ 3.000,01 a R$ 4.500,00</strong></td>
+              <td><strong>84 setores</strong></td>
+              <td><strong>27,4%</strong></td>
+              <td><span class="badge-blue">Média Vulnerabilidade</span></td>
+            </tr>
+            <tr>
+              <td><strong>De R$ 4.500,01 a R$ 7.000,00</strong></td>
+              <td><strong>70 setores</strong></td>
+              <td><strong>22,8%</strong></td>
+              <td>Média-Baixa Vulnerabilidade</td>
+            </tr>
+            <tr>
+              <td><strong>Acima de R$ 7.000,00</strong> (Rendimento Máximo: R$ 22.417,57)</td>
+              <td><strong>21 setores</strong></td>
+              <td><strong>6,8%</strong></td>
+              <td>Baixa Vulnerabilidade Socioeconômica</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>MÉDIA MUNICIPAL GERAL</strong></td>
+              <td><strong>307 setores</strong></td>
+              <td><strong>100,0%</strong></td>
+              <td><strong>R$ 3.895,50 de rendimento médio mensal por responsável</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size:10.5px; color:#64748b; margin-top:-6px; margin-bottom:18px;">
+          *Fonte dos microdados censitários: IBGE — Censo Demográfico 2022 (Malha Setorial de Rendimento e Demografia Redus Passo Fundo/RS - 4314100).
+        </div>
+
         <!-- 9. EXPOSIÇÃO E COBERTURA DE PROTEÇÃO (SGB x REDE DE ABRIGOS) -->
         <h3 class="section-title">
           <span><span class="badge-num">9</span> EXPOSIÇÃO E COBERTURA DE PROTEÇÃO</span>
@@ -1088,6 +1205,9 @@ export class ExportReportTool {
           </p>
           <p style="margin-top:8px;">
             A análise integrada de <strong>Exposição e Cobertura de Proteção</strong> demonstra que os <strong>25 setores de risco mapeados pelo SGB (2025)</strong>, englobando <strong>617 edificações e 2.468 moradores</strong>, contam com <strong>99,8% de cobertura da rede municipal de abrigos no raio de 2 km (2.464 moradores)</strong> e <strong>66,3% de cobertura imediata no raio de 1 km (1.636 moradores)</strong>, permitindo resposta célere em situações de contingência e evacuação.
+          </p>
+          <p style="margin-top:8px;">
+            A incorporação dos microdados do <strong>Censo IBGE 2022</strong> revela que Passo Fundo possui <strong>47.838 indivíduos (23,3% da população)</strong> em faixas etárias de atenção prioritária para resgates e suporte humanitário, sendo <strong>12.482 crianças na primeira infância (0 a 4 anos)</strong> e <strong>35.356 pessoas idosas (60 anos ou mais)</strong>. Adicionalmente, <strong>132 setores censitários (43,0% do total avaliado)</strong> apresentam rendimento médio domiciliar de até R$ 3.000,00, caracterizando zonas de vulnerabilidade social que exigem assistência prioritária da Defesa Civil em eventos adversos.
           </p>
         </div>
 

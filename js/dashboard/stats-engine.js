@@ -40,6 +40,31 @@ export class StatsEngine {
         { name: "Pulador", pop: 383 }
       ],
       densityBuckets: { low: 18, medium: 42, high: 95, veryHigh: 105, extreme: 52 },
+      censo2022: {
+        popTotal: 205627,
+        pop0a4: 12482,
+        pop5a9: 13200,
+        pop10a14: 12560,
+        pop15a19: 12533,
+        pop20a59: 119496,
+        popM60: 35356,
+        pct0a4: 6.07,
+        pct5a9: 6.42,
+        pct10a14: 6.11,
+        pct15a19: 6.09,
+        pct20a59: 58.11,
+        pctM60: 17.20,
+        rendaMedia: 3895.50,
+        rendaMin: 595.45,
+        rendaMax: 22417.57,
+        rendaBuckets: {
+          ate2000: 25,
+          de2000a3000: 107,
+          de3000a4500: 84,
+          de4500a7000: 70,
+          acima7000: 21
+        }
+      },
       floodAreaKm2: 4.91,
       floodAreaHa: 490.9,
       residenciasApp: 318,

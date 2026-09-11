@@ -139,6 +139,113 @@ export class DashboardUI {
         }
       });
     }
+
+    // 3. Chart: Estrutura Etária da População (Bar)
+    const ageCtx = document.getElementById('chart-age-sidebar');
+    if (ageCtx) {
+      if (this.charts.ageSidebar) this.charts.ageSidebar.destroy();
+      const c = stats.censo2022 || {
+        pop0a4: 12482, pop5a9: 13200, pop10a14: 12560, pop15a19: 12533, pop20a59: 119496, popM60: 35356
+      };
+      this.charts.ageSidebar = new Chart(ageCtx, {
+        type: 'bar',
+        data: {
+          labels: ['0-4 anos', '5-9 anos', '10-14', '15-19', '20-59', '60+ anos'],
+          datasets: [{
+            label: 'Habitantes',
+            data: [c.pop0a4, c.pop5a9, c.pop10a14, c.pop15a19, c.pop20a59, c.popM60],
+            backgroundColor: ['#ea580c', '#f97316', '#d97706', '#65a30d', '#10b981', '#7c3aed'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${formatNumber(ctx.raw, 0)} habitantes`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+    }
+
+    // 4. Chart: Grupos Prioritários em Emergências (Doughnut)
+    const priorityCtx = document.getElementById('chart-priority-sidebar');
+    if (priorityCtx) {
+      if (this.charts.prioritySidebar) this.charts.prioritySidebar.destroy();
+      const c = stats.censo2022 || { pop0a4: 12482, pop5a9: 13200, popM60: 35356, popTotal: 205627 };
+      const demais = (c.popTotal || 205627) - (c.pop0a4 + c.pop5a9 + c.popM60);
+      this.charts.prioritySidebar = new Chart(priorityCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Idosos 60+ (Prioritário)', '0-4 anos (1ª Infância)', '5-9 anos (Crianças)', 'Demais (10-59 anos)'],
+          datasets: [{
+            data: [c.popM60, c.pop0a4, c.pop5a9, demais],
+            backgroundColor: ['#7c3aed', '#ea580c', '#f97316', '#334155'],
+            borderColor: '#0f172a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#94a3b8', font: { size: 9.5 }, boxWidth: 10, padding: 6 }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${formatNumber(ctx.raw, 0)} hab`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 5. Chart: Vulnerabilidade Social / Renda por Setor (Bar)
+    const incomeCtx = document.getElementById('chart-income-sidebar');
+    if (incomeCtx) {
+      if (this.charts.incomeSidebar) this.charts.incomeSidebar.destroy();
+      const r = stats.censo2022?.rendaBuckets || { ate2000: 25, de2000a3000: 107, de3000a4500: 84, de4500a7000: 70, acima7000: 21 };
+      this.charts.incomeSidebar = new Chart(incomeCtx, {
+        type: 'bar',
+        data: {
+          labels: ['< R$2k', 'R$2k-3k', 'R$3k-4.5k', 'R$4.5k-7k', '> R$7k'],
+          datasets: [{
+            label: 'Setores Censitários',
+            data: [r.ate2000, r.de2000a3000, r.de3000a4500, r.de4500a7000, r.acima7000],
+            backgroundColor: ['#d73027', '#fc8d59', '#fee090', '#91bfdb', '#4575b4'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.raw} setores censitários`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+    }
   }
 
   async renderModalCharts() {
@@ -428,6 +535,78 @@ export class DashboardUI {
           scales: {
             x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
             y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+    }
+
+    // 8. Censo 2022: Distribuição por Faixa Etária (Bar)
+    const ageModalCtx = document.getElementById('chart-age-modal');
+    if (ageModalCtx) {
+      if (this.charts.ageModal) this.charts.ageModal.destroy();
+      const c = stats.censo2022 || {
+        pop0a4: 12482, pop5a9: 13200, pop10a14: 12560, pop15a19: 12533, pop20a59: 119496, popM60: 35356
+      };
+      this.charts.ageModal = new Chart(ageModalCtx, {
+        type: 'bar',
+        data: {
+          labels: ['0 a 4 anos (1ª Infância)', '5 a 9 anos (Crianças)', '10 a 14 anos', '15 a 19 anos (Jovens)', '20 a 59 anos (Adultos)', '60+ anos (Idosos)'],
+          datasets: [{
+            label: 'Habitantes',
+            data: [c.pop0a4, c.pop5a9, c.pop10a14, c.pop15a19, c.pop20a59, c.popM60],
+            backgroundColor: ['#ea580c', '#f97316', '#d97706', '#65a30d', '#10b981', '#7c3aed'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${formatNumber(ctx.raw, 0)} habitantes (${((ctx.raw / 205627) * 100).toFixed(1)}%)`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 11 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+          }
+        }
+      });
+    }
+
+    // 9. Censo 2022: Vulnerabilidade Social / Rendimento Domiciliar Médio por Setor (Bar)
+    const incomeModalCtx = document.getElementById('chart-income-modal');
+    if (incomeModalCtx) {
+      if (this.charts.incomeModal) this.charts.incomeModal.destroy();
+      const r = stats.censo2022?.rendaBuckets || { ate2000: 25, de2000a3000: 107, de3000a4500: 84, de4500a7000: 70, acima7000: 21 };
+      this.charts.incomeModal = new Chart(incomeModalCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Até R$ 2.000 (Alta Vuln.)', 'R$ 2.000 a 3.000 (Média-Alta)', 'R$ 3.000 a 4.500 (Média)', 'R$ 4.500 a 7.000 (Média-Baixa)', 'Acima de R$ 7.000 (Baixa Vuln.)'],
+          datasets: [{
+            label: 'Setores Censitários',
+            data: [r.ate2000, r.de2000a3000, r.de3000a4500, r.de4500a7000, r.acima7000],
+            backgroundColor: ['#d73027', '#fc8d59', '#fee090', '#91bfdb', '#4575b4'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.raw} setores censitários`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#cbd5e1', font: { size: 10.5 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } }
           }
         }
       });

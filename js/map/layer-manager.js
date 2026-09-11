@@ -191,7 +191,14 @@ export class LayerManager {
       console.log(`[LayerManager] Carregando '${config.name}' (${config.fileName})...`);
       
       const geoJsonData = await loadGeoJson(config.fileName, onProgress);
-      const features = this.geoJsonFormat.readFeatures(geoJsonData);
+      const isUtm22s = (config.crs && config.crs.includes('31982')) || 
+                       (geoJsonData.crs && geoJsonData.crs.properties && geoJsonData.crs.properties.name && geoJsonData.crs.properties.name.includes('31982'));
+      const features = isUtm22s
+        ? this.geoJsonFormat.readFeatures(geoJsonData)
+        : new ol.format.GeoJSON().readFeatures(geoJsonData, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:3857'
+          });
 
       // Tag features with layer metadata for popup/identification
       features.forEach(f => {
