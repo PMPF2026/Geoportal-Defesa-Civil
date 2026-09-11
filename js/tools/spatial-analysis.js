@@ -91,7 +91,118 @@ export class SpatialAnalysisTool {
   }
 
   /**
-   * Generates a spatial buffer on all valid selected layer features across their full extent
+   * Stitches connected or adjacent line segments into continuous, maximal LineStrings
+   * Uses an efficient spatial hash for O(N) topological unification.
+   * 
+   * @param {Array<Array<Array<number>>>} lines - Array of coordinate arrays [[x, y], ...]
+   * @param {number} tolerance - Coordinate distance tolerance in degrees (default 2e-5, ~2m)
+   * @returns {Array<Array<Array<number>>>} Stitched continuous lines
+   */
+  stitchLineSegments(lines, tolerance = 2e-5) {
+    if (!lines || lines.length <= 1) return lines ? lines.slice() : [];
+
+    const tolSq = tolerance * tolerance;
+    const cellSize = Math.max(tolerance * 2, 1e-4);
+
+    function distSq(p1, p2) {
+      const dx = p1[0] - p2[0];
+      const dy = p1[1] - p2[1];
+      return dx * dx + dy * dy;
+    }
+
+    function cellKey(pt) {
+      return Math.floor(pt[0] / cellSize) + ',' + Math.floor(pt[1] / cellSize);
+    }
+
+    // Wrap segments with unique id and active status
+    const segments = lines.map((coords, idx) => ({
+      id: idx,
+      coords: coords.map(p => [p[0], p[1]]),
+      active: true
+    }));
+
+    const grid = new Map();
+    for (const seg of segments) {
+      const hKey = cellKey(seg.coords[0]);
+      if (!grid.has(hKey)) grid.set(hKey, []);
+      grid.get(hKey).push({ seg, isHead: true });
+
+      const tKey = cellKey(seg.coords[seg.coords.length - 1]);
+      if (!grid.has(tKey)) grid.set(tKey, []);
+      grid.get(tKey).push({ seg, isHead: false });
+    }
+
+    function findNeighbor(pt, excludeSeg) {
+      const cx = Math.floor(pt[0] / cellSize);
+      const cy = Math.floor(pt[1] / cellSize);
+      let best = null;
+      let bestDist = tolSq;
+
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const entries = grid.get((cx + dx) + ',' + (cy + dy));
+          if (!entries) continue;
+          for (const e of entries) {
+            if (!e.seg.active || e.seg.id === excludeSeg.id) continue;
+            const candPt = e.isHead ? e.seg.coords[0] : e.seg.coords[e.seg.coords.length - 1];
+            const d = distSq(pt, candPt);
+            if (d <= bestDist) {
+              bestDist = d;
+              best = e;
+            }
+          }
+        }
+      }
+      return best;
+    }
+
+    const stitched = [];
+    for (const startSeg of segments) {
+      if (!startSeg.active) continue;
+      startSeg.active = false;
+      let currentCoords = startSeg.coords;
+
+      // Extend forward (tail)
+      let extending = true;
+      while (extending) {
+        extending = false;
+        const tail = currentCoords[currentCoords.length - 1];
+        const match = findNeighbor(tail, startSeg);
+        if (match) {
+          match.seg.active = false;
+          let cand = match.seg.coords;
+          if (!match.isHead) cand = cand.slice().reverse();
+          currentCoords = currentCoords.concat(cand.slice(1));
+          extending = true;
+        }
+      }
+
+      // Extend backward (head)
+      extending = true;
+      while (extending) {
+        extending = false;
+        const head = currentCoords[0];
+        const match = findNeighbor(head, startSeg);
+        if (match) {
+          match.seg.active = false;
+          let cand = match.seg.coords;
+          if (match.isHead) cand = cand.slice().reverse();
+          currentCoords = cand.slice(0, -1).concat(currentCoords);
+          extending = true;
+        }
+      }
+
+      stitched.push(currentCoords);
+    }
+
+    return stitched;
+  }
+
+  /**
+   * Generates a spatial buffer on all valid selected layer features across their full extent.
+   * For linear layers (LineString/MultiLineString), connected segments are stitched and unified
+   * prior to buffer generation and overlapping buffers are dissolved, ensuring a single continuous
+   * corridor without intermediate circular nodes.
    */
   async executeBufferAnalysis() {
     const layerSelect = document.getElementById('analysis-buffer-layer');
@@ -128,9 +239,10 @@ export class SpatialAnalysisTool {
 
       if (typeof turf !== 'undefined') {
         const radiusKm = radiusMeters / 1000;
-        const bufferedFeatures = [];
+        const rawTurfFeatures = [];
+        let hasLinearGeometries = false;
 
-        // Process ALL features without subset truncation
+        // 1. Extrair todas as feições válidas da camada
         for (let i = 0; i < features.length; i++) {
           const f = features[i];
           const geom = f.getGeometry();
@@ -142,27 +254,139 @@ export class SpatialAnalysisTool {
               dataProjection: 'EPSG:4326'
             });
 
-            if (!turfFeature || !turfFeature.geometry) continue;
-
-            const buffered = turf.buffer(turfFeature, radiusKm, { units: 'kilometers' });
-            if (buffered && buffered.geometry) {
-              const olBuffered = geoJsonFormat.readFeature(buffered, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-              });
-              bufferedFeatures.push(olBuffered);
-              totalBufferArea += ol.sphere.getArea(olBuffered.getGeometry());
-              processedCount++;
+            if (turfFeature && turfFeature.geometry) {
+              rawTurfFeatures.push(turfFeature);
+              const gtype = turfFeature.geometry.type;
+              if (gtype === 'LineString' || gtype === 'MultiLineString') {
+                hasLinearGeometries = true;
+              }
             }
           } catch (featureErr) {
             console.warn('[SpatialAnalysis] Aviso ao processar feição para buffer:', featureErr);
           }
         }
 
-        if (bufferedFeatures.length > 0) {
-          this.analysisSource.addFeatures(bufferedFeatures);
+        // Preservar o contador original de feições da camada
+        processedCount = rawTurfFeatures.length || features.length;
+
+        if (hasLinearGeometries) {
+          // --- FLUXO CIRÚRGICO DE CAMADAS LINEARES ---
+          // 2. Extrair coordenadas de todos os trechos lineares
+          const rawLines = [];
+          for (const tf of rawTurfFeatures) {
+            const g = tf.geometry;
+            if (!g) continue;
+            if (g.type === 'LineString') {
+              if (g.coordinates && g.coordinates.length >= 2) {
+                rawLines.push(g.coordinates);
+              }
+            } else if (g.type === 'MultiLineString') {
+              if (g.coordinates) {
+                for (const part of g.coordinates) {
+                  if (part && part.length >= 2) rawLines.push(part);
+                }
+              }
+            }
+          }
+
+          // Normalização e validação: remover vértices duplicados consecutivos ou coordenadas inválidas
+          const normalizedLines = [];
+          for (const coords of rawLines) {
+            const clean = [];
+            for (const pt of coords) {
+              if (!pt || pt.length < 2 || isNaN(pt[0]) || isNaN(pt[1])) continue;
+              if (clean.length > 0) {
+                const prev = clean[clean.length - 1];
+                if (prev[0] === pt[0] && prev[1] === pt[1]) continue;
+              }
+              clean.push([pt[0], pt[1]]);
+            }
+            if (clean.length >= 2) normalizedLines.push(clean);
+          }
+
+          // 3 & 4. Unificar / costurar segmentos conectados antes do buffer (~2 metros de tolerância)
+          const stitchedLines = this.stitchLineSegments(normalizedLines, 2e-5);
+
+          // 5. Gerar buffer sobre cada linha contínua unificada
+          const bufferedPolygons = [];
+          for (const lineCoords of stitchedLines) {
+            try {
+              const ls = turf.lineString(lineCoords);
+              const b = turf.buffer(ls, radiusKm, { units: 'kilometers' });
+              if (b && b.geometry) {
+                bufferedPolygons.push(b);
+              }
+            } catch (bufErr) {
+              console.warn('[SpatialAnalysis] Erro ao aplicar buffer na linha unificada:', bufErr);
+            }
+          }
+
+          // 6 & 7. Dissolver / unificar buffers sobrepostos para formar uma faixa contínua única
+          let dissolvedFc = null;
+          if (bufferedPolygons.length === 1) {
+            dissolvedFc = turf.featureCollection(bufferedPolygons);
+          } else if (bufferedPolygons.length > 1) {
+            try {
+              dissolvedFc = turf.dissolve(turf.featureCollection(bufferedPolygons));
+            } catch (dissolveErr) {
+              console.warn('[SpatialAnalysis] Aviso em turf.dissolve, aplicando união iterativa:', dissolveErr);
+              let unified = bufferedPolygons[0];
+              for (let i = 1; i < bufferedPolygons.length; i++) {
+                try {
+                  const u = turf.union(unified, bufferedPolygons[i]);
+                  if (u) unified = u;
+                } catch (uErr) {
+                  console.warn('[SpatialAnalysis] Erro ao unir polígonos de buffer:', uErr);
+                }
+              }
+              dissolvedFc = turf.featureCollection([unified]);
+            }
+          }
+
+          // 8 & 9. Converter para OpenLayers e calcular área geodésica exata sem sobreposição
+          if (dissolvedFc && dissolvedFc.features && dissolvedFc.features.length > 0) {
+            const olBufferedFeatures = [];
+            for (const feat of dissolvedFc.features) {
+              try {
+                const olFeat = geoJsonFormat.readFeature(feat, {
+                  dataProjection: 'EPSG:4326',
+                  featureProjection: 'EPSG:3857'
+                });
+                olBufferedFeatures.push(olFeat);
+                totalBufferArea += ol.sphere.getArea(olFeat.getGeometry());
+              } catch (readErr) {
+                console.warn('[SpatialAnalysis] Erro ao ler feição de buffer dissolvido:', readErr);
+              }
+            }
+            if (olBufferedFeatures.length > 0) {
+              this.analysisSource.addFeatures(olBufferedFeatures);
+            }
+          }
+        } else {
+          // --- TRATAMENTO PRESERVADO PARA CAMADAS NÃO-LINEARES (PONTOS E POLÍGONOS) ---
+          const bufferedFeatures = [];
+          for (const turfFeature of rawTurfFeatures) {
+            try {
+              const buffered = turf.buffer(turfFeature, radiusKm, { units: 'kilometers' });
+              if (buffered && buffered.geometry) {
+                const olBuffered = geoJsonFormat.readFeature(buffered, {
+                  dataProjection: 'EPSG:4326',
+                  featureProjection: 'EPSG:3857'
+                });
+                bufferedFeatures.push(olBuffered);
+                totalBufferArea += ol.sphere.getArea(olBuffered.getGeometry());
+              }
+            } catch (featureErr) {
+              console.warn('[SpatialAnalysis] Aviso ao processar feição não-linear para buffer:', featureErr);
+            }
+          }
+
+          if (bufferedFeatures.length > 0) {
+            this.analysisSource.addFeatures(bufferedFeatures);
+          }
         }
       } else {
+        // Fallback quando turf não estiver disponível
         for (let i = 0; i < features.length; i++) {
           const f = features[i];
           const geom = f.getGeometry();
