@@ -218,6 +218,45 @@ async function fetchPlugfieldWithFallback(url, initialHeaders, apiKey, accessTok
   return response;
 }
 
+function extractRiverLevelFromPayload(dash, sensors) {
+  let riverLevel = null;
+  let hasRiverSensor = false;
+
+  if (dash?.sc != null && dash.sc !== '' && !isNaN(parseFloat(dash.sc))) {
+    riverLevel = parseFloat(dash.sc);
+    hasRiverSensor = true;
+  } else if (dash?.riverLevel != null && dash.riverLevel !== '' && !isNaN(parseFloat(dash.riverLevel))) {
+    riverLevel = parseFloat(dash.riverLevel);
+    hasRiverSensor = true;
+  } else if (dash?.levelAdditional != null && dash.levelAdditional !== '' && !isNaN(parseFloat(dash.levelAdditional))) {
+    riverLevel = parseFloat(dash.levelAdditional);
+    hasRiverSensor = true;
+  } else if (dash?.lastSensorData?.sensorDataList && Array.isArray(dash.lastSensorData.sensorDataList)) {
+    const scSensor = dash.lastSensorData.sensorDataList.find(s =>
+      s.sensorCode === 'sc' ||
+      s.sensorId === 380 ||
+      (s.sensorName && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.sensorName))
+    );
+    if (scSensor && scSensor.dataValue != null && !isNaN(parseFloat(scSensor.dataValue))) {
+      riverLevel = parseFloat(scSensor.dataValue);
+      hasRiverSensor = true;
+    }
+  }
+
+  if (!hasRiverSensor && Array.isArray(sensors)) {
+    const hasSensorDef = sensors.some(s =>
+      s.code === 'sc' ||
+      s.id === 380 ||
+      (s.name && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.name))
+    );
+    if (hasSensorDef) {
+      hasRiverSensor = true;
+    }
+  }
+
+  return { riverLevel, hasRiverSensor };
+}
+
 module.exports = async function handler(req, res) {
   // Configuração rigorosa de cabeçalhos CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -297,6 +336,12 @@ module.exports = async function handler(req, res) {
         .map(st => {
           const idNum = parseInt(st.id || st.deviceId || 0, 10);
           const dash = st.dashboard || {};
+          const sensors = st.sensorList || st.sensors || [];
+          const { riverLevel, hasRiverSensor } = extractRiverLevelFromPayload(dash, sensors);
+          if (riverLevel !== null) {
+            dash.riverLevel = riverLevel;
+            dash.sc = riverLevel;
+          }
           return {
             id: idNum,
             deviceId: idNum,
@@ -305,8 +350,10 @@ module.exports = async function handler(req, res) {
             latitude: st.latitude != null && st.latitude !== '' ? parseFloat(st.latitude) : null,
             longitude: st.longitude != null && st.longitude !== '' ? parseFloat(st.longitude) : null,
             altitude: st.altitude != null && st.altitude !== '' ? parseFloat(st.altitude) : null,
-            sensors: st.sensorList || st.sensors || [],
+            sensors: sensors,
             dashboard: dash,
+            hasRiverSensor: hasRiverSensor,
+            riverLevel: riverLevel,
             lastUpdateTimestamp: st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null)
           };
         });
@@ -369,6 +416,12 @@ module.exports = async function handler(req, res) {
 
       const raw = await response.json();
       const dash = raw.dashboard || {};
+      const sensors = raw.sensorList || raw.sensors || [];
+      const { riverLevel, hasRiverSensor } = extractRiverLevelFromPayload(dash, sensors);
+      if (riverLevel !== null) {
+        dash.riverLevel = riverLevel;
+        dash.sc = riverLevel;
+      }
       const payload = {
         id: devIdNum,
         deviceId: devIdNum,
@@ -377,8 +430,10 @@ module.exports = async function handler(req, res) {
         latitude: raw.latitude != null && raw.latitude !== '' ? parseFloat(raw.latitude) : null,
         longitude: raw.longitude != null && raw.longitude !== '' ? parseFloat(raw.longitude) : null,
         altitude: raw.altitude != null && raw.altitude !== '' ? parseFloat(raw.altitude) : null,
-        sensors: raw.sensorList || raw.sensors || [],
+        sensors: sensors,
         dashboard: dash,
+        hasRiverSensor: hasRiverSensor,
+        riverLevel: riverLevel,
         lastUpdateTimestamp: raw.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null),
         updatedAt: new Date().toISOString()
       };
@@ -462,7 +517,20 @@ module.exports = async function handler(req, res) {
               : ((item.relativePressure != null && item.relativePressure !== '' && !isNaN(parseFloat(item.relativePressure)))
                 ? parseFloat(item.relativePressure)
                 : null)),
-          levelAdditional: item.levelAdditional != null && item.levelAdditional !== '' ? parseFloat(item.levelAdditional) : null,
+          levelAdditional: (item.sc != null && item.sc !== '' && !isNaN(parseFloat(item.sc)))
+            ? parseFloat(item.sc)
+            : ((item.riverLevel != null && item.riverLevel !== '' && !isNaN(parseFloat(item.riverLevel)))
+              ? parseFloat(item.riverLevel)
+              : ((item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)))
+                ? parseFloat(item.levelAdditional)
+                : null)),
+          riverLevel: (item.sc != null && item.sc !== '' && !isNaN(parseFloat(item.sc)))
+            ? parseFloat(item.sc)
+            : ((item.riverLevel != null && item.riverLevel !== '' && !isNaN(parseFloat(item.riverLevel)))
+              ? parseFloat(item.riverLevel)
+              : ((item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)))
+                ? parseFloat(item.levelAdditional)
+                : null)),
           humidity: item.humidity != null && item.humidity !== '' ? parseFloat(item.humidity) : null,
           radiation: item.radiation != null && item.radiation !== '' ? parseFloat(item.radiation) : null,
           evapo: item.evapo != null && item.evapo !== '' ? parseFloat(item.evapo) : null

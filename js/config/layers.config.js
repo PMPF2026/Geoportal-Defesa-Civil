@@ -346,12 +346,17 @@ export const LAYERS_CONFIG = [
       titlePrefix: '',
       fields: [
         { key: 'estacao_cod', label: 'Código da Estação', defaultValue: 'DCRS-00016' },
+        { key: 'nome_estacao', label: 'Nome da Estação', defaultValue: 'DCRS-00016 — Passo Fundo' },
+        { key: 'status_comunicacao', label: 'Status Operacional', defaultValue: 'Consultando...' },
+        { key: 'nivel_rio', label: 'Nível do Rio Passo Fundo', defaultValue: 'Consultando...' },
+        { key: 'tendencia_rio', label: 'Tendência do Nível', defaultValue: 'Estável' },
+        { key: 'chuva_hoje', label: 'Chuva Recente (1h / 24h)', defaultValue: '--' },
+        { key: 'temperatura_atual', label: 'Temperatura Atual', defaultValue: '--' },
         { key: 'rede', label: 'Rede Oficial', defaultValue: 'Rede Hidrometeorológica da Defesa Civil RS' },
         { key: 'bacia', label: 'Bacia Hidrográfica', defaultValue: 'RS - Rio Passo Fundo' },
         { key: 'municipio', label: 'Município', defaultValue: 'Passo Fundo / RS' },
         { key: 'provedor', label: 'Provedor dos Dados', defaultValue: 'DCRS' },
-        { key: 'lat', label: 'Latitude Oficial (WGS84)', format: 'number' },
-        { key: 'lon', label: 'Longitude Oficial (WGS84)', format: 'number' }
+        { key: 'ultima_atualizacao', label: 'Última Leitura', defaultValue: 'Sem comunicação recente' }
       ]
     },
     searchable: true,
@@ -397,7 +402,7 @@ export const LAYERS_CONFIG = [
         { key: 'rajada_maxima', label: 'Rajada Máxima', defaultValue: '--' },
         { key: 'direcao_vento', label: 'Direção do Vento', defaultValue: '--' },
         { key: 'pressao_atual', label: 'Pressão Atmosférica', defaultValue: '--' },
-        { key: 'nivel_rio', label: 'Nível do Rio (levelAdditional)', defaultValue: 'Não monitorado nesta estação' },
+        { key: 'nivel_rio', label: 'Nível do Rio (Sensor Sônico)', defaultValue: 'Não monitorado nesta estação' },
         { key: 'ultima_atualizacao', label: 'Última Atualização', defaultValue: 'Sem comunicação recente' },
         { key: 'provedor', label: 'Rede / Provedor', defaultValue: 'Rede Plugfield' },
         { key: 'municipio', label: 'Município', defaultValue: 'Passo Fundo / RS' }

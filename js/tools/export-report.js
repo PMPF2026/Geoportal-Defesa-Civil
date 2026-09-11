@@ -304,7 +304,7 @@ export class ExportReportTool {
         const gust = m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--';
         const windDir = m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--');
         const press = m.pressure != null ? `${m.pressure.toFixed(1).replace('.', ',')} hPa` : '--';
-        const river = m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Dado não disponível para esta estação';
+        const river = m.riverLevel != null ? `${m.riverLevel.toFixed(2).replace('.', ',')} m` : (st.hasRiverSensor ? 'Sensor ativo' : 'Dado não disponível para esta estação');
         const statusBadge = st.isOnline ? '<span style="color:#16a34a; font-weight:700;">Online</span>' : '<span style="color:#dc2626;">Offline</span>';
 
         return `

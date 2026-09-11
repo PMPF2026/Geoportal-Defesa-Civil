@@ -137,7 +137,7 @@ export class PlugfieldService {
       f.set('rajada_maxima', m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--');
       f.set('direcao_vento', m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--'));
       f.set('pressao_atual', m.pressure != null ? `${m.pressure.toFixed(1).replace('.', ',')} hPa` : '--');
-      f.set('nivel_rio', m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Não monitorado nesta estação');
+      f.set('nivel_rio', m.riverLevel != null ? `${m.riverLevel.toFixed(2).replace('.', ',')} m` : (st.hasRiverSensor ? 'Sensor ativo (aguardando leitura)' : 'Não monitorado nesta estação'));
       f.set('ultima_atualizacao', st.lastUpdateText || 'Sem comunicação recente');
     });
 
@@ -180,7 +180,13 @@ export class PlugfieldService {
           : ((item.relativePressure != null && !isNaN(parseFloat(item.relativePressure)))
             ? parseFloat(item.relativePressure)
             : null));
-      const river = item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)) ? parseFloat(item.levelAdditional) : null;
+      const river = (item.sc != null && item.sc !== '' && !isNaN(parseFloat(item.sc)))
+        ? parseFloat(item.sc)
+        : ((item.riverLevel != null && item.riverLevel !== '' && !isNaN(parseFloat(item.riverLevel)))
+          ? parseFloat(item.riverLevel)
+          : ((item.levelAdditional != null && item.levelAdditional !== '' && !isNaN(parseFloat(item.levelAdditional)))
+            ? parseFloat(item.levelAdditional)
+            : null));
       const hum = item.humidity != null && !isNaN(parseFloat(item.humidity)) ? parseFloat(item.humidity) : (item.humi != null && !isNaN(parseFloat(item.humi)) ? parseFloat(item.humi) : null);
 
       return {
@@ -267,10 +273,38 @@ export class PlugfieldService {
 
       let hasRiverSensor = false;
       let riverLevel = null;
-      if (dash.levelAdditional != null && dash.levelAdditional !== '') {
-        const val = parseFloat(dash.levelAdditional);
-        if (!isNaN(val)) {
-          riverLevel = val;
+
+      if (apiData?.riverLevel != null && !isNaN(parseFloat(apiData.riverLevel))) {
+        riverLevel = parseFloat(apiData.riverLevel);
+        hasRiverSensor = true;
+      } else if (dash.sc != null && dash.sc !== '' && !isNaN(parseFloat(dash.sc))) {
+        riverLevel = parseFloat(dash.sc);
+        hasRiverSensor = true;
+      } else if (dash.riverLevel != null && dash.riverLevel !== '' && !isNaN(parseFloat(dash.riverLevel))) {
+        riverLevel = parseFloat(dash.riverLevel);
+        hasRiverSensor = true;
+      } else if (dash.levelAdditional != null && dash.levelAdditional !== '' && !isNaN(parseFloat(dash.levelAdditional))) {
+        riverLevel = parseFloat(dash.levelAdditional);
+        hasRiverSensor = true;
+      } else if (dash.lastSensorData?.sensorDataList && Array.isArray(dash.lastSensorData.sensorDataList)) {
+        const scSensor = dash.lastSensorData.sensorDataList.find(s =>
+          s.sensorCode === 'sc' ||
+          s.sensorId === 380 ||
+          (s.sensorName && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.sensorName))
+        );
+        if (scSensor && scSensor.dataValue != null && !isNaN(parseFloat(scSensor.dataValue))) {
+          riverLevel = parseFloat(scSensor.dataValue);
+          hasRiverSensor = true;
+        }
+      }
+
+      if (!hasRiverSensor && (apiData?.hasRiverSensor || (apiData?.sensors && Array.isArray(apiData.sensors)))) {
+        const hasSensorDef = apiData?.hasRiverSensor || apiData.sensors.some(s =>
+          s.code === 'sc' ||
+          s.id === 380 ||
+          (s.name && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.name))
+        );
+        if (hasSensorDef) {
           hasRiverSensor = true;
         }
       }
@@ -395,6 +429,8 @@ export class PlugfieldService {
         lastUpdateText: formattedDate,
         timestamp: parsedTimestamp || (isOnline ? Date.now() : null),
         metrics: metrics,
+        hasRiverSensor: hasRiverSensor,
+        riverLevel: riverLevel,
 
         // Compatibilidade com subestruturas
         temperatura: {

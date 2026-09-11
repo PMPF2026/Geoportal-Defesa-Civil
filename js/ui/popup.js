@@ -124,8 +124,33 @@ export class PopupUI {
         props['rajada_maxima'] = m.windGust != null ? `${m.windGust.toFixed(1).replace('.', ',')} km/h` : '--';
         props['direcao_vento'] = m.windDirectionText || (m.windDirection != null ? `${m.windDirection}°` : '--');
         props['pressao_atual'] = m.pressure != null ? `${m.pressure.toFixed(1).replace('.', ',')} hPa` : '--';
-        props['nivel_rio'] = m.riverLevel != null ? `${m.riverLevel.toFixed(1).replace('.', ',')} cm` : 'Não monitorado nesta estação';
+        props['nivel_rio'] = m.riverLevel != null ? `${m.riverLevel.toFixed(2).replace('.', ',')} m` : (st.hasRiverSensor ? 'Sensor ativo (aguardando leitura)' : 'Não monitorado nesta estação');
         props['ultima_atualizacao'] = st.lastUpdateText || 'Sem comunicação recente';
+      }
+    }
+
+    // 4.1. Se for estação oficial DCRS-00016, injeta telemetria da Defesa Civil RS
+    if (layerConfig.id === 'estacao_dcrs00016' || props['estacao_cod'] === 'DCRS-00016') {
+      const drsTelemetry = (typeof WeatherService !== 'undefined')
+        ? WeatherService.getCachedTelemetry('DCRS-00016')
+        : null;
+
+      if (drsTelemetry && drsTelemetry.success) {
+        props['status_comunicacao'] = drsTelemetry.status === 'updated' ? 'Online (em tempo real)' : (drsTelemetry.status === 'delayed' ? 'Aguardando atualização' : 'Sem comunicação recente');
+        props['nivel_rio'] = drsTelemetry.rio?.nivel != null ? `${drsTelemetry.rio.nivel.toFixed(2).replace('.', ',')} m` : 'Dado não disponível';
+        const trend = drsTelemetry.rio?.tendencia || 0;
+        props['tendencia_rio'] = trend > 0.005 ? 'Subindo ⬆️' : (trend < -0.005 ? 'Descendo ⬇️' : 'Estável ➡️');
+        const c1h = drsTelemetry.chuva?.h1 != null ? `${drsTelemetry.chuva.h1.toFixed(1).replace('.', ',')} mm` : '--';
+        const c24h = drsTelemetry.chuva?.h24 != null ? `${drsTelemetry.chuva.h24.toFixed(1).replace('.', ',')} mm` : '--';
+        props['chuva_hoje'] = `${c1h} (1h) / ${c24h} (24h)`;
+        props['temperatura_atual'] = drsTelemetry.temperatura?.atual != null ? `${drsTelemetry.temperatura.atual.toFixed(1).replace('.', ',')} °C` : '--';
+        if (drsTelemetry.timestamp) {
+          try {
+            const dt = new Date(drsTelemetry.timestamp);
+            const pad = (n) => String(n).padStart(2, '0');
+            props['ultima_atualizacao'] = `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${dt.getFullYear()} às ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+          } catch {}
+        }
       }
     }
 

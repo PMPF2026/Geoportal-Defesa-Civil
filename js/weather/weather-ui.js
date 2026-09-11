@@ -866,16 +866,24 @@ export class WeatherUI {
       elPressure.textContent = pressVal !== null && pressVal !== undefined ? `${pressVal.toFixed(1).replace('.', ',')} hPa` : '-- hPa';
     }
 
-    // 5. Nível do Rio (levelAdditional)
+    // 5. Nível do Rio (Nível de líquido sônico 10M)
     if (elRiver) {
       if (riverVal !== null && riverVal !== undefined) {
-        elRiver.textContent = `${riverVal.toFixed(1).replace('.', ',')} cm`;
-        elRiver.style.fontSize = '20px';
+        elRiver.textContent = `${riverVal.toFixed(2).replace('.', ',')} m`;
+        elRiver.style.fontSize = '22px';
+        elRiver.style.fontWeight = '700';
         elRiver.style.color = '#06b6d4';
-        if (elRiverSub) elRiverSub.textContent = 'Sensor telemétrico de nível de água (levelAdditional)';
+        if (elRiverSub) elRiverSub.textContent = 'Nível de líquido sônico 10M (Sensor Telemétrico)';
+      } else if (st?.hasRiverSensor || r?.disponivel) {
+        elRiver.textContent = 'Sensor ativo (aguardando leitura)';
+        elRiver.style.fontSize = '14px';
+        elRiver.style.fontWeight = '500';
+        elRiver.style.color = '#38bdf8';
+        if (elRiverSub) elRiverSub.textContent = 'Nível de líquido sônico 10M (Plugfield)';
       } else {
         elRiver.textContent = 'Dado não disponível para esta estação';
         elRiver.style.fontSize = '13px';
+        elRiver.style.fontWeight = '400';
         elRiver.style.color = '#94a3b8';
         if (elRiverSub) elRiverSub.textContent = 'Esta estação não possui sensor de nível ativo';
       }
@@ -1196,41 +1204,52 @@ export class WeatherUI {
       if (hasRiverSensor) {
         riverBox.style.display = 'block';
         const riverContainer = document.getElementById('pf-river-chart-container');
-        riverContainer.innerHTML = `<canvas id="chart-pf-river"></canvas>`;
-        const canvasRiver = document.getElementById('chart-pf-river');
-        if (this.charts.pfRiver) this.charts.pfRiver.destroy();
-        const riverData = history.map(d => d.riverLevel);
-        const ctx = canvasRiver.getContext('2d');
-        this.charts.pfRiver = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'Nível do Sensor (cm / m)',
-                data: riverData,
-                borderColor: '#06b6d4',
-                backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 4,
-                borderWidth: 2
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { labels: { color: '#ffffff', font: { size: 10 } } },
-              tooltip: { callbacks: { label: (item) => `Nível: ${item.raw} cm` } }
+        const hasRiverData = history.some(d => d.riverLevel != null && !isNaN(d.riverLevel));
+
+        if (hasRiverData) {
+          riverContainer.innerHTML = `<canvas id="chart-pf-river"></canvas>`;
+          const canvasRiver = document.getElementById('chart-pf-river');
+          if (this.charts.pfRiver) this.charts.pfRiver.destroy();
+          const riverData = history.map(d => d.riverLevel);
+          const ctx = canvasRiver.getContext('2d');
+          this.charts.pfRiver = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Nível do Rio / Sônico (m)',
+                  data: riverData,
+                  borderColor: '#06b6d4',
+                  backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 4,
+                  borderWidth: 2
+                }
+              ]
             },
-            scales: {
-              x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
-              y: { ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { labels: { color: '#ffffff', font: { size: 10 } } },
+                tooltip: { callbacks: { label: (item) => `Nível: ${item.raw} m` } }
+              },
+              scales: {
+                x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                y: { ticks: { color: '#94a3b8', font: { size: 9.5 } }, grid: { color: 'rgba(255, 255, 255, 0.08)' } }
+              }
             }
-          }
-        });
+          });
+        } else {
+          riverContainer.innerHTML = `
+            <div style="text-align: center; color: #94a3b8; font-size: 11.5px; padding: 22px 14px;">
+              <i class="lucide-activity" style="color: #06b6d4; margin-right: 6px;"></i> Leitura telemétrica em tempo real ativa no card principal (${station?.metrics?.riverLevel != null ? station.metrics.riverLevel.toFixed(2).replace('.', ',') + ' m' : 'conectado'}).
+            </div>
+          `;
+          if (window.lucide) window.lucide.createIcons();
+        }
       } else {
         riverBox.style.display = 'none';
       }
@@ -2002,6 +2021,18 @@ export class WeatherUI {
           }
         }
       });
+    }
+  }
+
+  openPanel(subtab = 'plugfield', stationId = null) {
+    if (window.sidebar && typeof window.sidebar.openTab === 'function') {
+      window.sidebar.openTab('weather');
+    }
+    const tabMap = { plugfield: 'plugfield', defesacivil: 'drs', drs: 'drs', cptec: 'cptec' };
+    const targetSubtab = tabMap[subtab] || 'plugfield';
+    this.switchSubTab(targetSubtab);
+    if (stationId && targetSubtab === 'plugfield') {
+      this.selectPlugfieldStation(parseInt(stationId, 10));
     }
   }
 }
