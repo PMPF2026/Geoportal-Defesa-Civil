@@ -78,6 +78,9 @@ const STATION_TERRITORIAL_MAP = {
 
 // Cache de access_token obtido via autenticação oficial (não expira segundo a especificação Plugfield)
 let sessionAccessToken = null;
+let sessionUser = null;
+let lastLoginStatus = null;
+let lastLoginError = null;
 
 function getPlugfieldCredentials() {
   const apiKey = (
@@ -125,22 +128,27 @@ async function buildAuthHeaders() {
         body: JSON.stringify({ username, password })
       });
 
+      lastLoginStatus = loginResp.status;
       if (loginResp.ok) {
         const loginData = await loginResp.json();
         if (loginData && loginData.access_token) {
           sessionAccessToken = loginData.access_token;
+          sessionUser = loginData.user || null;
           accessToken = sessionAccessToken;
         }
       } else {
+        try { lastLoginError = (await loginResp.text()).slice(0, 300); } catch {}
         console.warn('[Plugfield Proxy] Falha na autenticação POST /login: HTTP', loginResp.status);
       }
     } catch (e) {
+      lastLoginError = e.message;
       console.warn('[Plugfield Proxy] Erro ao autenticar em POST /login:', e.message);
     }
   }
 
   const headers = {
     'Accept': 'application/json',
+    'Content-Type': 'application/json',
     'User-Agent': 'Portal-Defesa-Civil-Passo-Fundo/2.0'
   };
 
@@ -150,7 +158,6 @@ async function buildAuthHeaders() {
 
   if (accessToken) {
     headers['Authorization'] = accessToken;
-    headers['authorization'] = accessToken;
   }
 
   return { headers, apiKey, accessToken };
@@ -159,37 +166,52 @@ async function buildAuthHeaders() {
 /**
  * Executa requisições à Plugfield testando variações de cabeçalho em caso de 401 ou 403
  */
-async function fetchPlugfieldWithFallback(url, initialHeaders, apiKey) {
+async function fetchPlugfieldWithFallback(url, initialHeaders, apiKey, accessToken) {
   let response = await fetch(url, { headers: initialHeaders, method: 'GET' });
   if (response.ok) return response;
 
   // Se retornou 401 ou 403:
-  if ((response.status === 401 || response.status === 403) && apiKey) {
-    // Tentativa A: Se não tinha Authorization, tenta com Authorization: apiKey
-    if (!initialHeaders['Authorization']) {
-      const authKeyHeaders = {
-        ...initialHeaders,
-        'Authorization': apiKey,
-        'authorization': apiKey
-      };
-      const respA = await fetch(url, { headers: authKeyHeaders, method: 'GET' });
-      if (respA.ok) return respA;
+  if (response.status === 401 || response.status === 403) {
+    // Variação 1: Se temos accessToken, testa Authorization: Bearer <accessToken>
+    if (accessToken) {
+      const bearerHeaders = { ...initialHeaders, 'Authorization': `Bearer ${accessToken}` };
+      const r1 = await fetch(url, { headers: bearerHeaders, method: 'GET' });
+      if (r1.ok) return r1;
 
-      // Tentativa B: Authorization: Bearer <apiKey>
-      const bearerHeaders = {
-        ...initialHeaders,
-        'Authorization': `Bearer ${apiKey}`,
-        'authorization': `Bearer ${apiKey}`
-      };
-      const respB = await fetch(url, { headers: bearerHeaders, method: 'GET' });
-      if (respB.ok) return respB;
-    } else {
-      // Tentativa C: Se tinha Authorization e falhou, tenta SOMENTE com x-api-key
-      const onlyKeyHeaders = { ...initialHeaders };
-      delete onlyKeyHeaders['Authorization'];
-      delete onlyKeyHeaders['authorization'];
-      const respC = await fetch(url, { headers: onlyKeyHeaders, method: 'GET' });
-      if (respC.ok) return respC;
+      // Variação 2: lowercase authorization: <accessToken>
+      const lowerHeaders = { ...initialHeaders };
+      delete lowerHeaders['Authorization'];
+      lowerHeaders['authorization'] = accessToken;
+      const r2 = await fetch(url, { headers: lowerHeaders, method: 'GET' });
+      if (r2.ok) return r2;
+
+      // Variação 3: lowercase authorization: Bearer <accessToken>
+      const lowerBearer = { ...initialHeaders };
+      delete lowerBearer['Authorization'];
+      lowerBearer['authorization'] = `Bearer ${accessToken}`;
+      const r3 = await fetch(url, { headers: lowerBearer, method: 'GET' });
+      if (r3.ok) return r3;
+    }
+
+    // Variação 4: Se a URL possui parâmetro de query (?page=1), testa sem query
+    if (url.includes('?page=')) {
+      const baseOnly = url.split('?')[0];
+      const rPage = await fetch(baseOnly, { headers: initialHeaders, method: 'GET' });
+      if (rPage.ok) return rPage;
+    }
+
+    // Variação 5: Tenta apenas x-api-key (sem Authorization)
+    if (apiKey) {
+      const onlyKey = { ...initialHeaders };
+      delete onlyKey['Authorization'];
+      delete onlyKey['authorization'];
+      const rKey = await fetch(url, { headers: onlyKey, method: 'GET' });
+      if (rKey.ok) return rKey;
+
+      // Variação 6: Authorization: apiKey
+      const authKey = { ...initialHeaders, 'Authorization': apiKey };
+      const rAuth = await fetch(url, { headers: authKey, method: 'GET' });
+      if (rAuth.ok) return rAuth;
     }
   }
 
@@ -222,6 +244,11 @@ module.exports = async function handler(req, res) {
         apiKeyLength: creds.apiKey ? creds.apiKey.length : 0,
         hasAccessToken: !!creds.accessToken,
         hasLoginCredentials: !!(creds.username && creds.password),
+        loginStatus: lastLoginStatus,
+        loginUser: sessionUser ? { id: sessionUser.id, username: sessionUser.username } : null,
+        loginError: lastLoginError,
+        tokenLength: accessToken ? accessToken.length : 0,
+        tokenType: accessToken ? (accessToken.startsWith('ey') ? 'jwt' : 'opaque') : null,
         configuredEnvKeys: Object.keys(process.env).filter(k => k.toUpperCase().includes('PLUG') || k.toUpperCase().includes('API')),
         timestamp: new Date().toISOString()
       });
@@ -238,7 +265,7 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device?page=${page}`, headers, apiKey);
+      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device?page=${page}`, headers, apiKey, accessToken);
 
       if (!response.ok) {
         let details = null;
@@ -324,7 +351,7 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device/${devIdNum}`, headers, apiKey);
+      const response = await fetchPlugfieldWithFallback(`${BASE_URL}/device/${devIdNum}`, headers, apiKey, accessToken);
 
       if (!response.ok) {
         let details = null;
@@ -397,7 +424,7 @@ module.exports = async function handler(req, res) {
       }
 
       const url = `${BASE_URL}/data/daily?device=${devIdNum}&begin=${encodeURIComponent(begin)}&end=${encodeURIComponent(end)}`;
-      const response = await fetchPlugfieldWithFallback(url, headers, apiKey);
+      const response = await fetchPlugfieldWithFallback(url, headers, apiKey, accessToken);
 
       if (!response.ok) {
         let details = null;
