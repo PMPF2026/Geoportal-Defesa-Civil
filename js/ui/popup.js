@@ -154,6 +154,26 @@ export class PopupUI {
       }
     }
 
+    // 4.2. Se for camada de vulnerabilidade / renda, calcula valor em reais ($) e faixa da cor
+    if (layerConfig.id === 'censo_renda_vulnerabilidade') {
+      const rawVal = props['cn22_pop05_rsp_tot_0'];
+      const numVal = parseFloat(rawVal);
+      const valForBreak = (!isNaN(numVal) && numVal > 0) ? numVal : 0;
+
+      const breaks = layerConfig.choroplethBreaks || [];
+      const matchedBreak = breaks.find(b => valForBreak <= b.max) || breaks[0];
+
+      if (!isNaN(numVal) && numVal > 0) {
+        props['rendimento_reais'] = `R$ ${formatNumber(numVal, 2)}`;
+      } else {
+        props['rendimento_reais'] = 'Até R$ 2.000,00';
+      }
+
+      if (matchedBreak) {
+        props['faixa_rendimento'] = matchedBreak.label;
+      }
+    }
+
     // 5. Build Attribute Rows
     let rowsHtml = '';
     const fieldsToRender = pConfig.fields || Object.keys(props).filter(k => !k.startsWith('_') && k !== 'geometry').map(k => ({ key: k, label: k }));

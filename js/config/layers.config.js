@@ -1243,8 +1243,8 @@ export const LAYERS_CONFIG = [
       titleField: 'id',
       titlePrefix: 'Vulnerabilidade / Renda — Setor ',
       fields: [
-        { key: 'id', label: 'Código do Setor Censitário' },
-        { key: 'cn22_pop05_rsp_tot_0', label: 'Rendimento Médio Mensal Domiciliar', format: 'currency' }
+        { key: 'rendimento_reais', label: 'Rendimento Médio Domiciliar' },
+        { key: 'faixa_rendimento', label: 'Faixa de Rendimento (Cor)' }
       ]
     },
     description: 'Rendimento médio mensal domiciliar por setor censitário pelo Censo IBGE 2022, indicador chave de vulnerabilidade socioeconômica para a Defesa Civil.',
