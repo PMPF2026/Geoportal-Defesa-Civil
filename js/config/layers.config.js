@@ -1228,16 +1228,16 @@ export const LAYERS_CONFIG = [
     isChoropleth: true,
     choroplethField: 'cn22_pop05_rsp_tot_0',
     choroplethBreaks: [
-      { max: 2000, color: 'rgba(243, 232, 255, 0.75)', label: 'Até R$ 2.000 (Alta Vulnerabilidade Social)' },
-      { max: 3000, color: 'rgba(216, 180, 254, 0.75)', label: 'R$ 2.000 - R$ 3.000 (Média-Alta Vulnerabilidade)' },
-      { max: 4500, color: 'rgba(168, 85, 247, 0.75)', label: 'R$ 3.000 - R$ 4.500 (Média Vulnerabilidade)' },
-      { max: 7000, color: 'rgba(126, 34, 206, 0.75)', label: 'R$ 4.500 - R$ 7.000 (Média-Baixa Vulnerabilidade)' },
-      { max: Infinity, color: 'rgba(88, 28, 135, 0.75)', label: '> R$ 7.000 (Baixa Vulnerabilidade)' }
+      { max: 2000, color: 'rgba(247, 230, 197, 0.75)', label: 'Até R$ 2.000 (Alta Vulnerabilidade Social)' },
+      { max: 3000, color: 'rgba(232, 195, 158, 0.75)', label: 'R$ 2.000 - R$ 3.000 (Média-Alta Vulnerabilidade)' },
+      { max: 4500, color: 'rgba(201, 130, 91, 0.75)', label: 'R$ 3.000 - R$ 4.500 (Média Vulnerabilidade)' },
+      { max: 7000, color: 'rgba(155, 79, 54, 0.75)', label: 'R$ 4.500 - R$ 7.000 (Média-Baixa Vulnerabilidade)' },
+      { max: Infinity, color: 'rgba(90, 36, 24, 0.75)', label: '> R$ 7.000 (Baixa Vulnerabilidade)' }
     ],
     style: {
-      strokeColor: '#581c87',
+      strokeColor: '#5a2418',
       strokeWidth: 0.8,
-      previewColor: '#7e22ce'
+      previewColor: '#9b4f36'
     },
     popupConfig: {
       titleField: 'id',
