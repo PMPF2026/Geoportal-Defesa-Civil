@@ -43,7 +43,7 @@ export const LAYER_GROUPS = [
   },
   {
     id: 'populacao',
-    title: '6. População & Vulnerabilidade Social',
+    title: '6. População & Indicadores Socioeconômicos',
     iconClass: 'population',
     iconName: 'users',
     description: 'Distribuição, densidade demográfica setorial e domicílios (Censo IBGE 2022)'
@@ -892,7 +892,7 @@ export const LAYERS_CONFIG = [
     searchable: false
   },
 
-  // ================= 6. POPULAÇÃO & VULNERABILIDADE SOCIAL =================
+  // ================= 6. POPULAÇÃO & INDICADORES SOCIOECONÔMICOS =================
   {
     id: 'censo_pop_0a4',
     name: 'População de 0 a 4 anos (Primeira Infância)',

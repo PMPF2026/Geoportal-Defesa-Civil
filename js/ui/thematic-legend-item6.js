@@ -171,7 +171,7 @@ export class Item6ThematicLegendUI {
         <div class="item6-legend-header">
           <div class="item6-legend-badge">
             <span class="item6-legend-bullet"></span>
-            <span>População &amp; Vulnerabilidade</span>
+            <span>População &amp; Indicadores Socioeconômicos</span>
           </div>
           <div class="item6-legend-title">${meta.title}</div>
           ${meta.subtitle ? `<div class="item6-legend-subtitle">${meta.subtitle}</div>` : ''}
