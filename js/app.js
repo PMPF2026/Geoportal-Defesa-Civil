@@ -21,6 +21,7 @@ import { StatsEngine } from './dashboard/stats-engine.js';
 import { DashboardUI } from './dashboard/dashboard.js';
 import { DownloadsUI } from './ui/downloads.js';
 import { WeatherUI } from './weather/weather-ui.js';
+import { Item6ThematicLegendUI } from './ui/thematic-legend-item6.js';
 
 class WebGisApp {
   constructor() {
@@ -40,6 +41,7 @@ class WebGisApp {
     this.statsEngine = null;
     this.dashboardUI = null;
     this.weatherUI = null;
+    this.item6ThematicLegendUI = null;
   }
 
   async start() {
@@ -103,6 +105,10 @@ class WebGisApp {
 
       // 15. Load initial core layers
       await this.layerManager.initLayers();
+
+      // 15.1. Inicializar Legenda Cartográfica Temática Dinâmica do Item 6 (População & Vulnerabilidade Social)
+      this.item6ThematicLegendUI = new Item6ThematicLegendUI(this.layerManager, 'item6-floating-legend');
+      this.item6ThematicLegendUI.init();
 
       // 16. Refresh Lucide Icons across all rendered components
       this.refreshIcons();
