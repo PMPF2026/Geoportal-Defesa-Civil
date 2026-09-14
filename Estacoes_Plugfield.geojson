@@ -61,7 +61,7 @@
         "provedor": "Rede Plugfield",
         "municipio": "Passo Fundo / RS"
       },
-      "geometry": { "type": "Point", "coordinates": [-52.4630, -28.3240] }
+      "geometry": { "type": "Point", "coordinates": [-52.639036, -28.082155] }
     },
     {
       "type": "Feature",
@@ -149,7 +149,7 @@
         "provedor": "Rede Plugfield",
         "municipio": "Passo Fundo / RS"
       },
-      "geometry": { "type": "Point", "coordinates": [-52.4380, -28.2780] }
+      "geometry": { "type": "Point", "coordinates": [-52.277339, -28.225341] }
     },
     {
       "type": "Feature",
@@ -160,7 +160,7 @@
         "provedor": "Rede Plugfield",
         "municipio": "Passo Fundo / RS"
       },
-      "geometry": { "type": "Point", "coordinates": [-52.4020, -28.2610] }
+      "geometry": { "type": "Point", "coordinates": [-52.396017, -28.253607] }
     },
     {
       "type": "Feature",
@@ -171,7 +171,7 @@
         "provedor": "Rede Plugfield",
         "municipio": "Passo Fundo / RS"
       },
-      "geometry": { "type": "Point", "coordinates": [-52.4170, -28.2510] }
+      "geometry": { "type": "Point", "coordinates": [-52.351368, -28.291063] }
     },
     {
       "type": "Feature",
@@ -182,7 +182,7 @@
         "provedor": "Rede Plugfield",
         "municipio": "Passo Fundo / RS"
       },
-      "geometry": { "type": "Point", "coordinates": [-52.3720, -28.2750] }
+      "geometry": { "type": "Point", "coordinates": [-52.601557, -28.249373] }
     }
   ]
 }

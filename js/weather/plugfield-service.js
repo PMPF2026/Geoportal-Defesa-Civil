@@ -8,7 +8,7 @@ export const PLUGFIELD_STATIONS_CONFIG = [
   { deviceId: 4253,  name: 'Capinzal',                       type: 'Rural / Bacia Hidrográfica', lat: -28.2250, lon: -52.4820 },
   { deviceId: 4798,  name: 'Sede Independência',             type: 'Urbana / Administrativa',    lat: -28.2580, lon: -52.4110 },
   { deviceId: 4416,  name: 'São Roque',                      type: 'Rural / Setor Leste',        lat: -28.2890, lon: -52.3210 },
-  { deviceId: 3009,  name: 'Avena',                          type: 'Rural / Agrícola',           lat: -28.3240, lon: -52.4630 },
+  { deviceId: 3009,  name: 'Avena',                          type: 'Rural / Agrícola',           lat: -28.082155, lon: -52.639036 },
   { deviceId: 4931,  name: 'Pulador',                        type: 'Rural / Bacia Hidrográfica', lat: -28.3610, lon: -52.4190 },
   { deviceId: 4965,  name: 'Quinto Giongo (Victor Issler)',  type: 'Urbana / Victor Issler',     lat: -28.2430, lon: -52.3820 },
   { deviceId: 4678,  name: 'Fredolino Chimango (Centro)',    type: 'Urbana / Centro',            lat: -28.2620, lon: -52.4080 },
@@ -16,10 +16,10 @@ export const PLUGFIELD_STATIONS_CONFIG = [
   { deviceId: 4712,  name: 'Bela Vista',                     type: 'Urbana / Bela Vista',        lat: -28.2490, lon: -52.4250 },
   { deviceId: 4713,  name: 'Bom Recreio',                    type: 'Rural / Setor Norte',        lat: -28.1690, lon: -52.3890 },
   { deviceId: 4714,  name: 'Lobo da Costa (Entre Rios)',     type: 'Rural / Bacia Hidrográfica', lat: -28.2120, lon: -52.3480 },
-  { deviceId: 4717,  name: 'Camponesa',                      type: 'Urbana / Camponesa',         lat: -28.2780, lon: -52.4380 },
-  { deviceId: 4431,  name: 'Avenida Brasil (Largo Literatura)', type: 'Urbana / Eixo Central',   lat: -28.2610, lon: -52.4020 },
-  { deviceId: 10994, name: '2000 - ATITUS',                  type: 'Universitária / Campus Atitus', lat: -28.2510, lon: -52.4170 },
-  { deviceId: 2041,  name: 'Veneza',                         type: 'Urbana / Vila Veneza',       lat: -28.2750, lon: -52.3720 }
+  { deviceId: 4717,  name: 'Camponesa',                      type: 'Urbana / Camponesa',         lat: -28.225341, lon: -52.277339 },
+  { deviceId: 4431,  name: 'Avenida Brasil (Largo Literatura)', type: 'Urbana / Eixo Central',   lat: -28.253607, lon: -52.396017 },
+  { deviceId: 10994, name: '2000 - ATITUS',                  type: 'Universitária / Campus Atitus', lat: -28.291063, lon: -52.351368 },
+  { deviceId: 2041,  name: 'Veneza',                         type: 'Urbana / Vila Veneza',       lat: -28.249373, lon: -52.601557 }
 ];
 
 export class PlugfieldService {
