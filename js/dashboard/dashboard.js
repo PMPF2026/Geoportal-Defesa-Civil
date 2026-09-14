@@ -212,7 +212,7 @@ export class DashboardUI {
       });
     }
 
-    // 5. Chart: Vulnerabilidade Social / Renda por Setor (Bar)
+    // 5. Chart: Renda Média por Setor Censitário (Bar)
     const incomeCtx = document.getElementById('chart-income-sidebar');
     if (incomeCtx) {
       if (this.charts.incomeSidebar) this.charts.incomeSidebar.destroy();
