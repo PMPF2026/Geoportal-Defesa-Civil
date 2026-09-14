@@ -8,13 +8,8 @@
 
 import { LAYERS_CONFIG } from '../config/layers.config.js';
 
-// Mapeamento exclusivo das 9 camadas do Item 6 e sua hierarquia de títulos
+// Mapeamento exclusivo das 8 camadas do Item 6 e sua hierarquia de títulos
 export const ITEM6_LAYER_DEFINITIONS = {
-  densidade_populacional: {
-    title: 'Densidade Populacional',
-    subtitle: 'Setores Censitários',
-    unitNote: 'Habitantes por km² (hab/km²)'
-  },
   censo_pop_0a4: {
     title: 'População de 0 a 4 anos',
     subtitle: 'Primeira Infância',

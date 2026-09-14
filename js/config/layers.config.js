@@ -894,46 +894,6 @@ export const LAYERS_CONFIG = [
 
   // ================= 6. POPULAÇÃO & VULNERABILIDADE SOCIAL =================
   {
-    id: 'densidade_populacional',
-    name: 'Densidade Populacional (Setores)',
-    fileName: 'Densidade Populacional.geojson',
-    source: 'IBGE - Censo Demografico 2022',
-    refDate: '2022',
-    group: 'populacao',
-    geometryType: 'MultiPolygon',
-    defaultVisible: false,
-    defaultOpacity: 0.85,
-    zIndex: 28,
-    isLazy: true,
-    isChoropleth: true,
-    choroplethField: 'Densidade',
-    choroplethBreaks: [
-      { max: 50, color: 'rgba(254, 240, 217, 0.75)', label: '< 50 hab/km² (Rural/Baixa)' },
-      { max: 500, color: 'rgba(253, 204, 138, 0.75)', label: '50 - 500 hab/km² (Média-Baixa)' },
-      { max: 2000, color: 'rgba(252, 141, 89, 0.75)', label: '500 - 2.000 hab/km² (Média)' },
-      { max: 5000, color: 'rgba(227, 74, 51, 0.75)', label: '2.000 - 5.000 hab/km² (Alta)' },
-      { max: Infinity, color: 'rgba(179, 0, 0, 0.75)', label: '> 5.000 hab/km² (Muito Alta/Adensada)' }
-    ],
-    style: {
-      strokeColor: '#991b1b',
-      strokeWidth: 0.8,
-      previewColor: '#e34a33'
-    },
-    popupConfig: {
-      titleField: 'CD_SETOR',
-      titlePrefix: 'Densidade Demográfica - Setor ',
-      fields: [
-        { key: 'Densidade', label: 'Densidade (hab/km²)', format: 'number' },
-        { key: 'v0001', label: 'População do Setor (hab)', format: 'number' },
-        { key: 'AREA_KM2', label: 'Área do Setor (km²)', format: 'number' },
-        { key: 'NM_DIST', label: 'Distrito' },
-        { key: 'CD_SETOR', label: 'Código Setor IBGE' }
-      ]
-    },
-    searchable: true,
-    searchFields: ['CD_SETOR', 'NM_DIST']
-  },
-  {
     id: 'censo_pop_0a4',
     name: 'População de 0 a 4 anos (Primeira Infância)',
     fileName: 'cn22_pop03_0a4_tot_2_4314100_georedus_censo_2022.geojson',
@@ -1447,7 +1407,7 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_demografico',
     name: '👥 Cenário Demográfico & Social',
     description: 'Foco em densidade populacional, setores censitários e bairros',
-    activeLayers: ['densidade_populacional', 'setores_censitarios', 'bairros', 'distritos', 'limite_territorial']
+    activeLayers: ['censo_densidade_2022', 'setores_censitarios', 'bairros', 'distritos', 'limite_territorial']
   },
   {
     id: 'preset_geral',
