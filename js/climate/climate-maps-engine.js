@@ -18,6 +18,7 @@ export class ClimateMapsEngine {
     this.mapEngine = mapEngine;
     this.map = mapEngine ? mapEngine.getOlMap() : null;
     this.climateLayer = null;
+    this.isolineLayer = null;
     this.currentResult = null;
     this.boundaryData = null;
     this.mapClickListener = null;
@@ -684,6 +685,9 @@ export class ClimateMapsEngine {
     const dx = (maxX - minX) / gridCols;
     const dy = (maxY - minY) / gridRows;
 
+    const gridValues = new Float32Array(gridCols * gridRows);
+    gridValues.fill(NaN);
+
     let computedCells = 0;
     let sumGridVal = 0;
 
@@ -695,10 +699,12 @@ export class ClimateMapsEngine {
       for (let col = 0; col < gridCols; col++) {
         const curX = minX + (col + 0.5) * dx;
         const pixelIdx = rowOffset + col * 4;
+        const cellIdx = row * gridCols + col;
 
         // 1. Recorte espacial municipal
         if (!ClimateMapsEngine.pointInPolygon(curX, curY, boundary.ring)) {
           data[pixelIdx + 3] = 0;
+          gridValues[cellIdx] = NaN;
           continue;
         }
 
@@ -722,6 +728,7 @@ export class ClimateMapsEngine {
         }
 
         const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
+        gridValues[cellIdx] = cellVal;
         computedCells++;
         sumGridVal += cellVal;
 
@@ -761,7 +768,14 @@ export class ClimateMapsEngine {
       canvasDataUrl: canvas.toDataURL('image/png'),
       bboxUTM: boundary.bboxUTM,
       bbox3857: boundary.bbox3857,
-      boundaryRing: boundary.ring
+      boundaryRing: boundary.ring,
+      gridValues,
+      gridMinX: minX,
+      gridMaxX: maxX,
+      gridMinY: minY,
+      gridMaxY: maxY,
+      gridDx: dx,
+      gridDy: dy
     };
 
     this.currentResult = result;
@@ -816,6 +830,9 @@ export class ClimateMapsEngine {
     const dx = (maxX - minX) / gridCols;
     const dy = (maxY - minY) / gridRows;
 
+    const gridValues = new Float32Array(gridCols * gridRows);
+    gridValues.fill(NaN);
+
     let computedCells = 0;
     let sumGridVal = 0;
 
@@ -827,10 +844,12 @@ export class ClimateMapsEngine {
       for (let col = 0; col < gridCols; col++) {
         const curX = minX + (col + 0.5) * dx;
         const pixelIdx = rowOffset + col * 4;
+        const cellIdx = row * gridCols + col;
 
         // 1. Recorte espacial municipal
         if (!ClimateMapsEngine.pointInPolygon(curX, curY, boundary.ring)) {
           data[pixelIdx + 3] = 0;
+          gridValues[cellIdx] = NaN;
           continue;
         }
 
@@ -854,6 +873,7 @@ export class ClimateMapsEngine {
         }
 
         const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
+        gridValues[cellIdx] = cellVal;
         computedCells++;
         sumGridVal += cellVal;
 
@@ -893,7 +913,14 @@ export class ClimateMapsEngine {
       canvasDataUrl: canvas.toDataURL('image/png'),
       bboxUTM: boundary.bboxUTM,
       bbox3857: boundary.bbox3857,
-      boundaryRing: boundary.ring
+      boundaryRing: boundary.ring,
+      gridValues,
+      gridMinX: minX,
+      gridMaxX: maxX,
+      gridMinY: minY,
+      gridMaxY: maxY,
+      gridDx: dx,
+      gridDy: dy
     };
 
     this.currentResult = result;
@@ -1027,6 +1054,9 @@ export class ClimateMapsEngine {
     const dx = (maxX - minX) / gridCols;
     const dy = (maxY - minY) / gridRows;
 
+    const gridValues = new Float32Array(gridCols * gridRows);
+    gridValues.fill(NaN);
+
     let computedCells = 0;
     let sumGridVal = 0;
 
@@ -1038,10 +1068,12 @@ export class ClimateMapsEngine {
       for (let col = 0; col < gridCols; col++) {
         const curX = minX + (col + 0.5) * dx;
         const pixelIdx = rowOffset + col * 4;
+        const cellIdx = row * gridCols + col;
 
         // 1. Recorte espacial: verifica se está dentro do limite municipal
         if (!ClimateMapsEngine.pointInPolygon(curX, curY, boundary.ring)) {
           data[pixelIdx + 3] = 0; // Transparente fora do município
+          gridValues[cellIdx] = NaN;
           continue;
         }
 
@@ -1066,6 +1098,7 @@ export class ClimateMapsEngine {
         }
 
         const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
+        gridValues[cellIdx] = cellVal;
         computedCells++;
         sumGridVal += cellVal;
 
@@ -1102,11 +1135,360 @@ export class ClimateMapsEngine {
       canvasDataUrl: canvas.toDataURL('image/png'),
       bboxUTM: boundary.bboxUTM,
       bbox3857: boundary.bbox3857,
-      boundaryRing: boundary.ring
+      boundaryRing: boundary.ring,
+      gridValues,
+      gridMinX: minX,
+      gridMaxX: maxX,
+      gridMinY: minY,
+      gridMaxY: maxY,
+      gridDx: dx,
+      gridDy: dy
     };
 
     this.currentResult = result;
     return result;
+  }
+
+  /**
+   * Determina as cotas/níveis de contorno para o intervalo de valores observado
+   * @param {number} minVal Valor mínimo
+   * @param {number} maxVal Valor máximo
+   * @param {number} step Passo/intervalo padrão (ex: 10 mm para precipitação mensal)
+   * @returns {Array<number>}
+   */
+  static calculateContourLevels(minVal, maxVal, step = 10) {
+    if (minVal >= maxVal || step <= 0) return [];
+    const levels = [];
+    const start = Math.ceil(minVal / step) * step;
+    for (let val = start; val <= maxVal; val += step) {
+      levels.push(Math.round(val * 100) / 100);
+    }
+    return levels;
+  }
+
+  /**
+   * Conecta segmentos desconexos de 2 pontos em polilinhas contínuas
+   * @param {Array<[[number, number], [number, number]]>} segments
+   * @returns {Array<Array<[number, number]>>}
+   */
+  static stitchSegmentsToPolylines(segments) {
+    if (!segments || segments.length === 0) return [];
+
+    const keyFor = (pt) => `${Math.round(pt[0] * 100)},${Math.round(pt[1] * 100)}`;
+
+    const adj = new Map();
+    const addEdge = (pA, pB) => {
+      const kA = keyFor(pA);
+      const kB = keyFor(pB);
+      if (kA === kB) return;
+
+      if (!adj.has(kA)) adj.set(kA, { pt: pA, edges: [] });
+      if (!adj.has(kB)) adj.set(kB, { pt: pB, edges: [] });
+
+      adj.get(kA).edges.push({ pt: pB, key: kB });
+      adj.get(kB).edges.push({ pt: pA, key: kA });
+    };
+
+    segments.forEach(([pA, pB]) => addEdge(pA, pB));
+
+    const visitedEdges = new Set();
+    const edgeKey = (k1, k2) => (k1 < k2 ? `${k1}|${k2}` : `${k2}|${k1}`);
+    const polylines = [];
+
+    const oddNodes = [];
+    adj.forEach((node, k) => {
+      if (node.edges.length === 1) {
+        oddNodes.push(k);
+      }
+    });
+
+    const buildLineFrom = (startKey) => {
+      const line = [adj.get(startKey).pt];
+      let curKey = startKey;
+
+      while (true) {
+        const curNode = adj.get(curKey);
+        let nextEdge = null;
+        for (const edge of curNode.edges) {
+          const ek = edgeKey(curKey, edge.key);
+          if (!visitedEdges.has(ek)) {
+            nextEdge = edge;
+            visitedEdges.add(ek);
+            break;
+          }
+        }
+        if (!nextEdge) break;
+
+        line.push(nextEdge.pt);
+        curKey = nextEdge.key;
+        if (curKey === startKey) break;
+      }
+      return line;
+    };
+
+    // 1. Linhas que partem de pontas abertas
+    for (const startK of oddNodes) {
+      const line = buildLineFrom(startK);
+      if (line.length > 1) {
+        polylines.push(line);
+      }
+    }
+
+    // 2. Ciclos fechados restantes
+    adj.forEach((node, k) => {
+      for (const edge of node.edges) {
+        const ek = edgeKey(k, edge.key);
+        if (!visitedEdges.has(ek)) {
+          const line = buildLineFrom(k);
+          if (line.length > 1) {
+            polylines.push(line);
+          }
+        }
+      }
+    });
+
+    return polylines;
+  }
+
+  /**
+   * Gera segmentos e polilinhas de contorno via Marching Squares sobre a grade escalar
+   * @param {Float32Array} gridValues Valores escalares das células (tamanho gridCols * gridRows)
+   * @param {number} gridCols Número de colunas
+   * @param {number} gridRows Número de linhas
+   * @param {Array<number>} levels Lista de valores de corte (isovalues)
+   * @param {Object} geom { minX, maxX, minY, maxY, dx, dy }
+   * @returns {Array<{ level: number, polylines: Array<Array<[number, number]>> }>}
+   */
+  static generateContourLines(gridValues, gridCols, gridRows, levels, geom) {
+    const { minX, maxY, dx, dy } = geom;
+    const results = [];
+
+    const interp = (vA, vB, coordA, coordB, L) => {
+      const delta = vB - vA;
+      if (Math.abs(delta) < 1e-9) return (coordA + coordB) / 2;
+      const t = (L - vA) / delta;
+      return coordA + t * (coordB - coordA);
+    };
+
+    for (let l = 0; l < levels.length; l++) {
+      const L = levels[l];
+      const segments = [];
+
+      for (let r = 0; r < gridRows - 1; r++) {
+        const rowOffset0 = r * gridCols;
+        const rowOffset1 = (r + 1) * gridCols;
+
+        const y0 = maxY - (r + 0.5) * dy;
+        const y1 = y0 - dy;
+
+        for (let c = 0; c < gridCols - 1; c++) {
+          const val0 = gridValues[rowOffset0 + c];     // top-left
+          const val1 = gridValues[rowOffset0 + c + 1]; // top-right
+          const val2 = gridValues[rowOffset1 + c + 1]; // bottom-right
+          const val3 = gridValues[rowOffset1 + c];     // bottom-left
+
+          // Ignora células com qualquer vértice NaN (fora do perímetro municipal)
+          if (isNaN(val0) || isNaN(val1) || isNaN(val2) || isNaN(val3)) {
+            continue;
+          }
+
+          const b0 = val0 >= L ? 8 : 0;
+          const b1 = val1 >= L ? 4 : 0;
+          const b2 = val2 >= L ? 2 : 0;
+          const b3 = val3 >= L ? 1 : 0;
+          const caseIdx = b0 | b1 | b2 | b3;
+
+          if (caseIdx === 0 || caseIdx === 15) {
+            continue;
+          }
+
+          const x0 = minX + (c + 0.5) * dx;
+          const x1 = x0 + dx;
+
+          const pT = [interp(val0, val1, x0, x1, L), y0];
+          const pR = [x1, interp(val1, val2, y0, y1, L)];
+          const pB = [interp(val3, val2, x0, x1, L), y1];
+          const pL = [x0, interp(val0, val3, y0, y1, L)];
+
+          switch (caseIdx) {
+            case 1:
+              segments.push([pL, pB]);
+              break;
+            case 2:
+              segments.push([pB, pR]);
+              break;
+            case 3:
+              segments.push([pL, pR]);
+              break;
+            case 4:
+              segments.push([pT, pR]);
+              break;
+            case 5: {
+              const meanVal = (val0 + val1 + val2 + val3) * 0.25;
+              if (meanVal >= L) {
+                segments.push([pL, pT]);
+                segments.push([pB, pR]);
+              } else {
+                segments.push([pL, pB]);
+                segments.push([pT, pR]);
+              }
+              break;
+            }
+            case 6:
+              segments.push([pT, pB]);
+              break;
+            case 7:
+              segments.push([pL, pT]);
+              break;
+            case 8:
+              segments.push([pL, pT]);
+              break;
+            case 9:
+              segments.push([pT, pB]);
+              break;
+            case 10: {
+              const meanVal = (val0 + val1 + val2 + val3) * 0.25;
+              if (meanVal >= L) {
+                segments.push([pT, pR]);
+                segments.push([pL, pB]);
+              } else {
+                segments.push([pL, pT]);
+                segments.push([pB, pR]);
+              }
+              break;
+            }
+            case 11:
+              segments.push([pT, pR]);
+              break;
+            case 12:
+              segments.push([pL, pR]);
+              break;
+            case 13:
+              segments.push([pB, pR]);
+              break;
+            case 14:
+              segments.push([pL, pB]);
+              break;
+          }
+        }
+      }
+
+      const polylines = ClimateMapsEngine.stitchSegmentsToPolylines(segments);
+      results.push({ level: L, polylines });
+    }
+
+    return results;
+  }
+
+  /**
+   * Renderiza ou atualiza a camada vetorial de isolinhas (isoietas / isotermas)
+   * @param {Object} idwResult Resultado do cálculo IDW com gridValues retido
+   */
+  renderIsolineLayer(idwResult) {
+    if (!this.map) return;
+
+    if (!idwResult.gridValues || !idwResult.gridCols || !idwResult.gridRows) {
+      if (this.isolineLayer) this.isolineLayer.setVisible(false);
+      return;
+    }
+
+    const isPrecip = idwResult.variable === 'precipitacao';
+    let step = 10;
+    if (isPrecip) {
+      step = idwResult.scale === 'mensal' ? 10 : 5;
+    } else {
+      step = 1.0;
+    }
+
+    const levels = ClimateMapsEngine.calculateContourLevels(idwResult.minObserved, idwResult.maxObserved, step);
+    if (levels.length === 0) {
+      if (this.isolineLayer) this.isolineLayer.setVisible(false);
+      return;
+    }
+
+    const geom = {
+      minX: idwResult.gridMinX,
+      maxX: idwResult.gridMaxX,
+      minY: idwResult.gridMinY,
+      maxY: idwResult.gridMaxY,
+      dx: idwResult.gridDx,
+      dy: idwResult.gridDy
+    };
+
+    const contourData = ClimateMapsEngine.generateContourLines(
+      idwResult.gridValues,
+      idwResult.gridCols,
+      idwResult.gridRows,
+      levels,
+      geom
+    );
+
+    const vectorSource = new ol.source.Vector();
+    const unit = isPrecip ? 'mm' : '°C';
+    const strokeColor = isPrecip ? 'rgba(30, 58, 138, 0.85)' : 'rgba(154, 52, 18, 0.85)';
+    const textColor = isPrecip ? '#1e3a8a' : '#7c2d12';
+
+    contourData.forEach(({ level, polylines }) => {
+      polylines.forEach(linePts => {
+        if (linePts.length < 2) return;
+        const coords3857 = linePts.map(pt => ClimateMapsEngine.utmToWebMercator(pt[0], pt[1]));
+        const lineGeom = new ol.geom.LineString(coords3857);
+        const feat = new ol.Feature({
+          geometry: lineGeom,
+          level,
+          unit,
+          variable: idwResult.variable
+        });
+        vectorSource.addFeature(feat);
+      });
+    });
+
+    const isolineStyleFunction = (feature) => {
+      const level = feature.get('level');
+      const textVal = String(level);
+
+      return new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color: strokeColor,
+          width: 1.5
+        }),
+        text: new ol.style.Text({
+          text: textVal,
+          font: 'bold 11px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          placement: 'line',
+          repeat: 450,
+          fill: new ol.style.Fill({
+            color: textColor
+          }),
+          stroke: new ol.style.Stroke({
+            color: 'rgba(255, 255, 255, 0.95)',
+            width: 3
+          }),
+          textBaseline: 'middle'
+        })
+      });
+    };
+
+    const layerTitle = isPrecip
+      ? (idwResult.scale === 'mensal' ? 'Isoietas Mensais' : 'Isoietas Diárias')
+      : (idwResult.scale === 'mensal' ? 'Isotermas Mensais' : 'Isotermas Diárias');
+
+    if (this.isolineLayer) {
+      this.isolineLayer.setSource(vectorSource);
+      this.isolineLayer.setStyle(isolineStyleFunction);
+      this.isolineLayer.set('layerName', layerTitle);
+      this.isolineLayer.setVisible(true);
+    } else {
+      this.isolineLayer = new ol.layer.Vector({
+        source: vectorSource,
+        style: isolineStyleFunction,
+        zIndex: 25 // Acima da superfície (20) e abaixo das estações (95)
+      });
+      this.isolineLayer.set('layerId', 'clima_isolinhas');
+      this.isolineLayer.set('layerName', layerTitle);
+      this.isolineLayer.set('isIsolineLayer', true);
+      this.map.addLayer(this.isolineLayer);
+    }
   }
 
   /**
@@ -1157,6 +1539,9 @@ export class ClimateMapsEngine {
     if (stationsLayer && !stationsLayer.getVisible()) {
       stationsLayer.setVisible(true);
     }
+
+    // Renderiza ou atualiza a camada vetorial de isolinhas (isoietas / isotermas) a partir do grid numérico retido
+    this.renderIsolineLayer(idwResult);
 
     // Configura o ouvinte de clique interativo na superfície espacializada
     this.setupMapClickListener(idwResult);
@@ -1412,6 +1797,13 @@ export class ClimateMapsEngine {
           <input type="range" id="rng-climate-opacity" min="20" max="100" value="85">
         </div>
       </div>
+
+      <div class="climate-legend-controls" style="border-top: 1px dashed var(--dc-blue-border); padding-top: 8px; margin-top: -2px;">
+        <label class="climate-toggle-label" id="lbl-climate-isolines">
+          <input type="checkbox" id="chk-climate-isolines" checked>
+          <span>${isPrecip ? 'Exibir Isoietas (Linhas de Contorno)' : 'Exibir Isotermas (Linhas de Contorno)'}</span>
+        </label>
+      </div>
     `;
 
     legend.style.display = 'flex';
@@ -1441,6 +1833,15 @@ export class ClimateMapsEngine {
         }
       });
     }
+
+    const isoChk = legend.querySelector('#chk-climate-isolines');
+    if (isoChk) {
+      isoChk.addEventListener('change', (e) => {
+        if (this.isolineLayer) {
+          this.isolineLayer.setVisible(e.target.checked);
+        }
+      });
+    }
   }
 
   /**
@@ -1449,6 +1850,9 @@ export class ClimateMapsEngine {
   hideClimateLayer() {
     if (this.climateLayer) {
       this.climateLayer.setVisible(false);
+    }
+    if (this.isolineLayer) {
+      this.isolineLayer.setVisible(false);
     }
     const legend = document.getElementById('climate-floating-legend');
     if (legend) legend.style.display = 'none';
