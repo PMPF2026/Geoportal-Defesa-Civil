@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Portal Defesa Civil Passo Fundo - WebGIS Institucional
  * Módulo de Interface: Mapas Climáticos (Etapa 3 - Conexão Real com IDW)
  * 
@@ -144,7 +144,7 @@ export class ClimateMapsUI {
   }
 
   /**
-   * Define valores padrão de data e mês (default: 2026-09-14 para o teste controlado)
+   * Define valores padrão de data e mês (default: 2026-09-14 para diário e 2026-08 para o teste mensal fechado)
    */
   setDefaultDates() {
     if (this.dateInput && !this.dateInput.value) {
@@ -152,7 +152,7 @@ export class ClimateMapsUI {
     }
 
     if (this.monthInput && !this.monthInput.value) {
-      this.monthInput.value = '2026-09';
+      this.monthInput.value = '2026-08';
     }
   }
 
@@ -163,13 +163,25 @@ export class ClimateMapsUI {
     const variable = this.variableSelect ? this.variableSelect.value : 'temperatura';
     const scale = this.scaleSelect ? this.scaleSelect.value : 'diario';
     const isoDate = this.dateInput?.value || '2026-09-14';
+    const yearMonth = this.monthInput?.value || '2026-08';
 
-    // Verificação de escopo da Etapa 3 (Exclusivo para Temperatura Diária)
-    if (variable !== 'temperatura' || scale !== 'diario') {
-      Notification.info(
-        'Nesta Etapa 3 de validação, está ativo exclusivamente o teste controlado de "Temperatura Média Diária". As demais variáveis serão liberadas na próxima etapa.',
-        5500
-      );
+    // Verificação de escopo da Etapa 5.2 (Temperatura Diária/Mensal e Precipitação Mensal)
+    if (variable === 'precipitacao') {
+      if (scale === 'diario') {
+        Notification.info(
+          'A espacialização de Precipitação Diária será implementada em etapa posterior. No momento, selecione a Escala Mensal (Agosto de 2026).',
+          5500
+        );
+        return;
+      }
+      // scale === 'mensal' é permitido e processado abaixo
+    } else if (variable !== 'temperatura') {
+      Notification.info('Selecione uma variável climática válida (Temperatura ou Precipitação).', 4000);
+      return;
+    }
+
+    if (scale !== 'diario' && scale !== 'mensal') {
+      Notification.info('Selecione o período Diário ou Mensal para gerar a espacialização.', 4000);
       return;
     }
 
@@ -187,23 +199,45 @@ export class ClimateMapsUI {
     `;
 
     try {
-      Notification.info(`Iniciando interpolação IDW para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 2500);
+      let result = null;
 
-      // 1. Executa cálculo matemático IDW
-      const result = await this.climateEngine.computeIDWGrid(isoDate);
+      if (variable === 'precipitacao') {
+        Notification.info(`Consultando histórico pluviométrico e calculando completude mensal para ${yearMonth}...`, 3000);
+        result = await this.climateEngine.computeMonthlyPrecipitationIDWGrid(yearMonth);
+        await this.climateEngine.renderClimateLayer(result);
+        this.close();
 
-      // 2. Renderiza no mapa OpenLayers
-      await this.climateEngine.renderClimateLayer(result);
+        const minStr = result.minObserved.toFixed(1).replace('.', ',');
+        const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
 
-      // 3. Fecha modal e notifica sucesso
-      this.close();
+        Notification.success(
+          `Superfície de Precipitação Acumulada Mensal (${result.periodLabel}) espacializada com sucesso! (${result.validStations.length} estações com completude ≥ 95% • Amplitude: ${minStr} mm a ${maxStr} mm)`
+        );
+      } else if (scale === 'mensal') {
+        Notification.info(`Consultando histórico e calculando completude mensal para ${yearMonth}...`, 3000);
+        result = await this.climateEngine.computeMonthlyIDWGrid(yearMonth);
+        await this.climateEngine.renderClimateLayer(result);
+        this.close();
 
-      const minStr = result.minObserved.toFixed(1).replace('.', ',');
-      const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
+        const minStr = result.minObserved.toFixed(1).replace('.', ',');
+        const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
 
-      Notification.success(
-        `Superfície de Temperatura Média Diária espacializada com sucesso! (${result.validStations.length} estações ativas • Amplitude: ${minStr} °C a ${maxStr} °C)`
-      );
+        Notification.success(
+          `Superfície de Temperatura Média Mensal (${result.periodLabel}) espacializada com sucesso! (${result.validStations.length} estações com completude ≥ 90% • Amplitude: ${minStr} °C a ${maxStr} °C)`
+        );
+      } else {
+        Notification.info(`Iniciando interpolação IDW para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 2500);
+        result = await this.climateEngine.computeIDWGrid(isoDate);
+        await this.climateEngine.renderClimateLayer(result);
+        this.close();
+
+        const minStr = result.minObserved.toFixed(1).replace('.', ',');
+        const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
+
+        Notification.success(
+          `Superfície de Temperatura Média Diária espacializada com sucesso! (${result.validStations.length} estações ativas • Amplitude: ${minStr} °C a ${maxStr} °C)`
+        );
+      }
 
     } catch (err) {
       console.error('[ClimateMapsUI] Erro ao gerar espacialização climática:', err);

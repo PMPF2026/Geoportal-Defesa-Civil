@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Portal Defesa Civil Passo Fundo - WebGIS Institucional
  * Motor de Espacialização Climática (IDW) — Etapa 3
  * 
@@ -285,6 +285,622 @@ export class ClimateMapsEngine {
   }
 
   /**
+   * Busca as observações diárias do mês inteiro para todas as estações e calcula a Média Mensal Derivada
+   * Aplica estritamente o critério de completude de pelo menos 90% dos dias esperados
+   * Utiliza exclusivamente o endpoint /api/weather/plugfield?action=daily
+   * @param {string} yearMonth YYYY-MM (ex: "2026-08")
+   */
+  async fetchMonthlyObservations(yearMonth) {
+    const parts = yearMonth.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+
+    // 1. Cálculo dinâmico rigoroso de dias esperados no mês
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const minDaysRequired = Math.ceil(daysInMonth * 0.90); // 90% de completude (ex: 31 * 0.90 = 27.9 -> 28 dias)
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const beginStr = `01/${pad(month)}/${year}`;
+    const endStr = `${pad(daysInMonth)}/${pad(month)}/${year}`;
+
+    // Rótulo amigável em português
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthLabel = `${monthNames[month - 1]} de ${year}`;
+    const monthShortLabel = `${monthNames[month - 1].slice(0, 3)}/${year}`;
+
+    const sessionKey = `${this.sessionCacheKeyPrefix}monthly_${yearMonth}`;
+
+    // 2. Tentar ler do cache de sessão isolado
+    try {
+      const cached = sessionStorage.getItem(sessionKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.validStations) && parsed.validStations.length >= 3) {
+          console.log(`[ClimateMapsEngine] Utilizando cache isolado de sessão para ${monthLabel} (${parsed.validStations.length} estações).`);
+          return parsed;
+        }
+      }
+    } catch (e) {}
+
+    console.log(`[ClimateMapsEngine] Consultando histórico mensal (${beginStr} a ${endStr}) para ${monthLabel}...`);
+
+    // 3. Consulta assíncrona concorrente das 16 estações
+    const requests = PLUGFIELD_STATIONS_CONFIG.map(async (st) => {
+      const devId = st.deviceId;
+      const url = `/api/weather/plugfield?action=daily&deviceId=${devId}&begin=${encodeURIComponent(beginStr)}&end=${encodeURIComponent(endStr)}`;
+
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          return {
+            id: devId,
+            deviceId: devId,
+            name: st.name,
+            validDaysCount: 0,
+            daysInMonth,
+            completenessPercent: 0,
+            tempMonthlyMean: null,
+            participates: false,
+            exclusionReason: `Falha na requisição HTTP (${resp.status})`
+          };
+        }
+
+        const resJson = await resp.json();
+        if (!resJson.success || !resJson.data?.days || !Array.isArray(resJson.data.days)) {
+          return {
+            id: devId,
+            deviceId: devId,
+            name: st.name,
+            validDaysCount: 0,
+            daysInMonth,
+            completenessPercent: 0,
+            tempMonthlyMean: null,
+            participates: false,
+            exclusionReason: 'Sem registros retornados pelo servidor Plugfield'
+          };
+        }
+
+        const rawDays = resJson.data.days;
+
+        // Eliminação de duplicidades por localDate
+        const uniqueDayMap = new Map();
+        rawDays.forEach(d => {
+          const lDate = d.localDate || d.date || '';
+          if (lDate && !uniqueDayMap.has(lDate)) {
+            uniqueDayMap.set(lDate, d);
+          }
+        });
+
+        // Filtragem de dias com temperatura válida
+        let validSum = 0;
+        let validCount = 0;
+        const validDaysList = [];
+
+        uniqueDayMap.forEach((dayObj, lDate) => {
+          if (dayObj.temp !== null && dayObj.temp !== undefined && !isNaN(parseFloat(dayObj.temp))) {
+            const val = parseFloat(dayObj.temp);
+            validSum += val;
+            validCount++;
+            validDaysList.push({ localDate: lDate, temp: val });
+          }
+        });
+
+        const completeness = Math.round((validCount / daysInMonth) * 10000) / 100; // 2 casas decimais
+        const tempMonthlyMean = validCount > 0 ? (validSum / validCount) : null;
+        const meetsThreshold = validCount >= minDaysRequired;
+
+        const utmCoord = ClimateMapsEngine.toUTM22S(st.lon, st.lat);
+
+        return {
+          id: devId,
+          deviceId: devId,
+          name: st.name,
+          type: st.type,
+          lon: st.lon,
+          lat: st.lat,
+          utmX: utmCoord[0],
+          utmY: utmCoord[1],
+          validDaysCount: validCount,
+          daysInMonth,
+          completenessPercent: completeness,
+          tempMonthlyMean: tempMonthlyMean !== null ? Math.round(tempMonthlyMean * 100) / 100 : null,
+          tempObserved: tempMonthlyMean !== null ? Math.round(tempMonthlyMean * 100) / 100 : null, // Compatibilidade IDW
+          participates: meetsThreshold,
+          exclusionReason: meetsThreshold ? null : `Excluída logicamente da espacialização mensal por insuficiência de dados válidos (${validCount}/${daysInMonth} dias válidos • completude ${completeness}% < 90%)`
+        };
+
+      } catch (err) {
+        console.warn(`[ClimateMapsEngine] Falha ao consultar histórico mensal da estação ${devId} (${st.name}):`, err);
+        return {
+          id: devId,
+          deviceId: devId,
+          name: st.name,
+          validDaysCount: 0,
+          daysInMonth,
+          completenessPercent: 0,
+          tempMonthlyMean: null,
+          participates: false,
+          exclusionReason: `Exceção de rede: ${err.message}`
+        };
+      }
+    });
+
+    const allStationAudit = await Promise.all(requests);
+    const validStations = allStationAudit.filter(st => st.participates === true && st.tempObserved !== null);
+    const excludedStations = allStationAudit.filter(st => !st.participates || st.tempObserved === null);
+
+    console.log(`[ClimateMapsEngine] Auditoria Mensal para ${monthLabel}: ${validStations.length} participantes, ${excludedStations.length} excluídas logicamente.`);
+
+    const payload = {
+      variable: 'temperatura',
+      scale: 'mensal',
+      unit: '°C',
+      yearMonth,
+      monthLabel,
+      monthShortLabel,
+      daysInMonth,
+      minDaysRequired,
+      totalConfigured: PLUGFIELD_STATIONS_CONFIG.length,
+      allStationAudit,
+      validStations,
+      excludedStations,
+      timestamp: Date.now()
+    };
+
+    // Armazena no cache de sessão isolado
+    if (validStations.length >= 3) {
+      try {
+        sessionStorage.setItem(sessionKey, JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    return payload;
+  }
+
+  /**
+   * Consulta os dados diários históricos de precipitação de todas as 16 estações Plugfield
+   * e calcula os acumulados mensais e índice de completude para cada estação.
+   * Critério estrito de corte: completude >= 95% dos dias válidos do mês (ex: 30 de 31 dias para Agosto).
+   * @param {string} yearMonth YYYY-MM (ex: "2026-08")
+   */
+  async fetchMonthlyPrecipitationObservations(yearMonth) {
+    // 1. Decomposição e cálculo dinâmico dos dias do mês
+    const [yearStr, monthStr] = yearMonth.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const minDaysRequired = Math.ceil(daysInMonth * 0.95); // 95% de completude (ex: 31 * 0.95 = 29.45 -> 30 dias)
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const beginStr = `01/${pad(month)}/${year}`;
+    const endStr = `${pad(daysInMonth)}/${pad(month)}/${year}`;
+
+    // Rótulo amigável em português
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthLabel = `${monthNames[month - 1]} de ${year}`;
+    const monthShortLabel = `${monthNames[month - 1].slice(0, 3)}/${year}`;
+
+    const sessionKey = `pf_climate_precip_monthly_${yearMonth}`;
+
+    // 2. Tentar ler do cache de sessão isolado
+    try {
+      const cached = sessionStorage.getItem(sessionKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.validStations) && parsed.validStations.length >= 3) {
+          console.log(`[ClimateMapsEngine] Utilizando cache isolado de sessão para precipitação de ${monthLabel} (${parsed.validStations.length} estações).`);
+          return parsed;
+        }
+      }
+    } catch (e) {}
+
+    console.log(`[ClimateMapsEngine] Consultando histórico pluviométrico mensal (${beginStr} a ${endStr}) para ${monthLabel}...`);
+
+    // 3. Consulta assíncrona concorrente das 16 estações
+    const requests = PLUGFIELD_STATIONS_CONFIG.map(async (st) => {
+      const devId = st.deviceId;
+      const url = `/api/weather/plugfield?action=daily&deviceId=${devId}&begin=${encodeURIComponent(beginStr)}&end=${encodeURIComponent(endStr)}`;
+
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          return {
+            id: devId,
+            deviceId: devId,
+            name: st.name,
+            validDaysCount: 0,
+            daysInMonth,
+            completenessPercent: 0,
+            precipMonthlyTotal: null,
+            participates: false,
+            exclusionReason: `Falha na requisição HTTP (${resp.status})`
+          };
+        }
+
+        const resJson = await resp.json();
+        if (!resJson.success || !resJson.data?.days || !Array.isArray(resJson.data.days)) {
+          return {
+            id: devId,
+            deviceId: devId,
+            name: st.name,
+            validDaysCount: 0,
+            daysInMonth,
+            completenessPercent: 0,
+            precipMonthlyTotal: null,
+            participates: false,
+            exclusionReason: 'Sem registros retornados pelo servidor Plugfield'
+          };
+        }
+
+        const rawDays = resJson.data.days;
+
+        // Eliminação de duplicidades por localDate
+        const uniqueDayMap = new Map();
+        rawDays.forEach(d => {
+          const lDate = d.localDate || d.date || '';
+          if (lDate && !uniqueDayMap.has(lDate)) {
+            uniqueDayMap.set(lDate, d);
+          }
+        });
+
+        // Filtragem e somatório de dias com precipitação válida (0 mm é dia válido seco!)
+        let validSum = 0;
+        let validCount = 0;
+        const validDaysList = [];
+
+        uniqueDayMap.forEach((dayObj, lDate) => {
+          if (dayObj.rainAccum !== null && dayObj.rainAccum !== undefined && !isNaN(parseFloat(dayObj.rainAccum))) {
+            const val = parseFloat(dayObj.rainAccum);
+            validSum += val;
+            validCount++;
+            validDaysList.push({ localDate: lDate, rainAccum: val });
+          }
+        });
+
+        const completeness = Math.round((validCount / daysInMonth) * 10000) / 100; // 2 casas decimais
+        const rainMonthlyTotal = validCount > 0 ? Math.round(validSum * 100) / 100 : null;
+        const meetsThreshold = validCount >= minDaysRequired;
+
+        const utmCoord = ClimateMapsEngine.toUTM22S(st.lon, st.lat);
+
+        return {
+          id: devId,
+          deviceId: devId,
+          name: st.name,
+          type: st.type,
+          lon: st.lon,
+          lat: st.lat,
+          utmX: utmCoord[0],
+          utmY: utmCoord[1],
+          validDaysCount: validCount,
+          daysInMonth,
+          completenessPercent: completeness,
+          precipMonthlyTotal: rainMonthlyTotal,
+          precipObserved: rainMonthlyTotal,
+          tempObserved: rainMonthlyTotal, // Compatibilidade com loop genérico IDW
+          participates: meetsThreshold,
+          exclusionReason: meetsThreshold ? null : `Excluída logicamente da espacialização mensal por insuficiência de dados válidos (${validCount}/${daysInMonth} dias válidos • completude ${completeness}% < 95%)`
+        };
+
+      } catch (err) {
+        console.warn(`[ClimateMapsEngine] Falha ao consultar histórico pluviométrico mensal da estação ${devId} (${st.name}):`, err);
+        return {
+          id: devId,
+          deviceId: devId,
+          name: st.name,
+          validDaysCount: 0,
+          daysInMonth,
+          completenessPercent: 0,
+          precipMonthlyTotal: null,
+          participates: false,
+          exclusionReason: `Exceção de rede: ${err.message}`
+        };
+      }
+    });
+
+    const allStationAudit = await Promise.all(requests);
+    const validStations = allStationAudit.filter(st => st.participates === true && st.precipObserved !== null);
+    const excludedStations = allStationAudit.filter(st => !st.participates || st.precipObserved === null);
+
+    console.log(`[ClimateMapsEngine] Auditoria Pluviométrica Mensal para ${monthLabel}: ${validStations.length} participantes, ${excludedStations.length} excluídas logicamente.`);
+
+    const payload = {
+      variable: 'precipitacao',
+      scale: 'mensal',
+      unit: 'mm',
+      yearMonth,
+      monthLabel,
+      monthShortLabel,
+      daysInMonth,
+      minDaysRequired,
+      totalConfigured: PLUGFIELD_STATIONS_CONFIG.length,
+      allStationAudit,
+      validStations,
+      excludedStations,
+      timestamp: Date.now()
+    };
+
+    // Armazena no cache de sessão isolado
+    if (validStations.length >= 3) {
+      try {
+        sessionStorage.setItem(sessionKey, JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    return payload;
+  }
+
+  /**
+   * Executa a interpolação IDW para Temperatura Média Mensal Espacializada (EPSG:31982, p=2)
+   * @param {string} yearMonth YYYY-MM (ex: "2026-08")
+   */
+  async computeMonthlyIDWGrid(yearMonth) {
+    const boundary = await this.loadBoundary();
+    const monthlyData = await this.fetchMonthlyObservations(yearMonth);
+
+    if (!monthlyData || !monthlyData.validStations || monthlyData.validStations.length < 3) {
+      throw new Error(`Não há estações com completude suficiente (mínimo de 90%) para gerar a espacialização mensal de ${monthlyData?.monthLabel || yearMonth}.`);
+    }
+
+    const stations = monthlyData.validStations;
+
+    // Estatísticas das médias mensais derivadas reais
+    let minObs = Infinity, maxObs = -Infinity, sumObs = 0;
+    for (const st of stations) {
+      if (st.tempObserved < minObs) minObs = st.tempObserved;
+      if (st.tempObserved > maxObs) maxObs = st.tempObserved;
+      sumObs += st.tempObserved;
+    }
+    const meanObs = sumObs / stations.length;
+
+    // Margem dinâmica para escala cromática harmoniosa
+    const rangeMargin = Math.max(0.2, (maxObs - minObs) * 0.05);
+    const colorMin = minObs - rangeMargin;
+    const colorMax = maxObs + rangeMargin;
+
+    // Resolução da grade: 220 colunas x 156 linhas (~207 metros por célula)
+    const gridCols = 220;
+    const gridRows = 156;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = gridCols;
+    canvas.height = gridRows;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(gridCols, gridRows);
+    const data = imgData.data;
+
+    const minX = boundary.bboxUTM[0];
+    const maxX = boundary.bboxUTM[2];
+    const minY = boundary.bboxUTM[1];
+    const maxY = boundary.bboxUTM[3];
+
+    const dx = (maxX - minX) / gridCols;
+    const dy = (maxY - minY) / gridRows;
+
+    let computedCells = 0;
+    let sumGridVal = 0;
+
+    // Loop de cálculo raster IDW (p = 2)
+    for (let row = 0; row < gridRows; row++) {
+      const curY = maxY - (row + 0.5) * dy;
+      const rowOffset = row * gridCols * 4;
+
+      for (let col = 0; col < gridCols; col++) {
+        const curX = minX + (col + 0.5) * dx;
+        const pixelIdx = rowOffset + col * 4;
+
+        // 1. Recorte espacial municipal
+        if (!ClimateMapsEngine.pointInPolygon(curX, curY, boundary.ring)) {
+          data[pixelIdx + 3] = 0;
+          continue;
+        }
+
+        // 2. Cálculo IDW
+        let sumW = 0;
+        let sumWV = 0;
+        let exactMatchVal = null;
+
+        for (let s = 0; s < stations.length; s++) {
+          const st = stations[s];
+          const distSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
+
+          if (distSq < 1.0) {
+            exactMatchVal = st.tempObserved;
+            break;
+          }
+
+          const w = 1.0 / distSq;
+          sumW += w;
+          sumWV += w * st.tempObserved;
+        }
+
+        const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
+        computedCells++;
+        sumGridVal += cellVal;
+
+        // 3. Rampa cromática contínua
+        const normT = (cellVal - colorMin) / (colorMax - colorMin);
+        const rgba = ClimateMapsEngine.getColorForValue(normT, 215);
+
+        data[pixelIdx]     = rgba[0];
+        data[pixelIdx + 1] = rgba[1];
+        data[pixelIdx + 2] = rgba[2];
+        data[pixelIdx + 3] = rgba[3];
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+
+    const result = {
+      variable: 'temperatura',
+      scale: 'mensal',
+      unit: '°C',
+      yearMonth,
+      periodLabel: monthlyData.monthLabel,
+      periodShortLabel: monthlyData.monthShortLabel,
+      gridCols,
+      gridRows,
+      cellSizeMeters: Math.round(dx),
+      computedCells,
+      validStations: stations,
+      allStationAudit: monthlyData.allStationAudit,
+      excludedCount: monthlyData.excludedStations.length,
+      daysInMonth: monthlyData.daysInMonth,
+      minObserved: minObs,
+      maxObserved: maxObs,
+      meanObserved: meanObs,
+      colorMin,
+      colorMax,
+      canvasDataUrl: canvas.toDataURL('image/png'),
+      bboxUTM: boundary.bboxUTM,
+      bbox3857: boundary.bbox3857,
+      boundaryRing: boundary.ring
+    };
+
+    this.currentResult = result;
+    return result;
+  }
+
+  /**
+   * Executa a interpolação IDW para Precipitação Acumulada Mensal Espacializada (EPSG:31982, p=2)
+   * @param {string} yearMonth YYYY-MM (ex: "2026-08")
+   */
+  async computeMonthlyPrecipitationIDWGrid(yearMonth) {
+    const boundary = await this.loadBoundary();
+    const monthlyData = await this.fetchMonthlyPrecipitationObservations(yearMonth);
+
+    if (!monthlyData || !monthlyData.validStations || monthlyData.validStations.length < 3) {
+      throw new Error(`Não há estações com completude pluviométrica suficiente (mínimo de 95%) para gerar a espacialização mensal de ${monthlyData?.monthLabel || yearMonth}.`);
+    }
+
+    const stations = monthlyData.validStations;
+
+    // Estatísticas dos acumulados mensais derivados reais
+    let minObs = Infinity, maxObs = -Infinity, sumObs = 0;
+    for (const st of stations) {
+      const val = st.precipObserved;
+      if (val < minObs) minObs = val;
+      if (val > maxObs) maxObs = val;
+      sumObs += val;
+    }
+    const meanObs = sumObs / stations.length;
+
+    // Margem dinâmica para escala cromática pluviométrica harmoniosa
+    const rangeMargin = Math.max(1.0, (maxObs - minObs) * 0.05);
+    const colorMin = minObs - rangeMargin;
+    const colorMax = maxObs + rangeMargin;
+
+    // Resolução da grade: 220 colunas x 156 linhas (~207 metros por célula)
+    const gridCols = 220;
+    const gridRows = 156;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = gridCols;
+    canvas.height = gridRows;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(gridCols, gridRows);
+    const data = imgData.data;
+
+    const minX = boundary.bboxUTM[0];
+    const maxX = boundary.bboxUTM[2];
+    const minY = boundary.bboxUTM[1];
+    const maxY = boundary.bboxUTM[3];
+
+    const dx = (maxX - minX) / gridCols;
+    const dy = (maxY - minY) / gridRows;
+
+    let computedCells = 0;
+    let sumGridVal = 0;
+
+    // Loop de cálculo raster IDW (p = 2)
+    for (let row = 0; row < gridRows; row++) {
+      const curY = maxY - (row + 0.5) * dy;
+      const rowOffset = row * gridCols * 4;
+
+      for (let col = 0; col < gridCols; col++) {
+        const curX = minX + (col + 0.5) * dx;
+        const pixelIdx = rowOffset + col * 4;
+
+        // 1. Recorte espacial municipal
+        if (!ClimateMapsEngine.pointInPolygon(curX, curY, boundary.ring)) {
+          data[pixelIdx + 3] = 0;
+          continue;
+        }
+
+        // 2. Cálculo IDW
+        let sumW = 0;
+        let sumWV = 0;
+        let exactMatchVal = null;
+
+        for (let s = 0; s < stations.length; s++) {
+          const st = stations[s];
+          const distSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
+
+          if (distSq < 1.0) {
+            exactMatchVal = st.precipObserved;
+            break;
+          }
+
+          const w = 1.0 / distSq;
+          sumW += w;
+          sumWV += w * st.precipObserved;
+        }
+
+        const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
+        computedCells++;
+        sumGridVal += cellVal;
+
+        // 3. Rampa cromática contínua hidrológica/pluviométrica
+        const normT = (cellVal - colorMin) / (colorMax - colorMin);
+        const rgba = ClimateMapsEngine.getColorForPrecipitationValue(normT, 215);
+
+        data[pixelIdx]     = rgba[0];
+        data[pixelIdx + 1] = rgba[1];
+        data[pixelIdx + 2] = rgba[2];
+        data[pixelIdx + 3] = rgba[3];
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+
+    const result = {
+      variable: 'precipitacao',
+      scale: 'mensal',
+      unit: 'mm',
+      yearMonth,
+      periodLabel: monthlyData.monthLabel,
+      periodShortLabel: monthlyData.monthShortLabel,
+      gridCols,
+      gridRows,
+      cellSizeMeters: Math.round(dx),
+      computedCells,
+      validStations: stations,
+      allStationAudit: monthlyData.allStationAudit,
+      excludedCount: monthlyData.excludedStations.length,
+      daysInMonth: monthlyData.daysInMonth,
+      minObserved: minObs,
+      maxObserved: maxObs,
+      meanObserved: meanObs,
+      colorMin,
+      colorMax,
+      canvasDataUrl: canvas.toDataURL('image/png'),
+      bboxUTM: boundary.bboxUTM,
+      bbox3857: boundary.bbox3857,
+      boundaryRing: boundary.ring
+    };
+
+    this.currentResult = result;
+    return result;
+  }
+
+  /**
    * Mapeia um valor numérico normalizado [0, 1] em uma rampa cromática contínua equilibrada
    * Paleta climatológica profissional e visualmente equilibrada:
    *  - 0.00: #0284c7 (Azul Sereno / 2, 132, 199)
@@ -303,6 +919,45 @@ export class ClimateMapsEngine {
       { pos: 0.50, r: 22,  g: 163, b: 74  }, // Verde
       { pos: 0.75, r: 234, g: 179, b: 8   }, // Âmbar
       { pos: 1.00, r: 234, g: 88,  b: 12  }  // Laranja
+    ];
+
+    let lower = stops[0], upper = stops[stops.length - 1];
+    for (let i = 0; i < stops.length - 1; i++) {
+      if (clampedT >= stops[i].pos && clampedT <= stops[i + 1].pos) {
+        lower = stops[i];
+        upper = stops[i + 1];
+        break;
+      }
+    }
+
+    const range = upper.pos - lower.pos;
+    const factor = range === 0 ? 0 : (clampedT - lower.pos) / range;
+
+    const r = Math.round(lower.r + factor * (upper.r - lower.r));
+    const g = Math.round(lower.g + factor * (upper.g - lower.g));
+    const b = Math.round(lower.b + factor * (upper.b - lower.b));
+
+    return [r, g, b, alpha];
+  }
+
+  /**
+   * Mapeia um valor numérico normalizado [0, 1] em uma rampa cromática pluviométrica contínua
+   * Paleta hidrológica e pluviométrica internacional (Tons de Verde-Claro, Ciano, Azul e Índigo/Violeta):
+   *  - 0.00: #e0f2fe (Azul Celeste Muito Claro / 224, 242, 254)
+   *  - 0.25: #38bdf8 (Azul Claro Vibrante / 56, 189, 248)
+   *  - 0.50: #0284c7 (Azul Oceano / 2, 132, 199)
+   *  - 0.75: #1e40af (Azul Cobalto Profundo / 30, 64, 175)
+   *  - 1.00: #6b21a8 (Violeta / Púrpura Intenso / 107, 33, 168)
+   */
+  static getColorForPrecipitationValue(t, alpha = 215) {
+    const clampedT = Math.max(0, Math.min(1, t));
+
+    const stops = [
+      { pos: 0.00, r: 224, g: 242, b: 254 }, // Azul celeste claro
+      { pos: 0.25, r: 56,  g: 189, b: 248 }, // Azul claro
+      { pos: 0.50, r: 2,   g: 132, b: 199 }, // Azul oceano
+      { pos: 0.75, r: 30,  g: 64,  b: 175 }, // Azul cobalto
+      { pos: 1.00, r: 107, g: 33,  b: 168 }  // Violeta
     ];
 
     let lower = stops[0], upper = stops[stops.length - 1];
@@ -428,6 +1083,9 @@ export class ClimateMapsEngine {
     ctx.putImageData(imgData, 0, 0);
 
     const result = {
+      variable: 'temperatura',
+      scale: 'diario',
+      unit: '°C',
       isoDate,
       apiDate: obsData.apiDate,
       gridCols,
@@ -466,8 +1124,22 @@ export class ClimateMapsEngine {
       projection: 'EPSG:3857'
     });
 
+    const isMonthly = idwResult.scale === 'mensal';
+    const isPrecip = idwResult.variable === 'precipitacao';
+    let layerTitle = '';
+    if (isPrecip) {
+      layerTitle = isMonthly
+        ? `Precipitação Acumulada Mensal Espacializada (IDW) • ${idwResult.periodLabel}`
+        : `Precipitação Diária Espacializada (IDW) • ${idwResult.apiDate}`;
+    } else {
+      layerTitle = isMonthly
+        ? `Temperatura Média Mensal Espacializada (IDW) • ${idwResult.periodLabel}`
+        : `Temperatura Média Diária Espacializada (IDW) • ${idwResult.apiDate}`;
+    }
+
     if (this.climateLayer) {
       this.climateLayer.setSource(staticSource);
+      this.climateLayer.set('layerName', layerTitle);
       this.climateLayer.setVisible(true);
     } else {
       this.climateLayer = new ol.layer.Image({
@@ -476,7 +1148,7 @@ export class ClimateMapsEngine {
         zIndex: 20 // Acima do mapa-base (0) e abaixo das feições e estações (95)
       });
       this.climateLayer.set('layerId', 'clima_temp_idw');
-      this.climateLayer.set('layerName', 'Temperatura Média Diária Espacializada (IDW)');
+      this.climateLayer.set('layerName', layerTitle);
       this.map.addLayer(this.climateLayer);
     }
 
@@ -508,7 +1180,7 @@ export class ClimateMapsEngine {
       if (!this.climateLayer || !this.climateLayer.getVisible()) return;
 
       // 2. Se o usuário clicou em uma feição vetorial (ex.: estação), não intercepta!
-      // O IdentifyTool nativo cuidará de exibir o popup da estação com os DADOS OBSERVADOS
+      // O IdentifyTool nativo cuidará de exibir o popup da estação
       let clickedFeature = false;
       this.map.forEachFeatureAtPixel(evt.pixel, (feat, layer) => {
         if (layer && layer.get('isThematicLayer')) {
@@ -545,14 +1217,16 @@ export class ClimateMapsEngine {
           nearestName = st.name;
         }
 
+        const obsVal = (st.precipObserved !== undefined && st.precipObserved !== null) ? st.precipObserved : st.tempObserved;
+
         if (dSq < 1.0) {
-          sumWV = st.tempObserved;
+          sumWV = obsVal;
           sumW = 1.0;
           break;
         }
         const w = 1.0 / dSq;
         sumW += w;
-        sumWV += w * st.tempObserved;
+        sumWV += w * obsVal;
       }
 
       const spatializedVal = (sumWV / sumW);
@@ -570,19 +1244,45 @@ export class ClimateMapsEngine {
     const popupContent = document.getElementById('popup-content');
     if (!popupContent || !this.mapEngine.popupOverlay) return;
 
+    const isMonthly = idwResult.scale === 'mensal';
+    const isPrecip = idwResult.variable === 'precipitacao';
+    const icon = isPrecip ? '🌧️' : '🌡️';
+    const unit = isPrecip ? 'mm' : '°C';
+    const valFormatted = isPrecip ? val.toFixed(1).replace('.', ',') : val.toFixed(2).replace('.', ',');
+    const thresholdPercent = isPrecip ? '95%' : '90%';
+
+    let titleText = '';
+    if (isPrecip) {
+      titleText = isMonthly
+        ? 'Precipitação Acumulada Mensal Espacializada'
+        : 'Precipitação Diária Espacializada';
+    } else {
+      titleText = isMonthly
+        ? 'Temperatura Média Mensal Espacializada'
+        : 'Temperatura Média Diária Espacializada';
+    }
+
+    const periodText = isMonthly
+      ? `${idwResult.periodLabel} • Passo Fundo / RS`
+      : `${idwResult.apiDate} • Passo Fundo / RS`;
+
+    const baseText = isMonthly
+      ? `${idwResult.validStations.length} estações (${isPrecip ? 'acumulados mensais' : 'médias mensais'} com completude ≥ ${thresholdPercent})`
+      : `${idwResult.validStations.length} estações com dados observados`;
+
     popupContent.innerHTML = `
       <div class="climate-surface-popup">
         <div class="climate-popup-header">
-          <span style="font-size:18px;">🌡️</span>
+          <span style="font-size:18px;">${icon}</span>
           <div>
-            <div class="climate-popup-title">Temperatura Média Diária Espacializada</div>
-            <div class="climate-popup-subtitle">${idwResult.apiDate} • Passo Fundo / RS</div>
+            <div class="climate-popup-title">${titleText}</div>
+            <div class="climate-popup-subtitle">${periodText}</div>
           </div>
         </div>
 
         <div class="climate-popup-val-box">
-          <span class="climate-popup-val-number">${val.toFixed(2).replace('.', ',')}</span>
-          <span class="climate-popup-val-unit">°C</span>
+          <span class="climate-popup-val-number">${valFormatted}</span>
+          <span class="climate-popup-val-unit">${unit}</span>
         </div>
 
         <div class="climate-popup-meta">
@@ -592,8 +1292,14 @@ export class ClimateMapsEngine {
           </div>
           <div class="climate-popup-meta-row">
             <span>📡 <strong>Base:</strong></span>
-            <span>${idwResult.validStations.length} estações com dados observados</span>
+            <span>${baseText}</span>
           </div>
+          ${isMonthly ? `
+          <div class="climate-popup-meta-row">
+            <span>📊 <strong>Critério:</strong></span>
+            <span>Completude mínima de ${thresholdPercent} dos dias válidos</span>
+          </div>
+          ` : ''}
           <div class="climate-popup-meta-row">
             <span>📍 <strong>Mais próxima:</strong></span>
             <span>Estação ${nearestName} (${nearestDistKm} km)</span>
@@ -631,32 +1337,59 @@ export class ClimateMapsEngine {
       if (mapContainer) mapContainer.appendChild(legend);
     }
 
+    const isMonthly = idwResult.scale === 'mensal';
+    const isPrecip = idwResult.variable === 'precipitacao';
+    const icon = isPrecip ? '🌧️' : '🌡️';
+    const unit = isPrecip ? 'mm' : '°C';
+    const thresholdPercent = isPrecip ? '95%' : '90%';
+
+    let titleText = '';
+    if (isPrecip) {
+      titleText = isMonthly
+        ? 'Precipitação Acumulada Mensal Espacializada'
+        : 'Precipitação Diária Espacializada';
+    } else {
+      titleText = isMonthly
+        ? 'Temperatura Média Mensal Espacializada'
+        : 'Temperatura Média Diária Espacializada';
+    }
+
+    const periodDisplay = isMonthly ? idwResult.periodShortLabel : idwResult.apiDate;
+
     const minStr = idwResult.minObserved.toFixed(1).replace('.', ',');
     const meanStr = idwResult.meanObserved.toFixed(1).replace('.', ',');
     const maxStr = idwResult.maxObserved.toFixed(1).replace('.', ',');
 
+    const baseTagText = isMonthly
+      ? (isPrecip ? `Base: Acumulados Mensais (≥${thresholdPercent})` : `Base: Médias Mensais (≥${thresholdPercent})`)
+      : 'Base: Dados Observados';
+
+    const barGradientStyle = isPrecip
+      ? 'background: linear-gradient(to right, #e0f2fe, #38bdf8, #0284c7, #1e40af, #6b21a8);'
+      : '';
+
     legend.innerHTML = `
       <div class="climate-legend-header">
         <div class="climate-legend-title">
-          <span style="font-size:15px;">🌡️</span>
-          <span>Temperatura Média Diária Espacializada</span>
+          <span style="font-size:15px;">${icon}</span>
+          <span>${titleText}</span>
         </div>
         <button class="climate-legend-close" id="btn-close-climate-legend" title="Ocultar Mapa Climático">&times;</button>
       </div>
 
       <div class="climate-legend-subtitle">
-        <span>📅 <strong>${idwResult.apiDate}</strong></span>
+        <span>📅 <strong>${periodDisplay}</strong></span>
         <span>•</span>
         <span>${idwResult.validStations.length} estações válidas</span>
       </div>
 
       <!-- Barra de Gradiente Contínuo -->
       <div class="climate-legend-bar-container">
-        <div class="climate-legend-gradient-bar"></div>
+        <div class="climate-legend-gradient-bar" style="${barGradientStyle}"></div>
         <div class="climate-legend-labels">
-          <span class="legend-val min">${minStr} °C</span>
-          <span class="legend-val mid">${meanStr} °C (Média)</span>
-          <span class="legend-val max">${maxStr} °C</span>
+          <span class="legend-val min">${minStr} ${unit}</span>
+          <span class="legend-val mid">${meanStr} ${unit} (Média)</span>
+          <span class="legend-val max">${maxStr} ${unit}</span>
         </div>
       </div>
 
@@ -664,7 +1397,8 @@ export class ClimateMapsEngine {
       <div class="climate-legend-tags">
         <span class="climate-tag">Método: IDW (p=2)</span>
         <span class="climate-tag">EPSG:31982</span>
-        <span class="climate-tag">Base: Dados Observados</span>
+        <span class="climate-tag">${baseTagText}</span>
+        <span class="climate-tag">Unidade: ${unit}</span>
       </div>
 
       <!-- Controles de Visibilidade e Opacidade -->

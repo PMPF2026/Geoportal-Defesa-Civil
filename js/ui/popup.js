@@ -154,26 +154,6 @@ export class PopupUI {
       }
     }
 
-    // 4.2. Se for camada de vulnerabilidade / renda, calcula valor em reais ($) e faixa da cor
-    if (layerConfig.id === 'censo_renda_vulnerabilidade') {
-      const rawVal = props['cn22_pop05_rsp_tot_0'];
-      const numVal = parseFloat(rawVal);
-      const valForBreak = (!isNaN(numVal) && numVal > 0) ? numVal : 0;
-
-      const breaks = layerConfig.choroplethBreaks || [];
-      const matchedBreak = breaks.find(b => valForBreak <= b.max) || breaks[0];
-
-      if (!isNaN(numVal) && numVal > 0) {
-        props['rendimento_reais'] = `R$ ${formatNumber(numVal, 2)}`;
-      } else {
-        props['rendimento_reais'] = 'Até R$ 2.000,00';
-      }
-
-      if (matchedBreak) {
-        props['faixa_rendimento'] = matchedBreak.label;
-      }
-    }
-
     // 5. Build Attribute Rows
     let rowsHtml = '';
     const fieldsToRender = pConfig.fields || Object.keys(props).filter(k => !k.startsWith('_') && k !== 'geometry').map(k => ({ key: k, label: k }));
@@ -232,9 +212,6 @@ export class PopupUI {
       } else if (field.format === 'currency') {
         const num = parseFloat(val);
         if (!isNaN(num)) formattedVal = `R$ ${formatNumber(num, 2)}`;
-      } else if (field.format === 'percent') {
-        const num = parseFloat(val);
-        if (!isNaN(num)) formattedVal = `${formatNumber(num * 100, 1)}%`;
       } else if (field.format === 'area') {
         const num = parseFloat(val);
         if (!isNaN(num)) formattedVal = formatArea(num);
@@ -251,6 +228,105 @@ export class PopupUI {
       `;
     });
 
+    // 4.9. Contexto Climático Mensal: Se a camada de superfície climática mensal estiver ativa e for estação Plugfield
+    let climateMonthlyCardHtml = '';
+    if (layerConfig.id === 'estacoes_plugfield' || props['deviceId']) {
+      const devId = parseInt(props['deviceId'], 10);
+      const climateEngine = window.webGis?.climateMapsUI?.climateEngine;
+      const climateResult = climateEngine?.currentResult;
+
+      if (climateEngine?.climateLayer?.getVisible() && climateResult && climateResult.scale === 'mensal') {
+        const auditItem = climateResult.allStationAudit?.find(s => s.deviceId === devId);
+        const validItem = climateResult.validStations?.find(s => s.deviceId === devId);
+        const stName = props['nome_estacao'] || props['name'] || `Estação ${devId}`;
+        const isPrecip = climateResult.variable === 'precipitacao';
+
+        if (isPrecip) {
+          if (auditItem && auditItem.participates && auditItem.precipMonthlyTotal !== null) {
+            const valFormatted = auditItem.precipMonthlyTotal.toFixed(2).replace('.', ',');
+            const compFormatted = auditItem.completenessPercent.toFixed(2).replace('.', ',');
+            climateMonthlyCardHtml = `
+              <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.16), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom: 6px;">
+                  <span style="font-size:16px;">🌧️</span>
+                  <strong style="color:#38bdf8; font-size:13px;">Estação Meteorológica — ${escapeHtml(stName)}</strong>
+                </div>
+                <div style="font-size: 18px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">
+                  Precipitação acumulada mensal: <span style="color:#38bdf8;">${valFormatted} mm</span>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr; gap:3px; font-size: 11px; color:#cbd5e1;">
+                  <div>📅 <strong>Período:</strong> ${climateResult.periodLabel}</div>
+                  <div>📊 <strong>Dias válidos:</strong> ${auditItem.validDaysCount}/${auditItem.daysInMonth}</div>
+                  <div>📈 <strong>Completude:</strong> ${compFormatted}% <span style="color:#4ade80; font-weight:700;">(Aprovada ≥ 95%)</span></div>
+                  <div style="margin-top:4px; font-size:10px; color:#94a3b8; font-style:italic;">
+                    ℹ️ Fonte: dados observados pelas estações Plugfield (Precipitação Mensal Derivada).
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (auditItem && !auditItem.participates) {
+            const compFormatted = auditItem.completenessPercent.toFixed(2).replace('.', ',');
+            climateMonthlyCardHtml = `
+              <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom: 4px;">
+                  <span style="font-size:15px;">⚠️</span>
+                  <strong style="color:#f87171; font-size:12px;">Estação Meteorológica — ${escapeHtml(stName)}</strong>
+                </div>
+                <div style="font-size: 11px; color: #cbd5e1;">
+                  <div>📅 <strong>Período:</strong> ${climateResult.periodLabel}</div>
+                  <div>📊 <strong>Dias válidos:</strong> ${auditItem.validDaysCount}/${auditItem.daysInMonth} (Completude: ${compFormatted}%)</div>
+                  <div style="color:#fca5a5; margin-top:4px; font-weight:600;">
+                    🚫 Excluída logicamente da espacialização mensal por insuficiência de dados válidos (&lt; 95%).
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        } else {
+          if (auditItem && auditItem.participates && auditItem.tempMonthlyMean !== null) {
+            const meanFormatted = auditItem.tempMonthlyMean.toFixed(2).replace('.', ',');
+            const compFormatted = auditItem.completenessPercent.toFixed(2).replace('.', ',');
+            climateMonthlyCardHtml = `
+              <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.16), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom: 6px;">
+                  <span style="font-size:16px;">🌡️</span>
+                  <strong style="color:#38bdf8; font-size:13px;">Estação Meteorológica — ${escapeHtml(stName)}</strong>
+                </div>
+                <div style="font-size: 18px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">
+                  Temperatura média mensal: <span style="color:#fdba74;">${meanFormatted} °C</span>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr; gap:3px; font-size: 11px; color:#cbd5e1;">
+                  <div>📅 <strong>Período:</strong> ${climateResult.periodLabel}</div>
+                  <div>📊 <strong>Dias válidos:</strong> ${auditItem.validDaysCount}/${auditItem.daysInMonth}</div>
+                  <div>📈 <strong>Completude:</strong> ${compFormatted}% <span style="color:#4ade80; font-weight:700;">(Aprovada ≥ 90%)</span></div>
+                  <div style="margin-top:4px; font-size:10px; color:#94a3b8; font-style:italic;">
+                    ℹ️ Fonte: dados observados pelas estações Plugfield (Média Mensal Derivada).
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (auditItem && !auditItem.participates) {
+            const compFormatted = auditItem.completenessPercent.toFixed(2).replace('.', ',');
+            climateMonthlyCardHtml = `
+              <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom: 4px;">
+                  <span style="font-size:15px;">⚠️</span>
+                  <strong style="color:#f87171; font-size:12px;">Estação Meteorológica — ${escapeHtml(stName)}</strong>
+                </div>
+                <div style="font-size: 11px; color: #cbd5e1;">
+                  <div>📅 <strong>Período:</strong> ${climateResult.periodLabel}</div>
+                  <div>📊 <strong>Dias válidos:</strong> ${auditItem.validDaysCount}/${auditItem.daysInMonth} (Completude: ${compFormatted}%)</div>
+                  <div style="color:#fca5a5; margin-top:4px; font-weight:600;">
+                    🚫 Excluída logicamente da espacialização mensal por insuficiência de dados válidos (&lt; 90%).
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        }
+      }
+    }
+
     // 5. Build HTML
     this.contentEl.innerHTML = `
       <div class="popup-header">
@@ -263,6 +339,7 @@ export class PopupUI {
       </div>
       
       <div class="popup-body">
+        ${climateMonthlyCardHtml}
         <table class="popup-props-table">
           <tbody>
             ${rowsHtml || '<tr><td colspan="2" style="color:var(--text-muted);">Sem atributos adicionais.</td></tr>'}
