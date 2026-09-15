@@ -1400,9 +1400,19 @@ export class WeatherUI {
     const c = data.chuva || {};
     const setRain = (id, val) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = val != null && !isNaN(val) ? `${val.toFixed(1)} mm` : '0.0 mm';
+      if (el) el.textContent = val != null && !isNaN(val) ? `${val.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
     };
 
+    // IDs oficiais dos elementos HTML na interface da Defesa Civil RS
+    setRain('drs-rain-30m', c.min30);
+    setRain('drs-rain-1h', c.h1);
+    setRain('drs-rain-24h', c.h24);
+    setRain('drs-rain-48h', c.h48);
+    setRain('drs-rain-72h', c.h72);
+    setRain('drs-rain-5d', c.h120);
+    setRain('drs-rain-7d', c.h168);
+
+    // Fallbacks para compatibilidade com outros seletores
     setRain('rain-val-min30', c.min30);
     setRain('rain-val-h1', c.h1);
     setRain('rain-val-h24', c.h24);

@@ -7,6 +7,7 @@ import { formatNumber, formatArea, formatDistance, escapeHtml } from '../utils/f
 import { toUTM22S } from '../utils/projection.js';
 import { Notification } from './notification.js';
 import { PlugfieldService } from '../weather/plugfield-service.js';
+import { WeatherService } from '../weather/weather-service.js';
 
 export class PopupUI {
   constructor(mapEngine, layerManager) {
@@ -131,18 +132,26 @@ export class PopupUI {
 
     // 4.1. Se for estação oficial DCRS-00016, injeta telemetria da Defesa Civil RS
     if (layerConfig.id === 'estacao_dcrs00016' || props['estacao_cod'] === 'DCRS-00016') {
-      const drsTelemetry = (typeof WeatherService !== 'undefined')
-        ? WeatherService.getCachedTelemetry('DCRS-00016')
-        : null;
+      let drsTelemetry = null;
+      try {
+        if (typeof WeatherService !== 'undefined' && WeatherService.getCachedTelemetry) {
+          drsTelemetry = WeatherService.getCachedTelemetry('DCRS-00016');
+        }
+        if (!drsTelemetry) {
+          const rawLocal = localStorage.getItem('dcrs_last_telemetry_DCRS-00016');
+          if (rawLocal) drsTelemetry = JSON.parse(rawLocal);
+        }
+      } catch {}
 
       if (drsTelemetry && drsTelemetry.success) {
         props['status_comunicacao'] = drsTelemetry.status === 'updated' ? 'Online (em tempo real)' : (drsTelemetry.status === 'delayed' ? 'Aguardando atualização' : 'Sem comunicação recente');
         props['nivel_rio'] = drsTelemetry.rio?.nivel != null ? `${drsTelemetry.rio.nivel.toFixed(2).replace('.', ',')} m` : 'Dado não disponível';
         const trend = drsTelemetry.rio?.tendencia || 0;
         props['tendencia_rio'] = trend > 0.005 ? 'Subindo ⬆️' : (trend < -0.005 ? 'Descendo ⬇️' : 'Estável ➡️');
-        const c1h = drsTelemetry.chuva?.h1 != null ? `${drsTelemetry.chuva.h1.toFixed(1).replace('.', ',')} mm` : '--';
-        const c24h = drsTelemetry.chuva?.h24 != null ? `${drsTelemetry.chuva.h24.toFixed(1).replace('.', ',')} mm` : '--';
-        props['chuva_hoje'] = `${c1h} (1h) / ${c24h} (24h)`;
+        const c1h = drsTelemetry.chuva?.h1 != null ? `${drsTelemetry.chuva.h1.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
+        const c24h = drsTelemetry.chuva?.h24 != null ? `${drsTelemetry.chuva.h24.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
+        const c120h = drsTelemetry.chuva?.h120 != null ? `${drsTelemetry.chuva.h120.toFixed(1).replace('.', ',')} mm` : null;
+        props['chuva_hoje'] = c120h ? `${c1h} (1h) / ${c24h} (24h) • ${c120h} (5d)` : `${c1h} (1h) / ${c24h} (24h)`;
         props['temperatura_atual'] = drsTelemetry.temperatura?.atual != null ? `${drsTelemetry.temperatura.atual.toFixed(1).replace('.', ',')} °C` : '--';
         if (drsTelemetry.timestamp) {
           try {
@@ -151,6 +160,12 @@ export class PopupUI {
             props['ultima_atualizacao'] = `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${dt.getFullYear()} às ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
           } catch {}
         }
+      } else if (typeof WeatherService !== 'undefined' && WeatherService.fetchDefesaCivilRSTelemetry) {
+        WeatherService.fetchDefesaCivilRSTelemetry('DCRS-00016').then(liveData => {
+          if (liveData && liveData.success) {
+            this.renderCurrentFeature();
+          }
+        }).catch(() => {});
       }
     }
 
