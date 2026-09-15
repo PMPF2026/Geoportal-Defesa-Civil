@@ -1,17 +1,20 @@
 ﻿/**
  * Portal Defesa Civil Passo Fundo - WebGIS Institucional
- * Módulo: Mapas Climáticos (Interface & Protótipo Inicial)
+ * Módulo de Interface: Mapas Climáticos (Etapa 3 - Conexão Real com IDW)
  * 
  * Responsável pela gestão do painel modal "Mapas Climáticos",
- * seleção de variáveis (Temperatura, Precipitação), escala temporal (Diário, Mensal),
- * método de espacialização (IDW), e contagem dinâmica das estações da rede telemétrica.
+ * seleção de parâmetros e disparo do motor de interpolação geoestatística (IDW).
  */
 
 import { PLUGFIELD_STATIONS_CONFIG } from '../weather/plugfield-service.js';
+import { ClimateMapsEngine } from './climate-maps-engine.js';
 import { Notification } from '../ui/notification.js';
 
 export class ClimateMapsUI {
-  constructor() {
+  constructor(mapEngine = null) {
+    this.mapEngine = mapEngine;
+    this.climateEngine = null;
+
     this.modal = null;
     this.openBtn = null;
     this.closeBtn = null;
@@ -29,7 +32,15 @@ export class ClimateMapsUI {
   /**
    * Inicializa o módulo e vincula os elementos da interface
    */
-  init() {
+  init(mapEngine = null) {
+    if (mapEngine) {
+      this.mapEngine = mapEngine;
+    }
+
+    if (this.mapEngine) {
+      this.climateEngine = new ClimateMapsEngine(this.mapEngine);
+    }
+
     this.modal = document.getElementById('climate-maps-modal');
     this.openBtn = document.getElementById('btn-open-climate-maps');
     this.closeBtn = document.getElementById('btn-close-climate-maps-modal');
@@ -52,7 +63,7 @@ export class ClimateMapsUI {
     this.updateStationsCount();
     this.setDefaultDates();
 
-    console.log('[ClimateMapsUI] Módulo de Mapas Climáticos inicializado com sucesso.');
+    console.log('[ClimateMapsUI] Módulo de Mapas Climáticos pronto para espacialização.');
   }
 
   /**
@@ -108,7 +119,6 @@ export class ClimateMapsUI {
       this.modal.classList.add('active');
       this.updateStationsCount();
       
-      // Atualiza os ícones Lucide no interior do modal se necessário
       if (typeof lucide !== 'undefined' && lucide.createIcons) {
         lucide.createIcons();
       }
@@ -125,13 +135,6 @@ export class ClimateMapsUI {
   }
 
   /**
-   * Verifica se o modal está visível
-   */
-  isOpen() {
-    return this.modal ? this.modal.classList.contains('active') : false;
-  }
-
-  /**
    * Atualiza a contagem dinâmica de estações a partir da base oficial carregada
    */
   updateStationsCount() {
@@ -141,56 +144,76 @@ export class ClimateMapsUI {
   }
 
   /**
-   * Define valores padrão de data e mês com base na data local atual
+   * Define valores padrão de data e mês (default: 2026-09-14 para o teste controlado)
    */
   setDefaultDates() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-
     if (this.dateInput && !this.dateInput.value) {
-      this.dateInput.value = `${yyyy}-${mm}-${dd}`;
+      this.dateInput.value = '2026-09-14';
     }
 
     if (this.monthInput && !this.monthInput.value) {
-      this.monthInput.value = `${yyyy}-${mm}`;
+      this.monthInput.value = '2026-09';
     }
   }
 
   /**
-   * Manipulador do clique no botão "Gerar mapa"
-   * Na etapa 1 (Protótipo), valida os parâmetros e informa o usuário que a interpolação real
-   * está em fase de preparação, sem bloquear ou executar cálculos pesados prematuramente.
+   * Dispara a geração real da espacialização IDW
    */
-  handleGenerateMap() {
-    const variable = this.variableSelect ? this.variableSelect.options[this.variableSelect.selectedIndex].text : 'Temperatura';
-    const scale = this.scaleSelect ? this.scaleSelect.options[this.scaleSelect.selectedIndex].text : 'Diário';
-    const method = this.methodSelect ? this.methodSelect.options[this.methodSelect.selectedIndex].text : 'IDW';
-    const periodValue = this.scaleSelect?.value === 'mensal' ? this.monthInput?.value : this.dateInput?.value;
+  async handleGenerateMap() {
+    const variable = this.variableSelect ? this.variableSelect.value : 'temperatura';
+    const scale = this.scaleSelect ? this.scaleSelect.value : 'diario';
+    const isoDate = this.dateInput?.value || '2026-09-14';
 
-    // Mensagem informativa institucional padronizada
-    Notification.info(
-      `Protótipo "Mapas Climáticos": Parâmetros selecionados (${variable} • ${scale}: ${periodValue} via ${method}). A rotina de interpolação geoestatística será conectada na próxima fase.`,
-      5500
-    );
+    // Verificação de escopo da Etapa 3 (Exclusivo para Temperatura Diária)
+    if (variable !== 'temperatura' || scale !== 'diario') {
+      Notification.info(
+        'Nesta Etapa 3 de validação, está ativo exclusivamente o teste controlado de "Temperatura Média Diária". As demais variáveis serão liberadas na próxima etapa.',
+        5500
+      );
+      return;
+    }
 
-    // Estrutura de evento / callback preparada para a futura integração com IDW
-    const climatePayload = {
-      variable: this.variableSelect?.value || 'temperatura',
-      variableLabel: variable,
-      scale: this.scaleSelect?.value || 'diario',
-      scaleLabel: scale,
-      period: periodValue,
-      method: this.methodSelect?.value || 'idw',
-      methodLabel: method,
-      stationsAvailable: Array.isArray(PLUGFIELD_STATIONS_CONFIG) ? PLUGFIELD_STATIONS_CONFIG.length : 16,
-      timestamp: new Date().toISOString()
-    };
+    if (!this.climateEngine) {
+      Notification.error('Motor de espacialização climática não inicializado.');
+      return;
+    }
 
-    console.log('[ClimateMapsUI] Estrutura preparada para interpolação:', climatePayload);
+    // Estado visual de carregamento no botão
+    const origBtnHtml = this.generateBtn.innerHTML;
+    this.generateBtn.disabled = true;
+    this.generateBtn.innerHTML = `
+      <div class="climate-spinner-sm"></div>
+      <span>Processando IDW em tempo real...</span>
+    `;
 
-    // Dispara evento customizado para que outros módulos possam escutar futuramente se desejado
-    window.dispatchEvent(new CustomEvent('climatemaps:generate-requested', { detail: climatePayload }));
+    try {
+      Notification.info(`Iniciando interpolação IDW para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 2500);
+
+      // 1. Executa cálculo matemático IDW
+      const result = await this.climateEngine.computeIDWGrid(isoDate);
+
+      // 2. Renderiza no mapa OpenLayers
+      await this.climateEngine.renderClimateLayer(result);
+
+      // 3. Fecha modal e notifica sucesso
+      this.close();
+
+      const minStr = result.minObserved.toFixed(1).replace('.', ',');
+      const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
+
+      Notification.success(
+        `Superfície de Temperatura Média Diária espacializada com sucesso! (${result.validStations.length} estações ativas • Amplitude: ${minStr} °C a ${maxStr} °C)`
+      );
+
+    } catch (err) {
+      console.error('[ClimateMapsUI] Erro ao gerar espacialização climática:', err);
+      Notification.error(err.message || 'Falha ao processar interpolação dos dados climáticos.');
+    } finally {
+      this.generateBtn.disabled = false;
+      this.generateBtn.innerHTML = origBtnHtml;
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    }
   }
 }

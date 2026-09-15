@@ -97,9 +97,9 @@ class WebGisApp {
       // 12.2. Initialize Central Meteorológica e Avisos (Defesa Civil RS & CPTEC/INPE)
       this.weatherUI = new WeatherUI('tab-weather');
 
-      // 12.3. Initialize Mapas Climáticos UI (Protótipo Inicial)
-      this.climateMapsUI = new ClimateMapsUI();
-      this.climateMapsUI.init();
+      // 12.3. Initialize Mapas Climáticos UI (Etapa 3 - IDW)
+      this.climateMapsUI = new ClimateMapsUI(this.mapEngine);
+      this.climateMapsUI.init(this.mapEngine);
 
       // 13. Initialize Dynamic Layer Importer (Drag & Drop)
       this.layerImporter = new LayerImporter(this.mapEngine, this.layerManager, this.sidebarUI);
