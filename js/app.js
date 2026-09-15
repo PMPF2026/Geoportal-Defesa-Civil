@@ -22,6 +22,7 @@ import { DashboardUI } from './dashboard/dashboard.js';
 import { DownloadsUI } from './ui/downloads.js';
 import { WeatherUI } from './weather/weather-ui.js';
 import { Item6ThematicLegendUI } from './ui/thematic-legend-item6.js';
+import { ClimateMapsUI } from './climate/climate-maps-ui.js';
 
 class WebGisApp {
   constructor() {
@@ -42,6 +43,7 @@ class WebGisApp {
     this.dashboardUI = null;
     this.weatherUI = null;
     this.item6ThematicLegendUI = null;
+    this.climateMapsUI = null;
   }
 
   async start() {
@@ -94,6 +96,10 @@ class WebGisApp {
 
       // 12.2. Initialize Central Meteorológica e Avisos (Defesa Civil RS & CPTEC/INPE)
       this.weatherUI = new WeatherUI('tab-weather');
+
+      // 12.3. Initialize Mapas Climáticos UI (Protótipo Inicial)
+      this.climateMapsUI = new ClimateMapsUI();
+      this.climateMapsUI.init();
 
       // 13. Initialize Dynamic Layer Importer (Drag & Drop)
       this.layerImporter = new LayerImporter(this.mapEngine, this.layerManager, this.sidebarUI);
@@ -272,6 +278,8 @@ class WebGisApp {
         if (contactModal) contactModal.classList.remove('active');
         const shelterModal = document.getElementById('shelter-analysis-modal');
         if (shelterModal) shelterModal.classList.remove('active');
+        const climateModal = document.getElementById('climate-maps-modal');
+        if (climateModal) climateModal.classList.remove('active');
       } else if (e.key === '+' || e.key === '=') {
         this.mapEngine.zoomIn();
       } else if (e.key === '-' || e.key === '_') {

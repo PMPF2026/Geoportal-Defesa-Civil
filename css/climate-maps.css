@@ -1,0 +1,271 @@
+﻿/* ==========================================================================
+   PORTAL DEFESA CIVIL PASSO FUNDO - WEBGIS INSTITUCIONAL
+   Módulo: Mapas Climáticos (Interface & Protótipo Inicial)
+   ========================================================================== */
+
+/* Badge indicador de protótipo */
+.climate-badge-proto {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(255, 120, 0, 0.15);
+  border: 1px solid var(--dc-orange-primary);
+  color: var(--dc-orange-primary);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* Corpo do Modal */
+.climate-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--dc-blue-navy);
+  overflow-y: auto;
+  max-height: calc(88vh - 70px);
+}
+
+/* Card Conceitual: Dados Observados vs Dados Espacializados */
+.climate-concept-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--dc-blue-border);
+  border-left: 4px solid var(--dc-orange-primary);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.climate-concept-header {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.climate-concept-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.climate-concept-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.climate-tag-observed {
+  background: rgba(14, 165, 233, 0.18);
+  border: 1px solid #0ea5e9;
+  color: #38bdf8;
+}
+
+.climate-tag-spatialized {
+  background: rgba(249, 115, 22, 0.18);
+  border: 1px solid #f97316;
+  color: #fb923c;
+}
+
+/* Grupos de Formulário */
+.climate-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 560px) {
+  .climate-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.climate-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.climate-form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.climate-field-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.climate-field-label i {
+  font-size: 14px;
+  color: var(--dc-orange-primary);
+}
+
+.climate-select,
+.climate-input {
+  background: var(--dc-blue-card);
+  border: 1px solid var(--dc-blue-border);
+  color: #ffffff;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.climate-select option {
+  background: #1e293b;
+  color: #ffffff;
+  padding: 8px;
+}
+
+.climate-select:focus,
+.climate-input:focus {
+  border-color: var(--dc-orange-primary);
+  box-shadow: 0 0 0 2px rgba(255, 120, 0, 0.25);
+}
+
+.climate-field-hint {
+  font-size: 11px;
+  color: var(--text-subtle);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Card Informativo de Estações Disponíveis */
+.climate-stations-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid var(--dc-blue-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.climate-stations-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.climate-stations-title {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.climate-stations-title i {
+  color: #38bdf8;
+}
+
+.climate-stations-count {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.climate-stations-subtitle {
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+.climate-stations-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid #10b981;
+  color: #34d399;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.climate-pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #10b981;
+  animation: climatePulse 2s infinite;
+}
+
+@keyframes climatePulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Botão de Geração */
+.climate-btn-generate {
+  background: linear-gradient(135deg, var(--dc-orange-primary) 0%, #ea580c 100%);
+  border: 1px solid var(--dc-orange-hover);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.3);
+  width: 100%;
+}
+
+.climate-btn-generate:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow-orange);
+}
+
+.climate-btn-generate:active {
+  transform: translateY(0);
+}
+
+/* Rodapé / Nota informativa de protótipo */
+.climate-proto-note {
+  font-size: 11px;
+  color: var(--text-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  line-height: 1.4;
+  margin-top: -4px;
+}

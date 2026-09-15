@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="css/popup.css">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/weather.css">
+  <link rel="stylesheet" href="css/climate-maps.css">
 </head>
 <body>
   <div id="app">
@@ -49,6 +50,11 @@
           <span>Importar Camada</span>
         </button>
         <input type="file" id="input-import-geojson" accept=".geojson,.json,.kml" style="display: none;" />
+
+        <button class="header-btn" id="btn-open-climate-maps" title="Mapas Climáticos — Espacialização de Dados Meteorológicos">
+          <span style="font-size: 15px; line-height: 1;">🌦️</span>
+          <span>Mapas Climáticos</span>
+        </button>
 
         <button class="header-btn" id="btn-open-weather-modal" title="Central Meteorológica e Avisos (Defesa Civil RS & CPTEC/INPE)">
           <i class="lucide-cloud-sun-rain"></i>
@@ -1329,6 +1335,132 @@
           <span>🚨 <strong>Plantão de Emergência 24h:</strong></span>
           <a href="tel:199" style="color: #ffffff; background: #dc2626; padding: 4px 12px; border-radius: 4px; text-decoration: none; font-weight: 800; font-size: 13px;">Ligue 199</a>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL MAPAS CLIMÁTICOS ================= -->
+  <div class="modal-overlay" id="climate-maps-modal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span style="font-size: 18px; line-height: 1;">🌦️</span>
+          <span>Mapas Climáticos</span>
+          <span class="climate-badge-proto">Protótipo Inicial</span>
+        </div>
+        <button class="modal-close-btn" id="btn-close-climate-maps-modal" title="Fechar">&times;</button>
+      </div>
+      <div class="modal-body climate-modal-body">
+        
+        <!-- Card Conceitual: Dados Observados vs Dados Espacializados -->
+        <div class="climate-concept-card">
+          <div class="climate-concept-header">
+            <i class="lucide-info" style="color: var(--dc-orange-primary);"></i>
+            <span>Diretrizes Conceituais dos Dados</span>
+          </div>
+          <div class="climate-concept-item">
+            <span class="climate-concept-tag climate-tag-observed">Dados Observados</span>
+            <span>Registros pontuais e contínuos medidos pelos sensores das estações meteorológicas em campo.</span>
+          </div>
+          <div class="climate-concept-item">
+            <span class="climate-concept-tag climate-tag-spatialized">Dados Espacializados</span>
+            <span>Superfície contínua gerada por métodos geoestatísticos (ex.: <em>Temperatura média espacializada</em>).</span>
+          </div>
+        </div>
+
+        <!-- Grade de Configuração -->
+        <div class="climate-form-grid">
+          <!-- Variável Climática -->
+          <div class="climate-form-group">
+            <label class="climate-field-label" for="climate-variable-select">
+              <i class="lucide-thermometer-sun"></i>
+              <span>Selecione a variável</span>
+            </label>
+            <select class="climate-select" id="climate-variable-select">
+              <option value="temperatura" selected>Temperatura</option>
+              <option value="precipitacao">Precipitação</option>
+            </select>
+          </div>
+
+          <!-- Escala Temporal -->
+          <div class="climate-form-group">
+            <label class="climate-field-label" for="climate-scale-select">
+              <i class="lucide-clock"></i>
+              <span>Período</span>
+            </label>
+            <select class="climate-select" id="climate-scale-select">
+              <option value="diario" selected>Diário</option>
+              <option value="mensal">Mensal</option>
+            </select>
+          </div>
+
+          <!-- Seletor de Data (Escala Diária) -->
+          <div class="climate-form-group full-width" id="climate-date-group">
+            <label class="climate-field-label" for="climate-date-input">
+              <i class="lucide-calendar"></i>
+              <span>Data de observação</span>
+            </label>
+            <input type="date" class="climate-input" id="climate-date-input" />
+            <span class="climate-field-hint">
+              <i class="lucide-info"></i> Selecione o dia desejado para a espacialização meteorológica.
+            </span>
+          </div>
+
+          <!-- Seletor de Mês/Ano (Escala Mensal) -->
+          <div class="climate-form-group full-width" id="climate-month-group" style="display: none;">
+            <label class="climate-field-label" for="climate-month-input">
+              <i class="lucide-calendar-days"></i>
+              <span>Mês / Ano de observação</span>
+            </label>
+            <input type="month" class="climate-input" id="climate-month-input" />
+            <span class="climate-field-hint">
+              <i class="lucide-info"></i> Selecione o mês/ano de referência para agregação dos dados.
+            </span>
+          </div>
+
+          <!-- Método de Espacialização -->
+          <div class="climate-form-group full-width">
+            <label class="climate-field-label" for="climate-method-select">
+              <i class="lucide-sparkles"></i>
+              <span>Método de espacialização</span>
+            </label>
+            <select class="climate-select" id="climate-method-select">
+              <option value="idw" selected>IDW — Ponderação pelo Inverso da Distância</option>
+            </select>
+            <span class="climate-field-hint">
+              <i class="lucide-info"></i> Método determinístico baseado no decaimento da influência das estações com o quadrado da distância.
+            </span>
+          </div>
+        </div>
+
+        <!-- Área Informativa das Estações Disponíveis -->
+        <div class="climate-stations-card">
+          <div class="climate-stations-info">
+            <div class="climate-stations-title">
+              <i class="lucide-radio"></i>
+              <span>Estações meteorológicas disponíveis</span>
+            </div>
+            <div class="climate-stations-count" id="climate-stations-count">16 estações</div>
+            <div class="climate-stations-subtitle">Rede Telemétrica Plugfield & Defesa Civil Passo Fundo</div>
+          </div>
+          <div class="climate-stations-badge">
+            <span class="climate-pulse-dot"></span>
+            <span>Sensores Ativos</span>
+          </div>
+        </div>
+
+        <!-- Botão de Ação -->
+        <button class="climate-btn-generate" id="btn-generate-climate-map" type="button">
+          <i class="lucide-layers"></i>
+          <span>Gerar mapa</span>
+        </button>
+
+        <!-- Nota Técnica de Protótipo -->
+        <div class="climate-proto-note">
+          <i class="lucide-alert-circle"></i>
+          <span>Esta funcionalidade está sendo preparada para a próxima etapa.</span>
+        </div>
+
       </div>
     </div>
   </div>
