@@ -9,14 +9,14 @@
 
 const BASE_URL = 'https://prod-api.plugfield.com.br';
 
-// Cache Serverless em memória (TTL: 6 minutos = 360.000 ms)
+// Cache Serverless em memória (TTL: 2 minutos = 120.000 ms)
 const cacheStore = {
   devices: { data: null, timestamp: 0 },
   deviceDetails: {}, // { [deviceId]: { data, timestamp } }
   daily: {}          // { [`${deviceId}_${begin}_${end}`]: { data, timestamp } }
 };
 
-const CACHE_TTL_MS = 6 * 60 * 1000; // 6 minutos
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos (120.000 ms)
 
 // Lista oficial dos 16 deviceIds habilitados para o projeto Passo Fundo
 const ENABLED_DEVICE_IDS = [

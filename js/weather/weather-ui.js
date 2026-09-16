@@ -23,6 +23,12 @@ export class WeatherUI {
     this.isLoading = false;
     this.charts = {};
 
+    // Controle do polling automático e ciclo de vida da rede Plugfield
+    this.plugfieldPollingTimer = null;
+    this.isPlugfieldFetching = false;
+    this.lastPlugfieldFetchTime = 0;
+    this.visibilityHandlerBound = false;
+
     if (this.container) {
       this.init();
     }
@@ -52,8 +58,10 @@ export class WeatherUI {
       this.renderPlugfieldUI();
     }
 
-    await this.refreshAllData();
     this.startRealtimeSubscription();
+    this.startPlugfieldPolling();
+    this.bindVisibilityChange();
+    await this.refreshAllData();
   }
 
   renderSkeleton() {
@@ -605,12 +613,12 @@ export class WeatherUI {
       });
     }
 
-    // Botão Atualizar
+    // Botão Atualizar (força bypass do cache local)
     const btnRefresh = document.getElementById('btn-weather-refresh');
     if (btnRefresh) {
       btnRefresh.addEventListener('click', async () => {
         btnRefresh.classList.add('spinning');
-        await this.refreshAllData();
+        await this.refreshAllData(true);
         setTimeout(() => btnRefresh.classList.remove('spinning'), 600);
       });
     }
@@ -699,26 +707,32 @@ export class WeatherUI {
     }
   }
 
-  async refreshAllData() {
+  async refreshAllData(forceRefresh = false) {
     this.isLoading = true;
     await Promise.all([
       this.loadDefesaCivilRSData(),
       this.loadCptecData(),
-      this.loadPlugfieldData()
+      this.loadPlugfieldData(forceRefresh)
     ]);
     this.isLoading = false;
   }
 
-  async loadPlugfieldData() {
+  async loadPlugfieldData(forceRefresh = false) {
+    if (this.isPlugfieldFetching) return;
+    this.isPlugfieldFetching = true;
+
     try {
-      const stations = await PlugfieldService.getAllStations();
+      const stations = await PlugfieldService.getAllStations(forceRefresh);
       if (stations && stations.length > 0) {
         this.plugfieldStations = stations;
         this.renderPlugfieldUI();
         PlugfieldService.updateMapLayerWithTelemetry(stations);
       }
+      this.lastPlugfieldFetchTime = Date.now();
     } catch (err) {
       console.warn('[WeatherUI] Erro ao carregar dados Plugfield:', err);
+    } finally {
+      this.isPlugfieldFetching = false;
     }
   }
 
@@ -733,9 +747,11 @@ export class WeatherUI {
       const currentVal = parseInt(select.value, 10) || this.selectedPlugfieldId;
       select.innerHTML = this.plugfieldStations.map(st => {
         const isOffline = st.status === 'offline';
+        const isDelayed = st.status === 'delayed';
+        const statusSuffix = isOffline ? ' [Sem comunicação]' : (isDelayed ? ' [Atrasada]' : '');
         return `
           <option value="${st.deviceId}" ${st.deviceId === currentVal ? 'selected' : ''}>
-            ${st.name} (ID: ${st.deviceId})${isOffline ? ' [Offline]' : ''}
+            ${st.name} (ID: ${st.deviceId})${statusSuffix}
           </option>
         `;
       }).join('');
@@ -776,8 +792,9 @@ export class WeatherUI {
       elRiver.style.color = '#94a3b8';
     }
 
-    const isOnline = st.status === 'updated' || st.status === 'online' || (st.isOnline === true && st.status !== 'offline');
-    const isWaiting = st.status === 'waiting' || (st.isOnline === null && st.status !== 'offline');
+    const isOnline = st.status === 'updated' || st.status === 'online';
+    const isDelayed = st.status === 'delayed';
+    const isWaiting = st.status === 'waiting';
 
     // Atualizar Nome e Meta da Estação
     const stationNameText = document.getElementById('pf-station-name-text');
@@ -795,18 +812,20 @@ export class WeatherUI {
     const statusPill = document.getElementById('pf-status-pill');
     if (statusText) {
       if (isOnline) {
-        statusText.textContent = `Online • ${st.lastUpdateText || 'Atualizado em tempo real'}`;
+        statusText.textContent = `Online • ${st.lastUpdateText || 'Atualizado'}`;
       } else if (isWaiting) {
         statusText.textContent = 'Conectando à estação...';
+      } else if (isDelayed) {
+        statusText.textContent = `Comunicação atrasada • ${st.lastUpdateText || ''}`;
       } else {
-        statusText.textContent = 'Sem comunicação recente';
+        statusText.textContent = `Sem comunicação recente • ${st.lastUpdateText || ''}`;
       }
     }
     if (statusDot) {
-      statusDot.className = `status-dot ${isOnline ? 'green' : (isWaiting ? 'yellow' : 'red')}`;
+      statusDot.className = `status-dot ${isOnline ? 'green' : (isDelayed ? 'yellow' : (isWaiting ? 'yellow' : 'red'))}`;
     }
     if (statusPill) {
-      statusPill.className = `station-status-pill ${isOnline ? 'updated' : (isWaiting ? 'delayed' : 'error')}`;
+      statusPill.className = `station-status-pill ${isOnline ? 'updated' : (isDelayed ? 'delayed' : (isWaiting ? 'waiting' : 'error'))}`;
     }
 
     // Métricas (lê de st.metrics e das propriedades normalizadas)
@@ -1296,6 +1315,54 @@ export class WeatherUI {
         console.log('[WeatherUI] Status da conexão:', status);
       }
     );
+  }
+
+  /**
+   * Inicia o polling automático periódico das 16 estações Plugfield (intervalo estrito de 3 minutos = 180.000 ms)
+   * Garante no máximo um único timer ativo em qualquer circunstância.
+   */
+  startPlugfieldPolling() {
+    this.stopPlugfieldPolling();
+
+    this.plugfieldPollingTimer = setInterval(async () => {
+      // Se a aba estiver oculta (Page Visibility), suspende requisições em segundo plano
+      if (typeof document !== 'undefined' && document.hidden) {
+        return;
+      }
+      await this.loadPlugfieldData(false);
+    }, 180000);
+  }
+
+  /**
+   * Encerra com segurança o timer de polling das estações Plugfield
+   */
+  stopPlugfieldPolling() {
+    if (this.plugfieldPollingTimer) {
+      clearInterval(this.plugfieldPollingTimer);
+      this.plugfieldPollingTimer = null;
+    }
+  }
+
+  /**
+   * Gerencia visibilidade da aba para atualizar imediatamente no retorno respeitando o cache server-side
+   */
+  bindVisibilityChange() {
+    if (this.visibilityHandlerBound || typeof document === 'undefined') return;
+    this.visibilityHandlerBound = true;
+
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden) {
+        // Usuário retornou à aba:
+        // Se decorreram pelo menos 2 minutos desde a última busca, atualiza imediatamente
+        const now = Date.now();
+        const elapsed = now - (this.lastPlugfieldFetchTime || 0);
+        if (elapsed >= 120000) {
+          await this.loadPlugfieldData(false);
+        }
+        // Reinicia o intervalo de 3 minutos
+        this.startPlugfieldPolling();
+      }
+    });
   }
 
   async loadDefesaCivilRSData() {

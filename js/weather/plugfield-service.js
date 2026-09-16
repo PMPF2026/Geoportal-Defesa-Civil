@@ -25,17 +25,20 @@ export const PLUGFIELD_STATIONS_CONFIG = [
 export class PlugfieldService {
   static API_ENDPOINT = '/api/weather/plugfield';
   static CACHE_KEY_PREFIX = 'pf_real_v3_';
-  static CACHE_TTL_MS = 6 * 60 * 1000; // 6 minutos
+  static CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos = 120.000 ms
 
   /**
    * Obtém a lista e status das 16 estações Plugfield
+   * @param {boolean} [forceRefresh=false] Quando true, ignora o cache do localStorage e busca da API
    */
-  static async fetchAllStations() {
-    // 1. Tentar ler do cache local
-    const cached = this.getLocalCache('all_stations');
-    if (cached && cached.length > 0) {
-      this.updateMapLayerWithTelemetry(cached);
-      return cached;
+  static async fetchAllStations(forceRefresh = false) {
+    // 1. Tentar ler do cache local (ignorado se forceRefresh = true)
+    if (!forceRefresh) {
+      const cached = this.getLocalCache('all_stations');
+      if (cached && cached.length > 0) {
+        this.updateMapLayerWithTelemetry(cached);
+        return cached;
+      }
     }
 
     try {
@@ -52,7 +55,7 @@ export class PlugfieldService {
       const rawStations = resJson.data.stations;
       const normalizedStations = this.mergeAndNormalizeStations(rawStations);
 
-      // Salva no cache
+      // Salva no cache local
       this.setLocalCache('all_stations', normalizedStations);
       this.updateMapLayerWithTelemetry(normalizedStations);
       return normalizedStations;
@@ -74,9 +77,10 @@ export class PlugfieldService {
 
   /**
    * Alias de compatibilidade para fetchAllStations
+   * @param {boolean} [forceRefresh=false]
    */
-  static async getAllStations() {
-    return this.fetchAllStations();
+  static async getAllStations(forceRefresh = false) {
+    return this.fetchAllStations(forceRefresh);
   }
 
   /**
@@ -122,10 +126,10 @@ export class PlugfieldService {
         }
       }
 
-      // 2. Atualiza propriedades de telemetria em tempo real no GeoJSON da camada
+      // 2. Atualiza propriedades de telemetria no GeoJSON da camada
       const m = st.metrics || {};
       const isOnline = st.isOnline;
-      f.set('status_comunicacao', isOnline ? 'Online (em tempo real)' : (st.status === 'delayed' ? 'Comunicação atrasada' : (st.status === 'waiting' ? 'Conectando...' : 'Sem comunicação recente')));
+      f.set('status_comunicacao', isOnline ? 'Online' : (st.status === 'delayed' ? 'Comunicação atrasada' : (st.status === 'waiting' ? 'Conectando...' : 'Sem comunicação recente')));
       f.set('temperatura_atual', m.temperature != null ? `${m.temperature.toFixed(1).replace('.', ',')} °C` : '--');
       f.set('temperatura_min_max', (m.tempMin != null || m.tempMax != null)
         ? `${m.tempMin != null ? m.tempMin.toFixed(1).replace('.', ',') + ' °C' : '--'} / ${m.tempMax != null ? m.tempMax.toFixed(1).replace('.', ',') + ' °C' : '--'}`
@@ -341,7 +345,7 @@ export class PlugfieldService {
         ? parseFloat(dash.solr)
         : ((dash.radiation != null && !isNaN(parseFloat(dash.radiation))) ? parseFloat(dash.radiation) : null);
 
-      // Status temporal de comunicação baseado no timestamp oficial
+      // Status temporal de comunicação baseado no timestamp oficial (Limiares: <= 30 min: Online, <= 120 min: Atrasada, > 120 min: Sem comunicação recente)
       let isOnline = false;
       let status = 'offline';
       let formattedDate = 'Sem comunicação recente';
@@ -361,29 +365,27 @@ export class PlugfieldService {
           if (!isNaN(d.getTime())) {
             parsedTimestamp = d.getTime();
             const diffMinutes = (Date.now() - d.getTime()) / (1000 * 60);
-            if (diffMinutes <= 360) {
+
+            // Limiares estritos de comunicação telemétrica:
+            // - Até 30 minutos: Online (verde)
+            // - Entre 30 minutos e 2 horas (120 min): Atrasada (amarelo)
+            // - Acima de 2 horas: Sem comunicação recente (vermelho/cinza)
+            if (diffMinutes <= 30) {
               isOnline = true;
               status = 'updated';
-            } else {
+            } else if (diffMinutes <= 120) {
               isOnline = false;
               status = 'delayed';
+            } else {
+              isOnline = false;
+              status = 'offline';
             }
+
             const pad = (n) => String(n).padStart(2, '0');
             formattedDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
           }
         } catch {
           // ignore
-        }
-      }
-
-      // Se possui qualquer telemetria válida registrada, confirma status de funcionamento
-      if (tempAtual !== null || rainDay !== null || windSpd !== null || humi !== null) {
-        isOnline = true;
-        if (status === 'offline') {
-          status = 'updated';
-          if (formattedDate === 'Sem comunicação recente') {
-            formattedDate = 'Atualizado em tempo real';
-          }
         }
       }
 
@@ -424,10 +426,9 @@ export class PlugfieldService {
         isOnline: isOnline,
         lat: officialLat,
         lon: officialLon,
-        altitude: officialAlt,
-        lastUpdate: parsedTimestamp || (isOnline ? Date.now() : null),
+        lastUpdate: parsedTimestamp || null,
         lastUpdateText: formattedDate,
-        timestamp: parsedTimestamp || (isOnline ? Date.now() : null),
+        timestamp: parsedTimestamp || null,
         metrics: metrics,
         hasRiverSensor: hasRiverSensor,
         riverLevel: riverLevel,
