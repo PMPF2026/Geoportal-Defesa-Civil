@@ -18,7 +18,7 @@ export class SpatialAnalysisTool {
       source: this.analysisSource,
       zIndex: 850,
       style: new ol.style.Style({
-        stroke: new ol.style.Stroke({ color: '#f59e0b', width: 2.8 }),
+        stroke: new ol.style.Stroke({ color: 'rgba(245, 158, 11, 0.25)', width: 0.8 }),
         fill: new ol.style.Fill({ color: 'rgba(245, 158, 11, 0.32)' })
       })
     });
@@ -82,9 +82,7 @@ export class SpatialAnalysisTool {
       btn.addEventListener('click', () => {
         const radius = btn.getAttribute('data-radius');
         const radiusInput = document.getElementById('analysis-buffer-radius');
-        const layerSelect = document.getElementById('analysis-buffer-layer');
         if (radiusInput) radiusInput.value = radius;
-        if (layerSelect) layerSelect.value = 'malha_hidrica';
         this.executeBufferAnalysis();
       });
     });
@@ -321,46 +319,24 @@ export class SpatialAnalysisTool {
             }
           }
 
-          // 6 & 7. Dissolver / unificar buffers sobrepostos para formar uma faixa contínua única
-          let dissolvedFc = null;
-          if (bufferedPolygons.length === 1) {
-            dissolvedFc = turf.featureCollection(bufferedPolygons);
-          } else if (bufferedPolygons.length > 1) {
+          // 6. Converter diretamente cada polígono de buffer para OpenLayers e adicionar ao mapa
+          // (Sem dissolve ou union na thread principal, preservando 100% da fluidez e todas as feições)
+          const olBufferedFeatures = [];
+          for (let i = 0; i < bufferedPolygons.length; i++) {
             try {
-              dissolvedFc = turf.dissolve(turf.featureCollection(bufferedPolygons));
-            } catch (dissolveErr) {
-              console.warn('[SpatialAnalysis] Aviso em turf.dissolve, aplicando união iterativa:', dissolveErr);
-              let unified = bufferedPolygons[0];
-              for (let i = 1; i < bufferedPolygons.length; i++) {
-                try {
-                  const u = turf.union(unified, bufferedPolygons[i]);
-                  if (u) unified = u;
-                } catch (uErr) {
-                  console.warn('[SpatialAnalysis] Erro ao unir polígonos de buffer:', uErr);
-                }
-              }
-              dissolvedFc = turf.featureCollection([unified]);
+              const olFeat = geoJsonFormat.readFeature(bufferedPolygons[i], {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+              });
+              olBufferedFeatures.push(olFeat);
+              totalBufferArea += ol.sphere.getArea(olFeat.getGeometry());
+            } catch (readErr) {
+              console.warn('[SpatialAnalysis] Erro ao ler feição de buffer:', readErr);
             }
           }
 
-          // 8 & 9. Converter para OpenLayers e calcular área geodésica exata sem sobreposição
-          if (dissolvedFc && dissolvedFc.features && dissolvedFc.features.length > 0) {
-            const olBufferedFeatures = [];
-            for (const feat of dissolvedFc.features) {
-              try {
-                const olFeat = geoJsonFormat.readFeature(feat, {
-                  dataProjection: 'EPSG:4326',
-                  featureProjection: 'EPSG:3857'
-                });
-                olBufferedFeatures.push(olFeat);
-                totalBufferArea += ol.sphere.getArea(olFeat.getGeometry());
-              } catch (readErr) {
-                console.warn('[SpatialAnalysis] Erro ao ler feição de buffer dissolvido:', readErr);
-              }
-            }
-            if (olBufferedFeatures.length > 0) {
-              this.analysisSource.addFeatures(olBufferedFeatures);
-            }
+          if (olBufferedFeatures.length > 0) {
+            this.analysisSource.addFeatures(olBufferedFeatures);
           }
         } else {
           // --- TRATAMENTO PRESERVADO PARA CAMADAS NÃO-LINEARES (PONTOS E POLÍGONOS) ---
