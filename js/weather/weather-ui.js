@@ -16,6 +16,7 @@ export class WeatherUI {
     this.cptecData = null;
     this.alignedCptecForecasts = [];
     this.plugfieldStations = [];
+    this.embrapaData = null;
     this.selectedPlugfieldId = 4283; // Transbrasiliana por padrão
     this.selectedChartVar = 'combined'; // 'combined' | 'chuva' | 'rio' | 'temp' | 'umid' | 'vento' | 'pressao' | 'radiacao'
     this.selectedChartPeriod = 'h168'; // 'min30' | 'h1' | 'h24' | 'h48' | 'h72' | 'h120' | 'h168'
@@ -47,6 +48,12 @@ export class WeatherUI {
     const cachedCptec = WeatherService.getCachedForecast(WEATHER_CONFIG.CPTEC.CITY_ID);
     if (cachedCptec) {
       this.updateCptecUI(cachedCptec);
+    }
+
+    const cachedEmbrapa = WeatherService.getCachedEmbrapaDailyData();
+    if (cachedEmbrapa) {
+      this.embrapaData = cachedEmbrapa;
+      this.updateEmbrapaUI(cachedEmbrapa);
     }
 
     const cachedPf = PlugfieldService.getCachedStations();
@@ -95,6 +102,10 @@ export class WeatherUI {
             <button class="weather-tab-btn" data-subtab="plugfield" id="btn-subtab-plugfield">
               <i class="lucide-radio-tower"></i>
               <span>Rede Plugfield (16 Estações)</span>
+            </button>
+            <button class="weather-tab-btn" data-subtab="embrapa" id="btn-subtab-embrapa">
+              <i class="lucide-sprout"></i>
+              <span>Embrapa Trigo</span>
             </button>
           </div>
         </div>
@@ -548,6 +559,190 @@ export class WeatherUI {
           </div>
         </div>
 
+        <!-- ABA 4: ESTAÇÃO METEOROLÓGICA EMBRAPA TRIGO -->
+        <div id="weather-subtab-content-embrapa" class="weather-tab-pane" style="display: none;">
+          <!-- Barra de Informações da Estação -->
+          <div class="weather-station-bar">
+            <div class="weather-station-info">
+              <div class="weather-station-name" id="embrapa-station-display-name">
+                <i class="lucide-sprout" style="color: #22c55e;"></i>
+                <span>Estação Meteorológica Embrapa Trigo</span>
+              </div>
+              <div class="weather-station-meta" id="embrapa-station-display-meta">
+                Embrapa Trigo — Laboratório de Agrometeorologia &bull; Passo Fundo/RS
+              </div>
+            </div>
+            <div id="embrapa-status-badge-container">
+              <span class="station-status-pill updated" id="embrapa-status-pill" style="background: rgba(21, 128, 61, 0.2); border-color: #15803d; color: #4ade80;">
+                <span class="status-dot green"></span>
+                <span>Dados meteorológicos diários — Embrapa Trigo</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Destaque: Resumo Diário Oficial -->
+          <div class="river-featured-card" style="margin-top: 10px; border-left-color: #16a34a;" id="embrapa-featured-card">
+            <div class="river-info-col">
+              <div class="river-title">
+                <i class="lucide-calendar-check" style="color: #4ade80;"></i>
+                <span id="embrapa-featured-date-label">FECHAMENTO AGROMETEOROLÓGICO DIÁRIO</span>
+              </div>
+              <div class="river-level-value" id="embrapa-featured-temp-value" style="font-size: 15px; color: #f8fafc; font-weight: 500;">
+                Carregando dados da estação...
+              </div>
+            </div>
+            <div class="river-trend-col" id="embrapa-featured-badge-container">
+              <span class="trend-badge stable" style="background: rgba(34, 197, 94, 0.15); border-color: #22c55e; color: #86efac;">
+                <i class="lucide-award"></i> Fonte Oficial
+              </span>
+            </div>
+          </div>
+
+          <!-- Grade de Acumulados de Chuva Embrapa -->
+          <div class="rainfall-periods-container" style="margin-top: 10px;">
+            <div class="rainfall-header">
+              <i class="lucide-cloud-rain" style="color: #38bdf8;"></i>
+              <span>PRECIPITAÇÃO PLUVIOMÉTRICA — EMBRAPA TRIGO</span>
+            </div>
+            <div class="rainfall-grid">
+              <div class="rainfall-pill highlight-24h">
+                <span class="pill-period">DIA RECENTE</span>
+                <span class="pill-value" id="embrapa-rain-day">--</span>
+              </div>
+              <div class="rainfall-pill">
+                <span class="pill-period">ACUMULADO MÊS</span>
+                <span class="pill-value" id="embrapa-rain-month">--</span>
+              </div>
+              <div class="rainfall-pill">
+                <span class="pill-period">DIAS COM CHUVA</span>
+                <span class="pill-value" id="embrapa-rain-days-count">--</span>
+              </div>
+              <div class="rainfall-pill">
+                <span class="pill-period">MÉDIA DIÁRIA</span>
+                <span class="pill-value" id="embrapa-rain-avg">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Condições Agrometeorológicas do Dia -->
+          <div class="weather-section-title" style="margin-top: 14px;">
+            <i class="lucide-sun-medium" style="color: #22c55e;"></i>
+            <span>OBSERVAÇÕES DO DIA DA ESTAÇÃO</span>
+          </div>
+
+          <div class="weather-metrics-grid" id="embrapa-metrics-grid" style="margin-top: 8px;">
+            <!-- Temperatura Média -->
+            <div class="weather-metric-card" style="border-left: 3px solid #f97316;">
+              <div class="weather-metric-header">
+                <i class="lucide-thermometer" style="color: #f97316;"></i>
+                <span>TEMPERATURA</span>
+              </div>
+              <div class="weather-metric-value" id="embrapa-temp-val">-- °C</div>
+              <div class="weather-metric-sub" id="embrapa-temp-minmax">Mín: -- °C | Máx: -- °C</div>
+            </div>
+
+            <!-- Umidade Relativa -->
+            <div class="weather-metric-card" style="border-left: 3px solid #38bdf8;">
+              <div class="weather-metric-header">
+                <i class="lucide-droplets" style="color: #38bdf8;"></i>
+                <span>UMIDADE RELATIVA</span>
+              </div>
+              <div class="weather-metric-value" id="embrapa-umid-val">-- %</div>
+              <div class="weather-metric-sub" id="embrapa-umid-sub">Média Diária</div>
+            </div>
+
+            <!-- Vento Médio -->
+            <div class="weather-metric-card" style="border-left: 3px solid #a855f7;">
+              <div class="weather-metric-header">
+                <i class="lucide-wind" style="color: #c084fc;"></i>
+                <span>VENTO MÉDIO</span>
+              </div>
+              <div class="weather-metric-value" id="embrapa-vento-val">-- km/h</div>
+              <div class="weather-metric-sub" id="embrapa-vento-sub">Direção: --</div>
+            </div>
+
+            <!-- Rajada Máxima -->
+            <div class="weather-metric-card" style="border-left: 3px solid #ec4899;">
+              <div class="weather-metric-header">
+                <i class="lucide-zap" style="color: #f472b6;"></i>
+                <span>RAJADA MÁXIMA</span>
+              </div>
+              <div class="weather-metric-value" id="embrapa-rajada-val">-- km/h</div>
+              <div class="weather-metric-sub" id="embrapa-rajada-sub">Direção: --</div>
+            </div>
+
+            <!-- Insolação -->
+            <div class="weather-metric-card" style="border-left: 3px solid #eab308;">
+              <div class="weather-metric-header">
+                <i class="lucide-sun" style="color: #facc15;"></i>
+                <span>INSOLAÇÃO</span>
+              </div>
+              <div class="weather-metric-value" id="embrapa-insol-val">-- h</div>
+              <div class="weather-metric-sub">Heliógrafo Oficial</div>
+            </div>
+
+            <!-- Temperatura do Solo -->
+            <div class="weather-metric-card" style="border-left: 3px solid #10b981;">
+              <div class="weather-metric-header">
+                <i class="lucide-layers" style="color: #34d399;"></i>
+                <span>SOLO (5cm / 10cm)</span>
+              </div>
+              <div class="weather-metric-value" id="embrapa-solo-val">-- °C</div>
+              <div class="weather-metric-sub" id="embrapa-solo-sub">5 cm: -- | 10 cm: --</div>
+            </div>
+          </div>
+
+          <!-- Localização da Estação Embrapa -->
+          <div class="weather-location-box" style="margin-top: 10px;">
+            <div class="weather-location-info">
+              <div style="font-size: 12px; font-weight: 700; color: #ffffff;">
+                <i class="lucide-map-pin" style="color: #22c55e;"></i>
+                <span>Estação Meteorológica Embrapa Trigo</span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+                Coordenadas: Lat -28.2628° | Lon -52.4067° &bull; Altitude: 684 m
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                Endereço: Rodovia BR-285, Km 294, Passo Fundo/RS &bull; Código OMM: 83914
+              </div>
+            </div>
+            <button class="weather-focus-btn" id="btn-focus-embrapa-map" title="Centralizar e visualizar estação no mapa">
+              <i class="lucide-crosshair"></i>
+              <span>Ver no mapa</span>
+            </button>
+          </div>
+
+          <!-- Tabela com Histórico Diário Recente -->
+          <div class="weather-chart-box" style="margin-top: 10px;">
+            <div class="weather-chart-header-row" style="margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 700; color: #ffffff;">
+                <i class="lucide-table"></i> Histórico Mensal de Observações Diárias
+              </span>
+              <span id="embrapa-month-label" style="font-size: 11px; color: #94a3b8;">Setembro / 2026</span>
+            </div>
+            <div style="overflow-x: auto; max-height: 260px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+              <table style="width: 100%; border-collapse: collapse; font-size: 11px; color: #e2e8f0; text-align: center;" id="embrapa-history-table">
+                <thead style="background: rgba(15, 23, 42, 0.9); position: sticky; top: 0; z-index: 1;">
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.12); color: #94a3b8;">
+                    <th style="padding: 6px 8px;">Dia</th>
+                    <th style="padding: 6px 8px;">T. Média</th>
+                    <th style="padding: 6px 8px;">Mín / Máx</th>
+                    <th style="padding: 6px 8px;">Chuva (mm)</th>
+                    <th style="padding: 6px 8px;">UR (%)</th>
+                    <th style="padding: 6px 8px;">Vento (km/h)</th>
+                    <th style="padding: 6px 8px;">Insolação</th>
+                  </tr>
+                </thead>
+                <tbody id="embrapa-history-tbody">
+                  <tr>
+                    <td colspan="7" style="padding: 16px; color: #64748b;">Carregando histórico...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Status & Fontes Oficiais -->
         <div class="weather-footer-sources">
           <div class="weather-status-bar">
@@ -559,7 +754,8 @@ export class WeatherUI {
             &bull; <a href="${WEATHER_CONFIG.DEFESA_CIVIL_RS.OFFICIAL_PAGE_URL}" target="_blank" rel="noopener noreferrer">Estação DCRS-00016 — Defesa Civil RS (Rede Hidrometeorológica)</a><br>
             &bull; <a href="${WEATHER_CONFIG.DEFESA_CIVIL_RS.API_DOC_URL}" target="_blank" rel="noopener noreferrer">Documentação Oficial da API GraphQL da Defesa Civil RS</a><br>
             &bull; <a href="https://www.cptec.inpe.br" target="_blank" rel="noopener noreferrer">CPTEC/INPE — Centro de Previsão de Tempo e Estudos Climáticos</a><br>
-            &bull; <a href="https://wdg.plugfield.com.br/doc-api/index.html" target="_blank" rel="noopener noreferrer">Rede Meteorológica Plugfield (16 Estações Oficiais de Passo Fundo)</a>
+            &bull; <a href="https://wdg.plugfield.com.br/doc-api/index.html" target="_blank" rel="noopener noreferrer">Rede Meteorológica Plugfield (16 Estações Oficiais de Passo Fundo)</a><br>
+            &bull; <a href="https://www.cnpt.embrapa.br/pesquisa/agromet/app/principal/relatorioMet.php" target="_blank" rel="noopener noreferrer">Embrapa Trigo — Laboratório de Agrometeorologia (Estação Oficial de Passo Fundo)</a>
           </div>
         </div>
       </div>
@@ -575,9 +771,11 @@ export class WeatherUI {
     const btnDrs = document.getElementById('btn-subtab-drs');
     const btnCptec = document.getElementById('btn-subtab-cptec');
     const btnPlugfield = document.getElementById('btn-subtab-plugfield');
+    const btnEmbrapa = document.getElementById('btn-subtab-embrapa');
     const paneDrs = document.getElementById('weather-subtab-content-drs');
     const paneCptec = document.getElementById('weather-subtab-content-cptec');
     const panePlugfield = document.getElementById('weather-subtab-content-plugfield');
+    const paneEmbrapa = document.getElementById('weather-subtab-content-embrapa');
     const sourceBadge = document.getElementById('weather-source-badge');
 
     if (btnDrs && btnCptec && btnPlugfield) {
@@ -591,6 +789,20 @@ export class WeatherUI {
 
       btnPlugfield.addEventListener('click', () => {
         this.switchSubTab('plugfield');
+      });
+    }
+
+    if (btnEmbrapa) {
+      btnEmbrapa.addEventListener('click', () => {
+        this.switchSubTab('embrapa');
+      });
+    }
+
+    // Botão "Ver no mapa" Embrapa
+    const btnFocusEmbrapa = document.getElementById('btn-focus-embrapa-map');
+    if (btnFocusEmbrapa) {
+      btnFocusEmbrapa.addEventListener('click', () => {
+        this.focusEmbrapaStationOnMap();
       });
     }
 
@@ -648,9 +860,11 @@ export class WeatherUI {
     const btnDrs = document.getElementById('btn-subtab-drs');
     const btnCptec = document.getElementById('btn-subtab-cptec');
     const btnPlugfield = document.getElementById('btn-subtab-plugfield');
+    const btnEmbrapa = document.getElementById('btn-subtab-embrapa');
     const paneDrs = document.getElementById('weather-subtab-content-drs');
     const paneCptec = document.getElementById('weather-subtab-content-cptec');
     const panePlugfield = document.getElementById('weather-subtab-content-plugfield');
+    const paneEmbrapa = document.getElementById('weather-subtab-content-embrapa');
     const sourceBadge = document.getElementById('weather-source-badge');
 
     if (!btnDrs || !btnCptec || !btnPlugfield) return;
@@ -658,9 +872,12 @@ export class WeatherUI {
     btnDrs.classList.remove('active');
     btnCptec.classList.remove('active');
     btnPlugfield.classList.remove('active');
+    if (btnEmbrapa) btnEmbrapa.classList.remove('active');
+
     if (paneDrs) paneDrs.style.display = 'none';
     if (paneCptec) paneCptec.style.display = 'none';
     if (panePlugfield) panePlugfield.style.display = 'none';
+    if (paneEmbrapa) paneEmbrapa.style.display = 'none';
 
     if (subtab === 'drs') {
       btnDrs.classList.add('active');
@@ -684,6 +901,18 @@ export class WeatherUI {
         sourceBadge.style.color = '#10b981';
       }
       this.renderPlugfieldUI();
+    } else if (subtab === 'embrapa') {
+      if (btnEmbrapa) btnEmbrapa.classList.add('active');
+      if (paneEmbrapa) paneEmbrapa.style.display = 'block';
+      if (sourceBadge) {
+        sourceBadge.textContent = 'Fonte: Embrapa Trigo — Laboratório de Agrometeorologia';
+        sourceBadge.style.color = '#4ade80';
+      }
+      if (this.embrapaData) {
+        this.updateEmbrapaUI(this.embrapaData);
+      } else {
+        this.loadEmbrapaData();
+      }
     }
 
     if (window.lucide) {
@@ -707,12 +936,33 @@ export class WeatherUI {
     }
   }
 
+  focusEmbrapaStationOnMap() {
+    const lat = -28.262778;
+    const lon = -52.406667;
+    if (window.webGis && window.webGis.mapEngine) {
+      const olMap = window.webGis.mapEngine.getOlMap();
+      if (olMap) {
+        const view = olMap.getView();
+        view.animate({
+          center: window.ol.proj.fromLonLat([lon, lat]),
+          zoom: 16,
+          duration: 800
+        });
+
+        if (window.webGis.layerManager) {
+          window.webGis.layerManager.setLayerVisibility('estacao_embrapa_trigo', true);
+        }
+      }
+    }
+  }
+
   async refreshAllData(forceRefresh = false) {
     this.isLoading = true;
     await Promise.all([
       this.loadDefesaCivilRSData(),
       this.loadCptecData(),
-      this.loadPlugfieldData(forceRefresh)
+      this.loadPlugfieldData(forceRefresh),
+      this.loadEmbrapaData(forceRefresh)
     ]);
     this.isLoading = false;
   }
@@ -2101,11 +2351,152 @@ export class WeatherUI {
     }
   }
 
+  async loadEmbrapaData(forceRefresh = false) {
+    try {
+      if (forceRefresh) {
+        try { localStorage.removeItem('embrapa_trigo_daily_v1'); } catch (e) {}
+      }
+      const data = await WeatherService.fetchEmbrapaDailyData();
+      if (data && data.success) {
+        this.embrapaData = data;
+        this.updateEmbrapaUI(data);
+      }
+    } catch (err) {
+      console.warn('[WeatherUI] Erro ao carregar dados Embrapa Trigo:', err);
+    }
+  }
+
+  updateEmbrapaUI(raw) {
+    if (!raw) return;
+    const payload = raw.data || raw;
+    if (!payload) return;
+
+    const latest = payload.latestRecord || payload.latest || payload.lastConsolidatedRecord;
+    const days = payload.dailyRecords || payload.dailyData || [];
+    const monthlyRain = payload.monthlyRainAccum;
+
+    // Título / data de fechamento
+    const featuredTemp = document.getElementById('embrapa-featured-temp-value');
+    if (featuredTemp && latest) {
+      const tMed = (latest.tempAvg != null) ? `${latest.tempAvg.toFixed(1).replace('.', ',')} °C` : '--';
+      const tMin = (latest.tempMin != null) ? `${latest.tempMin.toFixed(1).replace('.', ',')} °C` : '--';
+      const tMax = (latest.tempMax != null) ? `${latest.tempMax.toFixed(1).replace('.', ',')} °C` : '--';
+      const dateRef = latest.dateFormatted || latest.day || '';
+      featuredTemp.innerHTML = `
+        <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 19px; font-weight: 800; color: #4ade80;">${tMed}</span>
+          <span style="font-size: 11.5px; color: #94a3b8;">(Mín: <strong style="color:#67e8f9;">${tMin}</strong> | Máx: <strong style="color:#fca5a5;">${tMax}</strong>)</span>
+          <span style="font-size: 11px; color: #64748b; margin-left: auto;">Ref: Dia ${dateRef}</span>
+        </div>
+      `;
+    }
+
+    // Acumulados de Chuva
+    const elRainDay = document.getElementById('embrapa-rain-day');
+    if (elRainDay && latest) {
+      elRainDay.textContent = (latest.rain != null) ? `${latest.rain.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
+    }
+    const elRainMonth = document.getElementById('embrapa-rain-month');
+    if (elRainMonth) {
+      elRainMonth.textContent = (monthlyRain != null) ? `${monthlyRain.toFixed(1).replace('.', ',')} mm` : '--';
+    }
+    const elRainDays = document.getElementById('embrapa-rain-days-count');
+    if (elRainDays && Array.isArray(days)) {
+      const rainyCount = days.filter(d => d.rain != null && d.rain > 0).length;
+      elRainDays.textContent = `${rainyCount} dias`;
+    }
+    const elRainAvg = document.getElementById('embrapa-rain-avg');
+    if (elRainAvg && Array.isArray(days) && days.length > 0 && monthlyRain != null) {
+      const avg = monthlyRain / days.length;
+      elRainAvg.textContent = `${avg.toFixed(1).replace('.', ',')} mm`;
+    }
+
+    // Cards de métricas
+    if (latest) {
+      const elTemp = document.getElementById('embrapa-temp-val');
+      const elTempMinMax = document.getElementById('embrapa-temp-minmax');
+      if (elTemp) elTemp.textContent = (latest.tempAvg != null) ? `${latest.tempAvg.toFixed(1).replace('.', ',')} °C` : '--';
+      if (elTempMinMax) {
+        const mn = (latest.tempMin != null) ? `${latest.tempMin.toFixed(1).replace('.', ',')} °C` : '--';
+        const mx = (latest.tempMax != null) ? `${latest.tempMax.toFixed(1).replace('.', ',')} °C` : '--';
+        elTempMinMax.textContent = `Mín: ${mn} | Máx: ${mx}`;
+      }
+
+      const elUmid = document.getElementById('embrapa-umid-val');
+      if (elUmid) elUmid.textContent = (latest.humidity != null) ? `${latest.humidity.toFixed(0)} %` : '--';
+
+      const elVento = document.getElementById('embrapa-vento-val');
+      const elVentoSub = document.getElementById('embrapa-vento-sub');
+      if (elVento) elVento.textContent = (latest.windSpeed != null) ? `${latest.windSpeed.toFixed(1).replace('.', ',')} km/h` : '--';
+      if (elVentoSub) elVentoSub.textContent = `Direção: ${latest.windDirectionText || '--'}`;
+
+      const elRajada = document.getElementById('embrapa-rajada-val');
+      const elRajadaSub = document.getElementById('embrapa-rajada-sub');
+      if (elRajada) elRajada.textContent = (latest.windGust != null) ? `${latest.windGust.toFixed(1).replace('.', ',')} km/h` : '--';
+      if (elRajadaSub) elRajadaSub.textContent = `Direção: ${latest.windGustDirection || '--'}`;
+
+      const elInsol = document.getElementById('embrapa-insol-val');
+      if (elInsol) elInsol.textContent = (latest.sunshineHours != null) ? `${latest.sunshineHours.toFixed(1).replace('.', ',')} h` : '--';
+
+      const elSolo = document.getElementById('embrapa-solo-val');
+      const elSoloSub = document.getElementById('embrapa-solo-sub');
+      if (elSolo) elSolo.textContent = '--';
+      if (elSoloSub) elSoloSub.textContent = '5 cm: -- | 10 cm: --';
+    }
+
+    // Tabela de histórico mensal
+    const tbody = document.getElementById('embrapa-history-tbody');
+    const monthLabel = document.getElementById('embrapa-month-label');
+    if (monthLabel) {
+      if (latest && latest.dateFormatted) {
+        const parts = latest.dateFormatted.split('/');
+        if (parts.length === 3) {
+          const mNum = parseInt(parts[1], 10);
+          const yNum = parts[2];
+          const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+          monthLabel.textContent = `${monthNames[mNum] || mNum} / ${yNum}`;
+        }
+      }
+    }
+
+    if (tbody && Array.isArray(days) && days.length > 0) {
+      // Exibir dias em ordem decrescente (mais recente primeiro)
+      const reversed = [...days].reverse();
+      tbody.innerHTML = reversed.map(d => {
+        const tMed = (d.tempAvg != null) ? `${d.tempAvg.toFixed(1).replace('.', ',')} °C` : '--';
+        const tMin = (d.tempMin != null) ? d.tempMin.toFixed(1).replace('.', ',') : '--';
+        const tMax = (d.tempMax != null) ? d.tempMax.toFixed(1).replace('.', ',') : '--';
+        const ch = (d.rain != null) ? `${d.rain.toFixed(1).replace('.', ',')}` : '0,0';
+        const chStyle = (d.rain && d.rain > 0) ? 'font-weight: 700; color: #38bdf8;' : 'color: #94a3b8;';
+        const ur = (d.humidity != null) ? `${d.humidity.toFixed(0)}%` : '--';
+        const v = (d.windSpeed != null) ? `${d.windSpeed.toFixed(1).replace('.', ',')}` : '--';
+        const ins = (d.sunshineHours != null) ? `${d.sunshineHours.toFixed(1).replace('.', ',')}h` : '--';
+        const dayLabel = d.day ? String(d.day).padStart(2, '0') : '--';
+
+        return `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+            <td style="padding: 5px 8px; font-weight: 700; color: #f8fafc;">${dayLabel}</td>
+            <td style="padding: 5px 8px;">${tMed}</td>
+            <td style="padding: 5px 8px; color: #94a3b8;"><span style="color:#67e8f9;">${tMin}</span> / <span style="color:#fca5a5;">${tMax}</span></td>
+            <td style="padding: 5px 8px; ${chStyle}">${ch}</td>
+            <td style="padding: 5px 8px;">${ur}</td>
+            <td style="padding: 5px 8px;">${v}</td>
+            <td style="padding: 5px 8px; color: #facc15;">${ins}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
   openPanel(subtab = 'plugfield', stationId = null) {
     if (window.sidebar && typeof window.sidebar.openTab === 'function') {
       window.sidebar.openTab('weather');
     }
-    const tabMap = { plugfield: 'plugfield', defesacivil: 'drs', drs: 'drs', cptec: 'cptec' };
+    const tabMap = { plugfield: 'plugfield', defesacivil: 'drs', drs: 'drs', cptec: 'cptec', embrapa: 'embrapa' };
     const targetSubtab = tabMap[subtab] || 'plugfield';
     this.switchSubTab(targetSubtab);
     if (stationId && targetSubtab === 'plugfield') {
