@@ -496,46 +496,6 @@ export class LayerManager {
       };
     }
 
-    // Estação Meteorológica Embrapa Trigo (Laboratório de Agrometeorologia)
-    if (config.id === 'estacao_embrapa_trigo' || s.iconType === 'estacao_embrapa') {
-      const svgEmbrapa = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
-          <circle cx="18" cy="18" r="17" fill="#15803d" stroke="#ffffff" stroke-width="2.5" />
-          <circle cx="18" cy="18" r="14" fill="#166534" />
-          <!-- Símbolo Agrometeorológico / Trigo & Estação Embrapa -->
-          <path d="M18 7 L18 29" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M18 11 C14 9, 11 12, 13 16 C15 18, 18 16, 18 16" fill="#facc15" stroke="#ffffff" stroke-width="0.8"/>
-          <path d="M18 11 C22 9, 25 12, 23 16 C21 18, 18 16, 18 16" fill="#facc15" stroke="#ffffff" stroke-width="0.8"/>
-          <path d="M18 17 C13 16, 11 19, 13 23 C15 25, 18 23, 18 23" fill="#facc15" stroke="#ffffff" stroke-width="0.8"/>
-          <path d="M18 17 C23 16, 25 19, 23 23 C21 25, 18 23, 18 23" fill="#facc15" stroke="#ffffff" stroke-width="0.8"/>
-          <circle cx="18" cy="7" r="2.4" fill="#fde047" stroke="#ffffff" stroke-width="0.8"/>
-          <path d="M13 29 L23 29" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
-        </svg>
-      `);
-
-      return (feature, resolution) => {
-        const showText = resolution < 45;
-        const name = feature.get('nome_estacao') || 'Embrapa Trigo — Passo Fundo';
-
-        return new ol.style.Style({
-          image: new ol.style.Icon({
-            src: svgEmbrapa,
-            anchor: [0.5, 0.5],
-            scale: 0.85
-          }),
-          text: showText ? new ol.style.Text({
-            text: name,
-            offsetY: 22,
-            font: 'bold 11px "Inter", sans-serif',
-            fill: new ol.style.Fill({ color: '#ffffff' }),
-            stroke: new ol.style.Stroke({ color: '#166534', width: 3.0 }),
-            backgroundFill: new ol.style.Fill({ color: 'rgba(22, 101, 52, 0.92)' }),
-            padding: [2, 6, 2, 6]
-          }) : null
-        });
-      };
-    }
-
     // Estações Meteorológicas Plugfield (16 Estações)
     if (config.id === 'estacoes_plugfield' || s.iconType === 'estacao_plugfield') {
       const svgPlugfield = 'data:image/svg+xml;utf8,' + encodeURIComponent(`

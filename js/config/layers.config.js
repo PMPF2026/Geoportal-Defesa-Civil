@@ -356,54 +356,6 @@ export const LAYERS_CONFIG = [
     searchFields: ['estacao_cod', 'nome_estacao']
   },
   {
-    id: 'estacao_embrapa_trigo',
-    name: 'Estação Meteorológica Embrapa Trigo',
-    fileName: 'Estacao_Embrapa_Trigo.geojson',
-    source: 'Embrapa Trigo — Laboratório de Agrometeorologia',
-    refDate: 'Dados Diários',
-    group: 'hidrografia',
-    geometryType: 'Point',
-    defaultVisible: true,
-    defaultOpacity: 1.0,
-    zIndex: 95,
-    isCore: true,
-    isLazy: false,
-    style: {
-      isCustomIcon: true,
-      iconType: 'estacao_embrapa',
-      pointColor: '#15803d',
-      pointRadius: 10.0,
-      strokeColor: '#ffffff',
-      strokeWidth: 2.5,
-      previewColor: '#15803d'
-    },
-    popupConfig: {
-      titleField: 'nome_estacao',
-      defaultTitle: 'ESTAÇÃO METEOROLÓGICA EMBRAPA TRIGO',
-      titlePrefix: '',
-      fields: [
-        { key: 'estacao_cod', label: 'Código da Estação', defaultValue: '83914' },
-        { key: 'nome_estacao', label: 'Nome da Estação', defaultValue: 'Estação Meteorológica Embrapa Trigo' },
-        { key: 'rede', label: 'Fonte Oficial', defaultValue: 'Embrapa Trigo — Laboratório de Agrometeorologia' },
-        { key: 'tipo_dado', label: 'Tipo de Dado', defaultValue: 'Dados meteorológicos diários' },
-        { key: 'temperatura_atual', label: 'Temperatura Média', defaultValue: '--' },
-        { key: 'temperatura_min_max', label: 'Mínima / Máxima', defaultValue: '--' },
-        { key: 'chuva_hoje', label: 'Precipitação do Dia', defaultValue: '--' },
-        { key: 'chuva_mes', label: 'Acumulado no Mês', defaultValue: '--' },
-        { key: 'umidade_atual', label: 'Umidade Relativa', defaultValue: '--' },
-        { key: 'vento_atual', label: 'Vento Médio', defaultValue: '--' },
-        { key: 'rajada_maxima', label: 'Rajada Máxima', defaultValue: '--' },
-        { key: 'insolacao', label: 'Insolação (Horas)', defaultValue: '--' },
-        { key: 'localizacao', label: 'Localização', defaultValue: 'BR-285, Km 294, Passo Fundo/RS' },
-        { key: 'municipio', label: 'Município', defaultValue: 'Passo Fundo / RS' },
-        { key: 'altitude_label', label: 'Altitude Oficial', defaultValue: '684 m' },
-        { key: 'ultima_atualizacao', label: 'Data da Observação', defaultValue: 'Dados meteorológicos diários — Embrapa Trigo' }
-      ]
-    },
-    searchable: true,
-    searchFields: ['estacao_cod', 'nome_estacao']
-  },
-  {
     id: 'estacoes_plugfield',
     name: 'Rede Meteorológica Plugfield (16 Estações)',
     fileName: 'Estacoes_Plugfield.geojson',

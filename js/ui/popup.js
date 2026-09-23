@@ -169,35 +169,6 @@ export class PopupUI {
       }
     }
 
-    // 4.1.1. Se for Estação Meteorológica Embrapa Trigo, injeta dados meteorológicos diários
-    if (layerConfig.id === 'estacao_embrapa_trigo' || props['estacao_cod'] === '83914') {
-      const embrapaRes = (typeof WeatherService !== 'undefined')
-        ? WeatherService.getCachedEmbrapaDailyData()
-        : null;
-
-      const payload = embrapaRes?.data || embrapaRes;
-      if (payload && (embrapaRes?.success || payload?.success !== false)) {
-        const latest = payload.latestRecord || payload.latest || payload.lastConsolidatedRecord;
-        if (latest) {
-          props['tipo_dado'] = 'Dados meteorológicos diários — Embrapa Trigo';
-          props['temperatura_atual'] = (latest.tempAvg != null) ? `${latest.tempAvg.toFixed(1).replace('.', ',')} °C` : '--';
-          const tmin = (latest.tempMin != null) ? `${latest.tempMin.toFixed(1).replace('.', ',')} °C` : '--';
-          const tmax = (latest.tempMax != null) ? `${latest.tempMax.toFixed(1).replace('.', ',')} °C` : '--';
-          props['temperatura_min_max'] = `Mín: ${tmin} | Máx: ${tmax}`;
-          props['chuva_hoje'] = (latest.rain != null) ? `${latest.rain.toFixed(1).replace('.', ',')} mm` : '0,0 mm';
-          const monthTotal = payload.monthlyRainAccum;
-          props['chuva_mes'] = (monthTotal != null) ? `${monthTotal.toFixed(1).replace('.', ',')} mm` : '--';
-          props['umidade_atual'] = (latest.humidity != null) ? `${latest.humidity.toFixed(0)} %` : '--';
-          const dirMed = latest.windDirectionText ? ` (${latest.windDirectionText})` : '';
-          props['vento_atual'] = (latest.windSpeed != null) ? `${latest.windSpeed.toFixed(1).replace('.', ',')} km/h${dirMed}` : '--';
-          const dirMax = latest.windGustDirection ? ` (${latest.windGustDirection})` : '';
-          props['rajada_maxima'] = (latest.windGust != null) ? `${latest.windGust.toFixed(1).replace('.', ',')} km/h${dirMax}` : '--';
-          props['insolacao'] = (latest.sunshineHours != null) ? `${latest.sunshineHours.toFixed(1).replace('.', ',')} horas` : '--';
-          props['ultima_atualizacao'] = `Observação do dia ${latest.dateFormatted || latest.day || ''} (Fechamento diário)`;
-        }
-      }
-    }
-
     // 5. Build Attribute Rows
     let rowsHtml = '';
     const fieldsToRender = pConfig.fields || Object.keys(props).filter(k => !k.startsWith('_') && k !== 'geometry').map(k => ({ key: k, label: k }));
@@ -392,7 +363,7 @@ export class PopupUI {
       </div>
 
       <div class="popup-actions">
-        ${(layerConfig.id === 'estacao_dcrs00016' || layerConfig.id === 'estacoes_plugfield' || layerConfig.id === 'estacao_embrapa_trigo' || props['estacao_cod'] === 'DCRS-00016' || props['estacao_cod'] === '83914' || props['deviceId']) ? `
+        ${(layerConfig.id === 'estacao_dcrs00016' || layerConfig.id === 'estacoes_plugfield' || props['estacao_cod'] === 'DCRS-00016' || props['deviceId']) ? `
           <button class="popup-action-btn" id="btn-popup-view-weather" style="background: rgba(2, 132, 199, 0.22); color: #38bdf8; border-color: #0284c7; font-weight:700;" title="Ver monitoramento na Central Meteorológica">
             <i class="lucide-activity"></i> Ver Central
           </button>
@@ -446,10 +417,6 @@ export class PopupUI {
         if (props['deviceId'] && window.webGis && window.webGis.weatherUI) {
           window.webGis.weatherUI.switchSubTab('plugfield');
           window.webGis.weatherUI.selectPlugfieldStation(props['deviceId']);
-        } else if ((layerConfig.id === 'estacao_embrapa_trigo' || props['estacao_cod'] === '83914') && window.webGis && window.webGis.weatherUI) {
-          window.webGis.weatherUI.switchSubTab('embrapa');
-        } else if ((layerConfig.id === 'estacao_dcrs00016' || props['estacao_cod'] === 'DCRS-00016') && window.webGis && window.webGis.weatherUI) {
-          window.webGis.weatherUI.switchSubTab('drs');
         }
       });
     }
