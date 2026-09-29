@@ -1426,9 +1426,10 @@
             </label>
             <select class="climate-select" id="climate-method-select">
               <option value="idw" selected>IDW — Ponderação pelo Inverso da Distância</option>
+              <option value="kriging">Krigagem Ordinária (Geoestatística)</option>
             </select>
-            <span class="climate-field-hint">
-              <i class="lucide-info"></i> Método determinístico baseado no decaimento da influência das estações com o quadrado da distância.
+            <span class="climate-field-hint" id="climate-method-hint">
+              <i class="lucide-info"></i> Selecione entre IDW (ponderação pela distância física) ou Krigagem Ordinária (modelo geoestatístico com semivariograma).
             </span>
           </div>
         </div>

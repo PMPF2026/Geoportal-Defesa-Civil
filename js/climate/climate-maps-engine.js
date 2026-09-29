@@ -933,7 +933,7 @@ export class ClimateMapsEngine {
    * Disponível para datas a partir de 01/09/2026 e considerando apenas dias com registro de precipitação.
    * @param {string} isoDate YYYY-MM-DD
    */
-  async computeDailyPrecipitationIDWGrid(isoDate) {
+  async computeDailyPrecipitationIDWGrid(isoDate, method = 'idw') {
     if (isoDate < '2026-09-01') {
       throw new Error('A espacialização de Precipitação Diária está disponível exclusivamente para datas a partir de 01/09/2026.');
     }
@@ -1001,10 +1001,41 @@ export class ClimateMapsEngine {
     const gridValues = new Float32Array(gridCols * gridRows);
     gridValues.fill(NaN);
 
+    const isKriging = method === 'kriging';
+    let K_inv = null, c0 = null, c = null, a = null;
+    const N = stations.length;
+    const M = N + 1;
+    const k0 = isKriging ? new Float64Array(M) : null;
+
+    if (isKriging) {
+      k0[N] = 1.0;
+      let sumVar = 0;
+      for (let i = 0; i < N; i++) {
+        const diff = stations[i].precipObserved - meanObs;
+        sumVar += diff * diff;
+      }
+      const varianceZ = Math.max(0.01, sumVar / N);
+      c0 = 0.05 * varianceZ;
+      c = 0.95 * varianceZ;
+      a = 30000.0; // 30 km de alcance territorial
+
+      const K = Array.from({ length: M }, () => new Float64Array(M));
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          const dist = Math.hypot(stations[i].utmX - stations[j].utmX, stations[i].utmY - stations[j].utmY);
+          K[i][j] = ClimateMapsEngine.exponentialSemivariogram(dist, c0, c, a);
+        }
+        K[i][N] = 1.0;
+        K[N][i] = 1.0;
+      }
+      K[N][N] = 0.0;
+      K_inv = ClimateMapsEngine.invertMatrix(K);
+    }
+
     let computedCells = 0;
     let sumGridVal = 0;
 
-    // Loop de cálculo raster IDW (p = 2)
+    // Loop de cálculo raster IDW (p = 2) ou Krigagem Ordinária
     for (let row = 0; row < gridRows; row++) {
       const curY = maxY - (row + 0.5) * dy;
       const rowOffset = row * gridCols * 4;
@@ -1021,26 +1052,46 @@ export class ClimateMapsEngine {
           continue;
         }
 
-        // 2. Cálculo IDW
-        let sumW = 0;
-        let sumWV = 0;
-        let exactMatchVal = null;
+        let cellVal = 0;
 
-        for (let s = 0; s < stations.length; s++) {
-          const st = stations[s];
-          const distSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
+        if (isKriging) {
+          // 2. Cálculo Krigagem Ordinária (BLUE)
+          for (let s = 0; s < N; s++) {
+            const dist = Math.hypot(curX - stations[s].utmX, curY - stations[s].utmY);
+            k0[s] = ClimateMapsEngine.exponentialSemivariogram(dist, c0, c, a);
+          }
+          for (let i = 0; i < N; i++) {
+            let wi = 0;
+            const rowInv = K_inv[i];
+            for (let j = 0; j < M; j++) {
+              wi += rowInv[j] * k0[j];
+            }
+            cellVal += wi * stations[i].precipObserved;
+          }
+          cellVal = Math.max(0, cellVal); // Clamping físico não-negativo
+        } else {
+          // 2. Cálculo IDW (p = 2)
+          let sumW = 0;
+          let sumWV = 0;
+          let exactMatchVal = null;
 
-          if (distSq < 1.0) {
-            exactMatchVal = st.precipObserved;
-            break;
+          for (let s = 0; s < N; s++) {
+            const st = stations[s];
+            const distSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
+
+            if (distSq < 1.0) {
+              exactMatchVal = st.precipObserved;
+              break;
+            }
+
+            const w = 1.0 / distSq;
+            sumW += w;
+            sumWV += w * st.precipObserved;
           }
 
-          const w = 1.0 / distSq;
-          sumW += w;
-          sumWV += w * st.precipObserved;
+          cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
         }
 
-        const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
         gridValues[cellIdx] = cellVal;
         computedCells++;
         sumGridVal += cellVal;
@@ -1062,6 +1113,12 @@ export class ClimateMapsEngine {
       variable: 'precipitacao',
       scale: 'diario',
       unit: 'mm',
+      method: isKriging ? 'kriging' : 'idw',
+      methodLabel: isKriging ? 'Krigagem Ordinária' : 'IDW (p=2)',
+      K_inv,
+      c0,
+      c,
+      a,
       isoDate,
       apiDate: obsData.apiDate,
       gridCols,
@@ -1173,10 +1230,79 @@ export class ClimateMapsEngine {
   }
 
   /**
-   * Executa a interpolação IDW (Ponderação pelo Inverso da Distância, p=2) em coordenadas métricas (EPSG:31982)
+   * Avalia o semivariograma exponencial empírico calibrado para o Planalto Médio Gaúcho
+   * @param {number} dist Distância euclidiana em metros
+   * @param {number} c0 Efeito pepita (nugget)
+   * @param {number} c Contribuição / patamar parcial (partial sill)
+   * @param {number} a Alcance em metros (range)
+   */
+  static exponentialSemivariogram(dist, c0, c, a) {
+    if (dist <= 0) return 0;
+    return c0 + c * (1.0 - Math.exp(-3.0 * dist / a));
+  }
+
+  /**
+   * Inverte uma matriz quadrada M x M utilizando eliminação de Gauss-Jordan com pivoteamento parcial
+   * @param {Array<Array<number>>|Array<Float64Array>} matrix Matriz M x M
+   * @returns {Array<Float64Array>} Matriz inversa
+   */
+  static invertMatrix(matrix) {
+    const n = matrix.length;
+    // Cria matriz aumentada [A | I]
+    const A = matrix.map(row => Array.from(row));
+    const I = Array.from({ length: n }, (_, i) => {
+      const row = new Float64Array(n);
+      row[i] = 1.0;
+      return row;
+    });
+
+    for (let col = 0; col < n; col++) {
+      let maxRow = col;
+      let maxVal = Math.abs(A[col][col]);
+      for (let r = col + 1; r < n; r++) {
+        const val = Math.abs(A[r][col]);
+        if (val > maxVal) {
+          maxVal = val;
+          maxRow = r;
+        }
+      }
+
+      if (maxVal < 1e-12) {
+        throw new Error('Matriz de Krigagem singular ou com determinante nulo.');
+      }
+
+      if (maxRow !== col) {
+        const tmpA = A[col]; A[col] = A[maxRow]; A[maxRow] = tmpA;
+        const tmpI = I[col]; I[col] = I[maxRow]; I[maxRow] = tmpI;
+      }
+
+      const pivot = A[col][col];
+      for (let j = 0; j < n; j++) {
+        A[col][j] /= pivot;
+        I[col][j] /= pivot;
+      }
+
+      for (let r = 0; r < n; r++) {
+        if (r !== col) {
+          const factor = A[r][col];
+          if (Math.abs(factor) > 1e-14) {
+            for (let j = 0; j < n; j++) {
+              A[r][j] -= factor * A[col][j];
+              I[r][j] -= factor * I[col][j];
+            }
+          }
+        }
+      }
+    }
+
+    return I;
+  }
+
+  /**
+   * Executa a interpolação IDW ou Krigagem Ordinária em coordenadas métricas (EPSG:31982)
    * Restrita estritamente ao polígono municipal de Passo Fundo
    */
-  async computeIDWGrid(isoDate) {
+  async computeIDWGrid(isoDate, method = 'idw') {
     const boundary = await this.loadBoundary();
     const obsData = await this.fetchDailyObservations(isoDate);
 
@@ -1201,7 +1327,6 @@ export class ClimateMapsEngine {
     const colorMax = maxObs + rangeMargin;
 
     // Resolução da grade: 220 colunas x 156 linhas (~207 metros por célula)
-    // Equilíbrio perfeito entre fidelidade cartográfica contínua e altíssimo desempenho (< 10 ms)
     const gridCols = 220;
     const gridRows = 156;
 
@@ -1223,12 +1348,43 @@ export class ClimateMapsEngine {
     const gridValues = new Float32Array(gridCols * gridRows);
     gridValues.fill(NaN);
 
+    const isKriging = method === 'kriging';
+    let K_inv = null, c0 = null, c = null, a = null;
+    const N = stations.length;
+    const M = N + 1;
+    const k0 = isKriging ? new Float64Array(M) : null;
+
+    if (isKriging) {
+      k0[N] = 1.0;
+      let sumVar = 0;
+      for (let i = 0; i < N; i++) {
+        const diff = stations[i].tempObserved - meanObs;
+        sumVar += diff * diff;
+      }
+      const varianceZ = Math.max(0.01, sumVar / N);
+      c0 = 0.05 * varianceZ;
+      c = 0.95 * varianceZ;
+      a = 30000.0; // 30 km
+
+      const K = Array.from({ length: M }, () => new Float64Array(M));
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          const dist = Math.hypot(stations[i].utmX - stations[j].utmX, stations[i].utmY - stations[j].utmY);
+          K[i][j] = ClimateMapsEngine.exponentialSemivariogram(dist, c0, c, a);
+        }
+        K[i][N] = 1.0;
+        K[N][i] = 1.0;
+      }
+      K[N][N] = 0.0;
+      K_inv = ClimateMapsEngine.invertMatrix(K);
+    }
+
     let computedCells = 0;
     let sumGridVal = 0;
 
-    // Loop de cálculo raster IDW (p = 2)
+    // Loop de cálculo raster IDW (p = 2) ou Krigagem Ordinária
     for (let row = 0; row < gridRows; row++) {
-      const curY = maxY - (row + 0.5) * dy; // Linha de cima para baixo
+      const curY = maxY - (row + 0.5) * dy;
       const rowOffset = row * gridCols * 4;
 
       for (let col = 0; col < gridCols; col++) {
@@ -1238,39 +1394,59 @@ export class ClimateMapsEngine {
 
         // 1. Recorte espacial: verifica se está dentro do limite municipal
         if (!ClimateMapsEngine.pointInPolygon(curX, curY, boundary.ring)) {
-          data[pixelIdx + 3] = 0; // Transparente fora do município
+          data[pixelIdx + 3] = 0;
           gridValues[cellIdx] = NaN;
           continue;
         }
 
-        // 2. Cálculo IDW (Inverso do quadrado da distância em metros)
-        let sumW = 0;
-        let sumWV = 0;
-        let exactMatchVal = null;
+        let cellVal = 0;
 
-        for (let s = 0; s < stations.length; s++) {
-          const st = stations[s];
-          const distSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
+        if (isKriging) {
+          // 2. Cálculo Krigagem Ordinária (BLUE)
+          for (let s = 0; s < N; s++) {
+            const dist = Math.hypot(curX - stations[s].utmX, curY - stations[s].utmY);
+            k0[s] = ClimateMapsEngine.exponentialSemivariogram(dist, c0, c, a);
+          }
+          for (let i = 0; i < N; i++) {
+            let wi = 0;
+            const rowInv = K_inv[i];
+            for (let j = 0; j < M; j++) {
+              wi += rowInv[j] * k0[j];
+            }
+            cellVal += wi * stations[i].tempObserved;
+          }
+          // Clamping físico suave
+          cellVal = Math.max(minObs - 1.5, Math.min(maxObs + 1.5, cellVal));
+        } else {
+          // 2. Cálculo IDW (p = 2)
+          let sumW = 0;
+          let sumWV = 0;
+          let exactMatchVal = null;
 
-          // Se a distância for menor que 1 metro, assume o próprio valor observado da estação
-          if (distSq < 1.0) {
-            exactMatchVal = st.tempObserved;
-            break;
+          for (let s = 0; s < N; s++) {
+            const st = stations[s];
+            const distSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
+
+            if (distSq < 1.0) {
+              exactMatchVal = st.tempObserved;
+              break;
+            }
+
+            const w = 1.0 / distSq;
+            sumW += w;
+            sumWV += w * st.tempObserved;
           }
 
-          const w = 1.0 / distSq; // p = 2
-          sumW += w;
-          sumWV += w * st.tempObserved;
+          cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
         }
 
-        const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
         gridValues[cellIdx] = cellVal;
         computedCells++;
         sumGridVal += cellVal;
 
         // 3. Normalização e mapeamento cromático
         const normT = (cellVal - colorMin) / (colorMax - colorMin);
-        const rgba = ClimateMapsEngine.getColorForValue(normT, 215); // ~85% de opacidade
+        const rgba = ClimateMapsEngine.getColorForValue(normT, 215);
 
         data[pixelIdx]     = rgba[0];
         data[pixelIdx + 1] = rgba[1];
@@ -1285,6 +1461,12 @@ export class ClimateMapsEngine {
       variable: 'temperatura',
       scale: 'diario',
       unit: '°C',
+      method: isKriging ? 'kriging' : 'idw',
+      methodLabel: isKriging ? 'Krigagem Ordinária' : 'IDW (p=2)',
+      K_inv,
+      c0,
+      c,
+      a,
       isoDate,
       apiDate: obsData.apiDate,
       gridCols,
@@ -1681,15 +1863,16 @@ export class ClimateMapsEngine {
 
     const isMonthly = idwResult.scale === 'mensal';
     const isPrecip = idwResult.variable === 'precipitacao';
+    const methodTag = idwResult.method === 'kriging' ? 'Krigagem' : 'IDW';
     let layerTitle = '';
     if (isPrecip) {
       layerTitle = isMonthly
-        ? `Precipitação Acumulada Mensal Espacializada (IDW) • ${idwResult.periodLabel}`
-        : `Precipitação Diária Espacializada (IDW) • ${idwResult.apiDate}`;
+        ? `Precipitação Acumulada Mensal Espacializada (${methodTag}) • ${idwResult.periodLabel}`
+        : `Precipitação Diária Espacializada (${methodTag}) • ${idwResult.apiDate}`;
     } else {
       layerTitle = isMonthly
-        ? `Temperatura Média Mensal Espacializada (IDW) • ${idwResult.periodLabel}`
-        : `Temperatura Média Diária Espacializada (IDW) • ${idwResult.apiDate}`;
+        ? `Temperatura Média Mensal Espacializada (${methodTag}) • ${idwResult.periodLabel}`
+        : `Temperatura Média Diária Espacializada (${methodTag}) • ${idwResult.apiDate}`;
     }
 
     if (this.climateLayer) {
@@ -1760,34 +1943,71 @@ export class ClimateMapsEngine {
         return;
       }
 
-      // 5. Calcula o valor IDW exato no ponto clicado
+      // 5. Calcula o valor espacializado exato no ponto clicado (IDW ou Krigagem)
       const stations = idwResult.validStations;
-      let sumW = 0;
-      let sumWV = 0;
+      let spatializedVal = 0;
       let nearestDist = Infinity;
       let nearestName = '';
 
-      for (const st of stations) {
-        const dSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
-        const d = Math.sqrt(dSq);
-        if (d < nearestDist) {
-          nearestDist = d;
-          nearestName = st.name;
+      const isKriging = idwResult.method === 'kriging' && idwResult.K_inv;
+
+      if (isKriging) {
+        const N = stations.length;
+        const M = N + 1;
+        const k0 = new Float64Array(M);
+        k0[N] = 1.0;
+
+        for (let s = 0; s < N; s++) {
+          const st = stations[s];
+          const dist = Math.hypot(curX - st.utmX, curY - st.utmY);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestName = st.name;
+          }
+          k0[s] = ClimateMapsEngine.exponentialSemivariogram(dist, idwResult.c0, idwResult.c, idwResult.a);
         }
 
-        const obsVal = (st.precipObserved !== undefined && st.precipObserved !== null) ? st.precipObserved : st.tempObserved;
-
-        if (dSq < 1.0) {
-          sumWV = obsVal;
-          sumW = 1.0;
-          break;
+        for (let i = 0; i < N; i++) {
+          let wi = 0;
+          const rowInv = idwResult.K_inv[i];
+          for (let j = 0; j < M; j++) {
+            wi += rowInv[j] * k0[j];
+          }
+          const obsVal = (stations[i].precipObserved !== undefined && stations[i].precipObserved !== null)
+            ? stations[i].precipObserved
+            : stations[i].tempObserved;
+          spatializedVal += wi * obsVal;
         }
-        const w = 1.0 / dSq;
-        sumW += w;
-        sumWV += w * obsVal;
+
+        if (idwResult.variable === 'precipitacao') {
+          spatializedVal = Math.max(0, spatializedVal);
+        }
+      } else {
+        let sumW = 0;
+        let sumWV = 0;
+
+        for (const st of stations) {
+          const dist = Math.hypot(curX - st.utmX, curY - st.utmY);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestName = st.name;
+          }
+
+          const obsVal = (st.precipObserved !== undefined && st.precipObserved !== null) ? st.precipObserved : st.tempObserved;
+
+          if (dist < 1.0) {
+            sumWV = obsVal;
+            sumW = 1.0;
+            break;
+          }
+          const w = 1.0 / (dist * dist);
+          sumW += w;
+          sumWV += w * obsVal;
+        }
+
+        spatializedVal = (sumWV / sumW);
       }
 
-      const spatializedVal = (sumWV / sumW);
       const nearestDistKm = (nearestDist / 1000).toFixed(1).replace('.', ',');
 
       // 6. Apresenta o popup contextual rigorosamente com a nomenclatura ESPACIALIZADA
@@ -1828,6 +2048,10 @@ export class ClimateMapsEngine {
       ? `${idwResult.validStations.length} estações (${isPrecip ? 'acumulados mensais' : 'médias mensais'} com completude ≥ ${thresholdPercent})`
       : `${idwResult.validStations.length} estações com dados observados`;
 
+    const methodFullName = idwResult.method === 'kriging'
+      ? 'Krigagem Ordinária (Geoestatística, BLUE)'
+      : 'IDW (Ponderação pelo Inverso da Distância, p=2)';
+
     popupContent.innerHTML = `
       <div class="climate-surface-popup">
         <div class="climate-popup-header">
@@ -1846,7 +2070,7 @@ export class ClimateMapsEngine {
         <div class="climate-popup-meta">
           <div class="climate-popup-meta-row">
             <span>📐 <strong>Método:</strong></span>
-            <span>IDW (Ponderação pelo Inverso da Distância, p=2)</span>
+            <span>${methodFullName}</span>
           </div>
           <div class="climate-popup-meta-row">
             <span>📡 <strong>Base:</strong></span>
@@ -1953,7 +2177,7 @@ export class ClimateMapsEngine {
 
       <!-- Metadados de Cartografia e Rigor Científico -->
       <div class="climate-legend-tags">
-        <span class="climate-tag">Método: IDW (p=2)</span>
+        <span class="climate-tag">Método: ${idwResult.method === 'kriging' ? 'Krigagem Ordinária' : 'IDW (p=2)'}</span>
         <span class="climate-tag">EPSG:31982</span>
         <span class="climate-tag">${baseTagText}</span>
         <span class="climate-tag">Unidade: ${unit}</span>

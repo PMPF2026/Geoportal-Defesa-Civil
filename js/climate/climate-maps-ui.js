@@ -176,6 +176,7 @@ export class ClimateMapsUI {
   async handleGenerateMap() {
     const variable = this.variableSelect ? this.variableSelect.value : 'temperatura';
     const scale = this.scaleSelect ? this.scaleSelect.value : 'diario';
+    const method = this.methodSelect ? this.methodSelect.value : 'idw';
     const isoDate = this.dateInput?.value || '2026-09-14';
     const yearMonth = this.monthInput?.value || '2026-08';
 
@@ -200,12 +201,15 @@ export class ClimateMapsUI {
       return;
     }
 
+    const isKriging = method === 'kriging';
+    const methodShort = isKriging ? 'Krigagem' : 'IDW';
+
     // Estado visual de carregamento no botão
     const origBtnHtml = this.generateBtn.innerHTML;
     this.generateBtn.disabled = true;
     this.generateBtn.innerHTML = `
       <div class="climate-spinner-sm"></div>
-      <span>Processando IDW em tempo real...</span>
+      <span>Processando ${methodShort} em tempo real...</span>
     `;
 
     try {
@@ -213,8 +217,8 @@ export class ClimateMapsUI {
 
       if (variable === 'precipitacao') {
         if (scale === 'diario') {
-          Notification.info(`Consultando pluviômetros e calculando precipitação diária para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 3000);
-          result = await this.climateEngine.computeDailyPrecipitationIDWGrid(isoDate);
+          Notification.info(`Consultando pluviômetros e calculando precipitação diária via ${methodShort} para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 3000);
+          result = await this.climateEngine.computeDailyPrecipitationIDWGrid(isoDate, method);
           await this.climateEngine.renderClimateLayer(result);
           this.close();
 
@@ -222,7 +226,7 @@ export class ClimateMapsUI {
           const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
 
           Notification.success(
-            `Superfície de Precipitação Acumulada Diária (${result.apiDate}) espacializada com sucesso! (${result.validStations.length} estações • Amplitude: ${minStr} mm a ${maxStr} mm)`
+            `Superfície de Precipitação Acumulada Diária (${result.apiDate}) gerada via ${result.methodLabel}! (${result.validStations.length} estações • Amplitude: ${minStr} mm a ${maxStr} mm)`
           );
         } else {
           Notification.info(`Consultando histórico pluviométrico e calculando completude mensal para ${yearMonth}...`, 3000);
@@ -250,8 +254,8 @@ export class ClimateMapsUI {
           `Superfície de Temperatura Média Mensal (${result.periodLabel}) espacializada com sucesso! (${result.validStations.length} estações com completude ≥ 90% • Amplitude: ${minStr} °C a ${maxStr} °C)`
         );
       } else {
-        Notification.info(`Iniciando interpolação IDW para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 2500);
-        result = await this.climateEngine.computeIDWGrid(isoDate);
+        Notification.info(`Iniciando interpolação ${methodShort} para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 2500);
+        result = await this.climateEngine.computeIDWGrid(isoDate, method);
         await this.climateEngine.renderClimateLayer(result);
         this.close();
 
@@ -259,7 +263,7 @@ export class ClimateMapsUI {
         const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
 
         Notification.success(
-          `Superfície de Temperatura Média Diária espacializada com sucesso! (${result.validStations.length} estações ativas • Amplitude: ${minStr} °C a ${maxStr} °C)`
+          `Superfície de Temperatura Média Diária gerada via ${result.methodLabel}! (${result.validStations.length} estações ativas • Amplitude: ${minStr} °C a ${maxStr} °C)`
         );
       }
 
