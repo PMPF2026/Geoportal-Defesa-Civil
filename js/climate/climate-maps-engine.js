@@ -928,6 +928,172 @@ export class ClimateMapsEngine {
   }
 
   /**
+   * Executa a interpolação IDW para Precipitação Acumulada Diária Espacializada (EPSG:31982, p=2)
+   * Restrita estritamente ao polígono municipal de Passo Fundo
+   * Disponível para datas a partir de 01/09/2026 e considerando apenas dias com registro de precipitação.
+   * @param {string} isoDate YYYY-MM-DD
+   */
+  async computeDailyPrecipitationIDWGrid(isoDate) {
+    if (isoDate < '2026-09-01') {
+      throw new Error('A espacialização de Precipitação Diária está disponível exclusivamente para datas a partir de 01/09/2026.');
+    }
+
+    const boundary = await this.loadBoundary();
+    const obsData = await this.fetchDailyObservations(isoDate);
+
+    if (!obsData || !obsData.validStations || obsData.validStations.length < 3) {
+      throw new Error('Não há dados telemétricos suficientes para gerar a espacialização de precipitação diária para esta data (mínimo de 3 estações ativas necessárias).');
+    }
+
+    // Normaliza as estações com seus respectivos acumulados pluviométricos (rainAccum)
+    const stations = obsData.validStations.map(st => {
+      const rain = (st.rainAccum !== null && st.rainAccum !== undefined && !isNaN(st.rainAccum))
+        ? Math.max(0, Math.round(parseFloat(st.rainAccum) * 100) / 100)
+        : 0;
+      return {
+        ...st,
+        precipObserved: rain,
+        tempObserved: rain // compatibilidade com funções internas
+      };
+    });
+
+    // Estatísticas dos dados observados reais de precipitação
+    let minObs = Infinity, maxObs = -Infinity, sumObs = 0;
+    for (const st of stations) {
+      const val = st.precipObserved;
+      if (val < minObs) minObs = val;
+      if (val > maxObs) maxObs = val;
+      sumObs += val;
+    }
+    const meanObs = sumObs / stations.length;
+
+    // Regra operacional: considerar apenas dias com registro de precipitação (ao menos uma estação com chuva > 0 mm)
+    if (maxObs <= 0) {
+      const err = new Error(`Não houve registro de precipitação nas estações meteorológicas em ${obsData.apiDate} (tempo seco • todos os pluviômetros registraram 0,0 mm). A espacialização de chuva diária considera apenas dias com precipitação.`);
+      err.isDryDay = true;
+      throw err;
+    }
+
+    // Margem dinâmica para escala cromática pluviométrica harmoniosa
+    const rangeMargin = Math.max(0.5, (maxObs - minObs) * 0.05);
+    const colorMin = Math.max(0, minObs - rangeMargin);
+    const colorMax = maxObs + rangeMargin;
+
+    // Resolução da grade: 220 colunas x 156 linhas (~207 metros por célula)
+    const gridCols = 220;
+    const gridRows = 156;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = gridCols;
+    canvas.height = gridRows;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(gridCols, gridRows);
+    const data = imgData.data;
+
+    const minX = boundary.bboxUTM[0];
+    const maxX = boundary.bboxUTM[2];
+    const minY = boundary.bboxUTM[1];
+    const maxY = boundary.bboxUTM[3];
+
+    const dx = (maxX - minX) / gridCols;
+    const dy = (maxY - minY) / gridRows;
+
+    const gridValues = new Float32Array(gridCols * gridRows);
+    gridValues.fill(NaN);
+
+    let computedCells = 0;
+    let sumGridVal = 0;
+
+    // Loop de cálculo raster IDW (p = 2)
+    for (let row = 0; row < gridRows; row++) {
+      const curY = maxY - (row + 0.5) * dy;
+      const rowOffset = row * gridCols * 4;
+
+      for (let col = 0; col < gridCols; col++) {
+        const curX = minX + (col + 0.5) * dx;
+        const pixelIdx = rowOffset + col * 4;
+        const cellIdx = row * gridCols + col;
+
+        // 1. Recorte espacial municipal (Ray-Casting)
+        if (!ClimateMapsEngine.pointInPolygon(curX, curY, boundary.ring)) {
+          data[pixelIdx + 3] = 0;
+          gridValues[cellIdx] = NaN;
+          continue;
+        }
+
+        // 2. Cálculo IDW
+        let sumW = 0;
+        let sumWV = 0;
+        let exactMatchVal = null;
+
+        for (let s = 0; s < stations.length; s++) {
+          const st = stations[s];
+          const distSq = (curX - st.utmX) * (curX - st.utmX) + (curY - st.utmY) * (curY - st.utmY);
+
+          if (distSq < 1.0) {
+            exactMatchVal = st.precipObserved;
+            break;
+          }
+
+          const w = 1.0 / distSq;
+          sumW += w;
+          sumWV += w * st.precipObserved;
+        }
+
+        const cellVal = exactMatchVal !== null ? exactMatchVal : (sumWV / sumW);
+        gridValues[cellIdx] = cellVal;
+        computedCells++;
+        sumGridVal += cellVal;
+
+        // 3. Rampa cromática contínua hidrológica/pluviométrica
+        const normT = (cellVal - colorMin) / (colorMax - colorMin);
+        const rgba = ClimateMapsEngine.getColorForPrecipitationValue(normT, 215);
+
+        data[pixelIdx]     = rgba[0];
+        data[pixelIdx + 1] = rgba[1];
+        data[pixelIdx + 2] = rgba[2];
+        data[pixelIdx + 3] = rgba[3];
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+
+    const result = {
+      variable: 'precipitacao',
+      scale: 'diario',
+      unit: 'mm',
+      isoDate,
+      apiDate: obsData.apiDate,
+      gridCols,
+      gridRows,
+      cellSizeMeters: Math.round(dx),
+      computedCells,
+      validStations: stations,
+      allStationAudit: stations,
+      excludedCount: obsData.excludedCount,
+      minObserved: minObs,
+      maxObserved: maxObs,
+      meanObserved: meanObs,
+      colorMin,
+      colorMax,
+      canvasDataUrl: canvas.toDataURL('image/png'),
+      bboxUTM: boundary.bboxUTM,
+      bbox3857: boundary.bbox3857,
+      boundaryRing: boundary.ring,
+      gridValues,
+      gridMinX: minX,
+      gridMaxX: maxX,
+      gridMinY: minY,
+      gridMaxY: maxY,
+      gridDx: dx,
+      gridDy: dy
+    };
+
+    this.currentResult = result;
+    return result;
+  }
+
+  /**
    * Mapeia um valor numérico normalizado [0, 1] em uma rampa cromática contínua equilibrada
    * Paleta climatológica profissional e visualmente equilibrada:
    *  - 0.00: #0284c7 (Azul Sereno / 2, 132, 199)
@@ -1395,7 +1561,14 @@ export class ClimateMapsEngine {
     const isPrecip = idwResult.variable === 'precipitacao';
     let step = 10;
     if (isPrecip) {
-      step = idwResult.scale === 'mensal' ? 10 : 5;
+      if (idwResult.scale === 'mensal') {
+        step = 10;
+      } else {
+        const amp = idwResult.maxObserved - idwResult.minObserved;
+        if (amp >= 25) step = 5;
+        else if (amp >= 10) step = 2;
+        else step = 1;
+      }
     } else {
       step = 1.0;
     }

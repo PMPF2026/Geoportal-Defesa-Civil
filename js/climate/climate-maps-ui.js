@@ -103,6 +103,20 @@ export class ClimateMapsUI {
       });
     }
 
+    // Adaptação dinâmica para Precipitação Diária (a partir de 01/09/2026)
+    if (this.variableSelect && this.dateInput) {
+      this.variableSelect.addEventListener('change', () => {
+        if (this.variableSelect.value === 'precipitacao') {
+          this.dateInput.min = '2026-09-01';
+          if (this.dateInput.value < '2026-09-01' || this.dateInput.value === '2026-09-14') {
+            this.dateInput.value = '2026-09-28';
+          }
+        } else {
+          this.dateInput.removeAttribute('min');
+        }
+      });
+    }
+
     // Ação do botão "Gerar mapa"
     if (this.generateBtn) {
       this.generateBtn.addEventListener('click', () => {
@@ -165,16 +179,12 @@ export class ClimateMapsUI {
     const isoDate = this.dateInput?.value || '2026-09-14';
     const yearMonth = this.monthInput?.value || '2026-08';
 
-    // Verificação de escopo da Etapa 5.2 (Temperatura Diária/Mensal e Precipitação Mensal)
+    // Verificação de escopo da Precipitação Diária (a partir de 01/09/2026)
     if (variable === 'precipitacao') {
-      if (scale === 'diario') {
-        Notification.info(
-          'A espacialização de Precipitação Diária será implementada em etapa posterior. No momento, selecione a Escala Mensal (Agosto de 2026).',
-          5500
-        );
+      if (scale === 'diario' && isoDate < '2026-09-01') {
+        Notification.warning('A espacialização de Precipitação Diária está disponível para datas a partir de 01/09/2026.', 5000);
         return;
       }
-      // scale === 'mensal' é permitido e processado abaixo
     } else if (variable !== 'temperatura') {
       Notification.info('Selecione uma variável climática válida (Temperatura ou Precipitação).', 4000);
       return;
@@ -202,17 +212,31 @@ export class ClimateMapsUI {
       let result = null;
 
       if (variable === 'precipitacao') {
-        Notification.info(`Consultando histórico pluviométrico e calculando completude mensal para ${yearMonth}...`, 3000);
-        result = await this.climateEngine.computeMonthlyPrecipitationIDWGrid(yearMonth);
-        await this.climateEngine.renderClimateLayer(result);
-        this.close();
+        if (scale === 'diario') {
+          Notification.info(`Consultando pluviômetros e calculando precipitação diária para ${ClimateMapsEngine.formatApiDate(isoDate)}...`, 3000);
+          result = await this.climateEngine.computeDailyPrecipitationIDWGrid(isoDate);
+          await this.climateEngine.renderClimateLayer(result);
+          this.close();
 
-        const minStr = result.minObserved.toFixed(1).replace('.', ',');
-        const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
+          const minStr = result.minObserved.toFixed(1).replace('.', ',');
+          const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
 
-        Notification.success(
-          `Superfície de Precipitação Acumulada Mensal (${result.periodLabel}) espacializada com sucesso! (${result.validStations.length} estações com completude ≥ 95% • Amplitude: ${minStr} mm a ${maxStr} mm)`
-        );
+          Notification.success(
+            `Superfície de Precipitação Acumulada Diária (${result.apiDate}) espacializada com sucesso! (${result.validStations.length} estações • Amplitude: ${minStr} mm a ${maxStr} mm)`
+          );
+        } else {
+          Notification.info(`Consultando histórico pluviométrico e calculando completude mensal para ${yearMonth}...`, 3000);
+          result = await this.climateEngine.computeMonthlyPrecipitationIDWGrid(yearMonth);
+          await this.climateEngine.renderClimateLayer(result);
+          this.close();
+
+          const minStr = result.minObserved.toFixed(1).replace('.', ',');
+          const maxStr = result.maxObserved.toFixed(1).replace('.', ',');
+
+          Notification.success(
+            `Superfície de Precipitação Acumulada Mensal (${result.periodLabel}) espacializada com sucesso! (${result.validStations.length} estações com completude ≥ 95% • Amplitude: ${minStr} mm a ${maxStr} mm)`
+          );
+        }
       } else if (scale === 'mensal') {
         Notification.info(`Consultando histórico e calculando completude mensal para ${yearMonth}...`, 3000);
         result = await this.climateEngine.computeMonthlyIDWGrid(yearMonth);
@@ -241,7 +265,11 @@ export class ClimateMapsUI {
 
     } catch (err) {
       console.error('[ClimateMapsUI] Erro ao gerar espacialização climática:', err);
-      Notification.error(err.message || 'Falha ao processar interpolação dos dados climáticos.');
+      if (err.isDryDay) {
+        Notification.info(err.message, 6500);
+      } else {
+        Notification.error(err.message || 'Falha ao processar interpolação dos dados climáticos.');
+      }
     } finally {
       this.generateBtn.disabled = false;
       this.generateBtn.innerHTML = origBtnHtml;
