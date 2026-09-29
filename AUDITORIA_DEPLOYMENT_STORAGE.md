@@ -1,4 +1,4 @@
-﻿# RELATÓRIO DE AUDITORIA ULTRACONSERVADORA DO DEPLOYMENT STORAGE
+# RELATÓRIO DE AUDITORIA ULTRACONSERVADORA DO DEPLOYMENT STORAGE
 
 **Projeto:** Portal Geospacial / WebGIS da Defesa Civil de Passo Fundo  
 **Ambiente de Produção:** Vercel (`geoportal-defesa-civil.vercel.app`)  
@@ -74,7 +74,7 @@ A auditoria cobriu 100% dos arquivos em dois ambientes:
 | **1** | `Malha Hídrica.geojson` | GeoJSON | 21.371,4 | **20,87 MB** | Camada oficial de drenagem e rios de Passo Fundo |
 | **2** | `Malha Viária.geojson` | GeoJSON | 4.725,0 | **4,61 MB** | Sistema viário urbano completo de Passo Fundo |
 | **3** | `Municípios do RS.geojson` | GeoJSON | 1.265,5 | **1,24 MB** | Contexto territorial e limites limítrofes regionais |
-| **4** | `Setores Censitários Passo Fundo.geojson` | GeoJSON | 985,3 | **0,96 MB** | Malha de setores censitários do IBGE |
+| **4** | `Setores Censitários Passo Fundo.geojson` | GeoJSON | 5.482,0 | **5,35 MB** | Malha oficial consolidada de 321 setores censitários do IBGE |
 | **5** | `Densidade Populacional.geojson` | GeoJSON | 940,4 | **0,92 MB** | Base anterior de densidade demográfica |
 | **6** | `cn22_pop03_20a59_tot_2_4314100_georedus_censo_2022.geojson` | GeoJSON | 694,4 | **0,68 MB** | Censo 2022 IBGE: População adulta (20 a 59 anos) |
 | **7** | `cn22_pop03_m60_tot_2_4314100_georedus_censo_2022.geojson` | GeoJSON | 675,7 | **0,66 MB** | Censo 2022 IBGE: População idosa (60+ anos vulnerável) |

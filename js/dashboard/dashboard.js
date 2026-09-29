@@ -285,7 +285,7 @@ export class DashboardUI {
     const densModalCtx = document.getElementById('chart-density-modal') || document.getElementById('chart-modal-densidade');
     if (densModalCtx) {
       if (this.charts.densityModal) this.charts.densityModal.destroy();
-      const b = stats.densityBuckets || { low: 18, medium: 42, high: 95, veryHigh: 105, extreme: 52 };
+      const b = stats.densityBuckets || { low: 23, medium: 13, high: 42, veryHigh: 110, extreme: 133 };
       this.charts.densityModal = new Chart(densModalCtx, {
         type: 'bar',
         data: {

@@ -38,7 +38,7 @@ As camadas estão organizadas em 6 grupos temáticos:
 - **Limite Territorial de Passo Fundo:** Perímetro municipal oficial (Área: 784,41 km²).
 - **Bairros e Regiões Urbanas:** 23 regiões e bairros urbanos cadastrados com população e vilas associadas.
 - **Distritos de Passo Fundo:** 7 distritos municipais (Sede, Bela Vista, Bom Recreio, São Roque, Pulador, Sede Independência, Santo Antônio do Capinzal).
-- **Setores Censitários (IBGE 2022):** 312 setores censitários com contagem de moradores, domicílios e renda média domiciliar.
+- **Setores Censitários (IBGE 2022):** 321 setores censitários com contagem de moradores, domicílios e renda média domiciliar (malha oficial consolidada).
 - **Municípios do RS:** Malha dos 496 municípios do Rio Grande do Sul (carregamento sob demanda).
 
 ### 5. Planejamento Urbano

@@ -17,7 +17,7 @@ export class StatsEngine {
       avgDensity: 262.9,
       bairrosCount: 23,
       distritosCount: 7,
-      setoresCount: 312,
+      setoresCount: 321,
       bairrosList: [
         { name: "Centro / Vila Vergueiro", pop: 26084 },
         { name: "São Cristóvão", pop: 20707 },
@@ -39,7 +39,7 @@ export class StatsEngine {
         { name: "Sede Independência", pop: 392 },
         { name: "Pulador", pop: 383 }
       ],
-      densityBuckets: { low: 18, medium: 42, high: 95, veryHigh: 105, extreme: 52 },
+      densityBuckets: { low: 23, medium: 13, high: 42, veryHigh: 110, extreme: 133 },
       censo2022: {
         popTotal: 205627,
         pop0a4: 12482,
@@ -164,9 +164,70 @@ export class StatsEngine {
   }
 
   /**
-   * Returns current consolidated statistics
+   * Recalculates sector demographic and density stats dynamically from loaded GeoJSON features
+   */
+  recalculateFromSetoresFeatures(features) {
+    if (!features || features.length === 0) return;
+
+    let popTotal = 0;
+    let domTotal = 0;
+    const densityBuckets = { low: 0, medium: 0, high: 0, veryHigh: 0, extreme: 0 };
+    const rendaBuckets = { ate2000: 0, de2000a3000: 0, de3000a4500: 0, de4500a7000: 0, acima7000: 0 };
+    const rendas = [];
+
+    features.forEach(f => {
+      const p = f.getProperties ? f.getProperties() : (f.properties || {});
+      const pop = parseFloat(p.V0001) || 0;
+      const dom = parseFloat(p.V0002) || 0;
+      popTotal += pop;
+      domTotal += dom;
+
+      const dens = parseFloat(p.DENSIDADE);
+      if (!isNaN(dens)) {
+        if (dens < 50) densityBuckets.low++;
+        else if (dens <= 500) densityBuckets.medium++;
+        else if (dens <= 2000) densityBuckets.high++;
+        else if (dens <= 5000) densityBuckets.veryHigh++;
+        else densityBuckets.extreme++;
+      }
+
+      const renda = parseFloat(p.RendaV06004_Vmed_mensal_pordomic || p.V06004_VME);
+      if (!isNaN(renda) && renda > 0) {
+        rendas.push(renda);
+        if (renda <= 2000) rendaBuckets.ate2000++;
+        else if (renda <= 3000) rendaBuckets.de2000a3000++;
+        else if (renda <= 4500) rendaBuckets.de3000a4500++;
+        else if (renda <= 7000) rendaBuckets.de4500a7000++;
+        else rendaBuckets.acima7000++;
+      }
+    });
+
+    this.cachedStats.setoresCount = features.length;
+    if (popTotal > 0) this.cachedStats.totalPop = popTotal;
+    if (domTotal > 0) this.cachedStats.totalDomicilios = domTotal;
+    this.cachedStats.densityBuckets = densityBuckets;
+
+    if (rendas.length > 0) {
+      this.cachedStats.censo2022.rendaBuckets = rendaBuckets;
+      this.cachedStats.censo2022.rendaMin = Math.min(...rendas);
+      this.cachedStats.censo2022.rendaMax = Math.max(...rendas);
+      this.cachedStats.censo2022.rendaMedia = +(rendas.reduce((a, b) => a + b, 0) / rendas.length).toFixed(2);
+    }
+  }
+
+  /**
+   * Returns current consolidated statistics with dynamic derivation from layer if loaded
    */
   async getConsolidatedStats() {
+    if (this.layerManager) {
+      const layer = this.layerManager.getLayer('setores_censitarios');
+      if (layer && layer.getSource()) {
+        const features = layer.getSource().getFeatures();
+        if (features && features.length > 0) {
+          this.recalculateFromSetoresFeatures(features);
+        }
+      }
+    }
     return this.cachedStats;
   }
 }
