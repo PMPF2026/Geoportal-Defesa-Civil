@@ -512,30 +512,36 @@
 
           <!-- TAB 6: DOWNLOADS / DADOS PÚBLICOS -->
           <div class="tab-panel" id="tab-downloads">
-            <div class="layer-toolbar">
-              <span class="layer-toolbar-title">Catálogo de Dados Públicos</span>
-              <span class="badge-blue" id="download-layers-count">21 Camadas</span>
-            </div>
-
-            <!-- Search Filter for Downloads -->
-            <div class="download-search-container" style="margin-bottom: 12px;">
-              <div class="search-input-wrapper">
-                <i class="lucide-search search-icon"></i>
-                <input 
-                  type="text" 
-                  id="download-search-input" 
-                  class="search-input" 
-                  placeholder="Buscar camada para download (ex: abrigos, pontes, rios)..." 
-                  autocomplete="off"
-                />
-                <button class="search-clear-btn" id="download-search-clear" title="Limpar busca">&times;</button>
+            <div class="panel-header downloads-header-compact">
+              <h3 class="panel-title-downloads">Catálogo de Dados Espaciais</h3>
+              <span class="panel-subtitle">Camadas disponíveis para download</span>
+              <div class="downloads-meta-line">
+                <span class="downloads-count-stat"><strong id="download-layers-count">35</strong> camadas &bull; SIRGAS 2000 / UTM 22S</span>
+                <div class="downloads-compact-actions">
+                  <button type="button" id="btn-expand-all-downloads" class="btn-link-action" title="Expandir todos os grupos">Expandir Todos</button>
+                  <span class="sep-dot">&bull;</span>
+                  <button type="button" id="btn-collapse-all-downloads" class="btn-link-action" title="Recolher todos os grupos">Recolher Todos</button>
+                </div>
               </div>
             </div>
 
-            <!-- Downloads Cards Container -->
-            <div class="downloads-list" id="downloads-list-container">
-              <!-- Populated dynamically by downloads.js -->
+            <div class="downloads-search-box">
+              <input type="text" id="download-search-input" placeholder="Buscar camada para download..." autocomplete="off" />
+              <button type="button" id="download-search-clear" title="Limpar busca">&times;</button>
             </div>
+
+            <div class="downloads-pills-bar" id="downloads-pills-bar" role="tablist" aria-label="Filtro rápido por tema">
+              <button type="button" class="download-pill active" data-group-filter="all">Todos <span class="pill-count" id="pill-count-all">35</span></button>
+              <button type="button" class="download-pill" data-group-filter="defesa_civil_emergencia">Defesa Civil <span class="pill-count" id="pill-count-defesa_civil_emergencia">4</span></button>
+              <button type="button" class="download-pill" data-group-filter="risco_enchentes">Risco e Enchentes <span class="pill-count" id="pill-count-risco_enchentes">5</span></button>
+              <button type="button" class="download-pill" data-group-filter="hidrografia_clima">Hidrografia <span class="pill-count" id="pill-count-hidrografia_clima">6</span></button>
+              <button type="button" class="download-pill" data-group-filter="sistema_viario">Sistema Viário <span class="pill-count" id="pill-count-sistema_viario">6</span></button>
+              <button type="button" class="download-pill" data-group-filter="censo_populacao">Censo e População <span class="pill-count" id="pill-count-censo_populacao">9</span></button>
+              <button type="button" class="download-pill" data-group-filter="divisao_territorial">Divisão Territorial <span class="pill-count" id="pill-count-divisao_territorial">5</span></button>
+            </div>
+
+            <!-- Dynamic Accordion List Container -->
+            <div id="downloads-list-container" class="downloads-list"></div>
 
             <!-- Footer info of the downloads tab -->
             <div class="downloads-footer-info" style="margin-top: 16px; padding: 10px 12px; background: var(--dc-blue-card); border: 1px solid var(--dc-blue-border); border-radius: var(--radius-md); font-size: 11px; color: var(--text-muted); line-height: 1.5;">
