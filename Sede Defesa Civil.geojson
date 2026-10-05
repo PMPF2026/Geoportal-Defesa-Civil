@@ -3,6 +3,6 @@
 "name": "Sede Defesa Civil",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::31982" } },
 "features": [
-{ "type": "Feature", "properties": { "id": 1, "D. Civil": "Sede Defesa Civil", "Endereço": "Av. Brasil Leste, 1528, Patrópolis", "Coord X": 364325, "Coord_Y": 6874997 }, "geometry": { "type": "Point", "coordinates": [ 364321.323902319010813, 6874990.9824023777619 ] } }
+{ "type": "Feature", "properties": { "id": 1, "D. Civil": "Sede Defesa Civil", "Endereço": "Av. Brasil Leste, 1528, Patrópolis", "Coord X": 364325, "Coord_Y": 6874997, "streetview_url": "https://www.google.com/maps/@?api=1&map_action=pano&pano=mdXgPengpkiuAn4MY1F9gw&viewpoint=-28.2439002,-52.3830512&heading=129&pitch=0" }, "geometry": { "type": "Point", "coordinates": [ 364321.323902319010813, 6874990.9824023777619 ] } }
 ]
 }

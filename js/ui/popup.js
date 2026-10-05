@@ -432,9 +432,18 @@ export class PopupUI {
     const svBtn = this.contentEl.querySelector('#btn-popup-streetview');
     if (svBtn) {
       svBtn.addEventListener('click', () => {
-        if (this.lastCoordinate) {
-          const lonLat = ol.proj.toLonLat(this.lastCoordinate);
-          const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lonLat[1]},${lonLat[0]}`;
+        if (props && props['streetview_url']) {
+          window.open(props['streetview_url'], '_blank');
+          return;
+        }
+
+        const geom = feature && feature.getGeometry ? feature.getGeometry() : null;
+        const coord = (geom && geom.getType() === 'Point') ? geom.getCoordinates() : this.lastCoordinate;
+
+        if (coord) {
+          const lonLat = ol.proj.toLonLat(coord);
+          const headingParam = (props && props['streetview_heading']) ? `&heading=${props['streetview_heading']}` : '';
+          const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lonLat[1]},${lonLat[0]}${headingParam}`;
           window.open(url, '_blank');
         }
       });
