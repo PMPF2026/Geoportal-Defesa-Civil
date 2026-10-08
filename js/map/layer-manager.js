@@ -80,9 +80,24 @@ export class LayerManager {
           url: config.tileUrl,
           minZoom: config.minZoom || 13,
           maxZoom: config.maxZoom || 19,
+          attributions: config.attribution || config.source,
           crossOrigin: 'anonymous',
           wrapX: false
         });
+
+        if (config.validTiles && config.validTiles instanceof Set) {
+          const originalTileUrlFn = xyzSource.getTileUrlFunction();
+          xyzSource.setTileUrlFunction((tileCoord, pixelRatio, projection) => {
+            const url = originalTileUrlFn(tileCoord, pixelRatio, projection);
+            if (!url) return undefined;
+            const match = url.match(/(\d+)\/(\d+)\/(\d+)\.webp$/);
+            if (match) {
+              const key = `${match[1]}/${match[2]}/${match[3]}`;
+              return config.validTiles.has(key) ? url : undefined;
+            }
+            return url;
+          });
+        }
 
         const rasterLayer = new ol.layer.Tile({
           source: xyzSource,
