@@ -1382,6 +1382,62 @@ export const LAYERS_CONFIG = [
     },
     searchable: true,
     searchFields: ['fid', 'COD_MUN', 'UF']
+  },
+
+  // ================= 9. TOPOGRAFIA & HIPSOMETRIA =================
+  {
+    id: 'hipsometria_relevo',
+    name: 'Hipsometria e Relevo',
+    fileName: 'tiles/hipsometria/{z}/{x}/{y}.webp',
+    source: 'Prefeitura Municipal de Passo Fundo / Defesa Civil / SEPLAN',
+    refDate: '2026',
+    group: 'topografia_relevo',
+    isRaster: true,
+    isXYZTiles: true,
+    isHypsometry: true,
+    tileUrl: 'tiles/hipsometria/{z}/{x}/{y}.webp',
+    validTiles: HIPSOMETRIA_VALID_TILES,
+    minZoom: 10,
+    maxZoom: 14,
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 4, // Acima do mapa-base (0), abaixo de ortofotos (5) e vetores (10-75)
+    isLazy: true,
+    extent: [366258.919, 6862590.871, 407000.589, 6898495.275],
+    crs: 'EPSG:31982',
+    date: '2026',
+    attribution: 'Hipsometria e relevo — Prefeitura Municipal de Passo Fundo / Defesa Civil / SEPLAN',
+    style: {
+      previewColor: '#66bd63'
+    },
+    hypsometryClasses: [
+      { min: 474, max: 500, label: '474 – 500 m', color: '#006837' },
+      { min: 500, max: 525, label: '500 – 525 m', color: '#1a9850' },
+      { min: 525, max: 550, label: '525 – 550 m', color: '#66bd63' },
+      { min: 550, max: 575, label: '550 – 575 m', color: '#a6d96a' },
+      { min: 575, max: 600, label: '575 – 600 m', color: '#d9ef8b' },
+      { min: 600, max: 625, label: '600 – 625 m', color: '#fee08b' },
+      { min: 625, max: 650, label: '625 – 650 m', color: '#fdc863' },
+      { min: 650, max: 675, label: '650 – 675 m', color: '#f4a340' },
+      { min: 675, max: 700, label: '675 – 700 m', color: '#e67e33' },
+      { min: 700, max: 725, label: '700 – 725 m', color: '#c96a3a' },
+      { min: 725, max: 755, label: '725 – 755 m', color: '#f2f0e8' }
+    ],
+    popupConfig: {
+      titleField: 'name',
+      defaultTitle: 'Hipsometria e Relevo de Passo Fundo',
+      fields: [
+        { key: 'name', label: 'Camada', defaultValue: 'Hipsometria e Relevo' },
+        { key: 'data', label: 'Referência', defaultValue: '2026' },
+        { key: 'crs', label: 'Sistema de Referência', defaultValue: 'SIRGAS 2000 / UTM 22S (EPSG:31982) / Web Mercator' },
+        { key: 'resolucao', label: 'Resolução Original', defaultValue: '28,53 m (Nativa MDE) / Tiles Z10 a Z14' },
+        { key: 'classes', label: 'Faixas Altimétricas', defaultValue: '11 Classes (474 m a 755 m)' },
+        { key: 'composicao', label: 'Composição', defaultValue: 'Hipsometria + Rugosidade (15%) + Sombreamento (35%)' },
+        { key: 'fonte', label: 'Fonte', defaultValue: 'Prefeitura Municipal de Passo Fundo / Defesa Civil / SEPLAN' }
+      ]
+    },
+    description: 'Composição hipsométrica detalhada com sombreamento de relevo e rugosidade de Passo Fundo (faixas altimétricas de 474 m a 755 m).',
+    searchable: false
   }
 ];
 
