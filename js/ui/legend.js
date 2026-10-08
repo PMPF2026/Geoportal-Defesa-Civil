@@ -71,6 +71,31 @@ export class LegendUI {
    * @returns {string}
    */
   generateLayerLegendItem(layerConfig) {
+    // 0. Hipsometria e Relevo
+    if (layerConfig.id === 'hipsometria_relevo' || layerConfig.isHypsometry) {
+      const classes = layerConfig.hypsometryClasses || [];
+      let rampHtml = `
+        <div class="legend-item">
+          <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">
+            Hipsometria
+          </div>
+          <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px;">
+            Altitude (m)
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; padding-left: 4px;">
+      `;
+      classes.forEach(c => {
+        rampHtml += `
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted);">
+            <span style="display: inline-block; width: 18px; height: 12px; border-radius: 2px; background: ${c.color}; border: 1px solid rgba(255,255,255,0.25);"></span>
+            <span>${c.label}</span>
+          </div>
+        `;
+      });
+      rampHtml += `</div></div>`;
+      return rampHtml;
+    }
+
     // 1. Choropleth Legend Ramp (Densidade Populacional)
     if (layerConfig.isChoropleth && layerConfig.choroplethBreaks) {
       let rampHtml = `
