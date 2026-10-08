@@ -3,6 +3,8 @@
  * Central Layer Registry & Advanced Cartographic Symbology Configuration
  */
 
+import { HIPSOMETRIA_VALID_TILES } from './hipsometria-tiles.js';
+
 export const LAYER_GROUPS = [
   {
     id: 'defesa_civil',
@@ -63,6 +65,14 @@ export const LAYER_GROUPS = [
     iconName: 'mountain',
     description: 'Mapeamento oficial de domicílios e setores de risco geológico (Serviço Geológico do Brasil - SGB, 2025)',
     badge: 'SGB 2025'
+  },
+  {
+    id: 'topografia_relevo',
+    title: '9. Topografia, Hipsometria & Relevo',
+    iconClass: 'topography',
+    iconName: 'mountain-snow',
+    description: 'Modelo Digital de Elevação, hipsometria e relevo sombreado municipal (Prefeitura Municipal / Defesa Civil / SEPLAN)',
+    badge: 'Relevo'
   }
 ];
 

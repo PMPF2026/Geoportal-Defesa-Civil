@@ -35,6 +35,7 @@ $mimeMap = @{
     ".png"  = "image/png";
     ".jpg"  = "image/jpeg";
     ".jpeg" = "image/jpeg";
+    ".webp" = "image/webp";
     ".ico"  = "image/x-icon";
     ".qmd"  = "text/xml; charset=utf-8"
 }
