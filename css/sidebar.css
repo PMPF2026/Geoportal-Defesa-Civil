@@ -404,6 +404,8 @@
 .group-icon.urban { background: #7c3aed; }
 .group-icon.population { background: #d97706; }
 .group-icon.ortho { background: #0891b2; }
+.group-icon.sgb { background: #dc2626; }
+.group-icon.topography { background: #16a34a; }
 
 .layer-group-title {
   font-size: 12px;
