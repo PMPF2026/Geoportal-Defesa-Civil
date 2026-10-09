@@ -1094,3 +1094,34 @@
   border-color: #b45309;
   color: #ffffff;
 }
+
+.btn-download-format.geotiff {
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+.btn-download-format.geotiff:hover {
+  background: #9333ea;
+  border-color: #7e22ce;
+  color: #ffffff;
+}
+
+.btn-download-format.bin {
+  border-color: rgba(6, 182, 212, 0.4);
+  color: #22d3ee;
+}
+.btn-download-format.bin:hover {
+  background: #0891b2;
+  border-color: #0e7490;
+  color: #ffffff;
+}
+
+.btn-download-format.json {
+  border-color: rgba(244, 114, 182, 0.4);
+  color: #f472b6;
+}
+.btn-download-format.json:hover {
+  background: #db2777;
+  border-color: #be185d;
+  color: #ffffff;
+}
+
