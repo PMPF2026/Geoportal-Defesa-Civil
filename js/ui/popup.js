@@ -88,6 +88,7 @@ export class PopupUI {
     if (layerConfig.group === 'divisao_territorial') tagClass = 'tag-territorial';
     if (layerConfig.group === 'planejamento_urbano') tagClass = 'tag-planejamento';
     if (layerConfig.group === 'populacao') tagClass = 'tag-populacao';
+    if (layerConfig.group === 'topografia_relevo') tagClass = 'tag-topografia';
 
     // 3. Multi-feature pagination header if > 1 feature
     let paginationHtml = '';
@@ -214,6 +215,22 @@ export class PopupUI {
           <tr style="background: rgba(245, 158, 11, 0.10);">
             <th style="color: #fcd34d; font-weight: 700;">${escapeHtml(field.label)}</th>
             <td style="font-weight: 700; color: #fef08a;">${escapeHtml(String(val))}</td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Destaque para Cota Altimétrica (Curvas de Nível — 10 m)
+      if (field.format === 'elevation_m' || (field.key === 'Z' && layerConfig.id === 'curvas_nivel_10m')) {
+        const num = parseFloat(val);
+        const zStr = !isNaN(num) ? `${Number.isInteger(num) ? num : num.toFixed(1).replace('.', ',')} m` : `${escapeHtml(String(val))} m`;
+        const activeColor = this.layerManager?.contourColor || layerConfig.style?.strokeColor || '#795548';
+        rowsHtml += `
+          <tr style="background: rgba(121, 85, 72, 0.15); border-left: 3px solid ${activeColor};">
+            <th style="color: #d7ccc8; font-weight: 700;">${escapeHtml(field.label)}</th>
+            <td style="font-weight: 800; color: #ffffff; font-size: 13px;">
+              <span style="background: ${activeColor}; color: #ffffff; padding: 2px 8px; border-radius: 4px; display: inline-block;">${zStr}</span>
+            </td>
           </tr>
         `;
         return;

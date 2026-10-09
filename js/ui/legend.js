@@ -202,6 +202,20 @@ export class LegendUI {
       `;
     }
 
+    // 3.5. Curvas de nível — 10 m (Topografia & Relevo)
+    if (layerConfig.id === 'curvas_nivel_10m') {
+      const activeColor = this.layerManager?.contourColor || layerConfig.style?.strokeColor || '#795548';
+      return `
+        <div class="legend-item" style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-block; width: 24px; height: 0px; border-top: 2.2px solid ${activeColor};"></span>
+          <div>
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block;">${layerConfig.name}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Isolinhas com equidistância de 10 metros &bull; MDE Passo Fundo</span>
+          </div>
+        </div>
+      `;
+    }
+
     // 4. LineString Symbology
     if (layerConfig.geometryType === 'MultiLineString' || layerConfig.geometryType === 'LineString') {
       const s = layerConfig.style || {};
