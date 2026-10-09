@@ -1438,6 +1438,43 @@ export const LAYERS_CONFIG = [
     },
     description: 'Composição hipsométrica detalhada com sombreamento de relevo e rugosidade de Passo Fundo (faixas altimétricas de 474 m a 755 m).',
     searchable: false
+  },
+  {
+    id: 'curvas_nivel_10m',
+    name: 'Curvas de nível — 10 m',
+    fileName: 'curvas_nivel_10m.geojson',
+    source: 'Prefeitura Municipal de Passo Fundo / Defesa Civil / SEPLAN',
+    refDate: '2026',
+    group: 'topografia_relevo',
+    geometryType: 'MultiLineString',
+    defaultVisible: false,
+    defaultOpacity: 0.9,
+    zIndex: 16,
+    isLazy: true,
+    crs: 'EPSG:31982',
+    style: {
+      strokeColor: '#795548',
+      strokeWidth: 1.0,
+      previewColor: '#795548'
+    },
+    contourColor: '#795548',
+    colorOptions: [
+      { id: 'marrom', label: 'Marrom', color: '#795548', description: 'Visualização topográfica tradicional' },
+      { id: 'preto', label: 'Preto', color: '#222222', description: 'Alto contraste em mapas claros' },
+      { id: 'vermelho', label: 'Vermelho', color: '#D32F2F', description: 'Destaque visual sobre a cartografia' }
+    ],
+    popupConfig: {
+      defaultTitle: 'Curva de nível — 10 m',
+      fields: [
+        { key: 'Z', label: 'Cota altimétrica', format: 'elevation_m' },
+        { key: 'equidistancia', label: 'Equidistância', defaultValue: '10 metros' },
+        { key: 'crs', label: 'Sistema de Referência', defaultValue: 'SIRGAS 2000 / UTM 22S (EPSG:31982)' },
+        { key: 'origem_dados', label: 'Origem', defaultValue: 'Modelo Digital de Elevação (MDE Passo Fundo)' },
+        { key: 'fonte', label: 'Fonte', defaultValue: 'Prefeitura Municipal de Passo Fundo / Defesa Civil / SEPLAN' }
+      ]
+    },
+    description: 'Camada vetorial de curvas de nível com equidistância altimétrica vertical de 10 metros geradas a partir do Modelo Digital de Elevação.',
+    searchable: false
   }
 ];
 

@@ -30,6 +30,9 @@ export class LayerManager {
 
     // Listeners for layer load events
     this.loadCallbacks = [];
+
+    // Active color for contour lines (Curvas de nível — 10 m)
+    this.contourColor = '#795548';
   }
 
   /**
@@ -219,6 +222,11 @@ export class LayerManager {
       features.forEach(f => {
         f.set('_layerId', config.id);
         f.set('_layerName', config.name);
+        if (config.id === 'curvas_nivel_10m') {
+          const zVal = f.get('Z') ?? f.get('ELEV');
+          f.set('Z', zVal);
+          f.set('ELEV', zVal);
+        }
       });
 
       source.addFeatures(features);
@@ -658,6 +666,21 @@ export class LayerManager {
       };
     }
 
+    // 7.5. Curvas de nível — 10 m (Topografia & Relevo) com seletor dinâmico de 3 cores
+    if (config.id === 'curvas_nivel_10m') {
+      return (feature) => {
+        const activeColor = this.contourColor || config.style?.strokeColor || '#795548';
+        const z = feature.get('Z') ?? feature.get('ELEV') ?? 0;
+        const isMaster = Math.round(z) % 50 === 0;
+        return new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            color: activeColor,
+            width: isMaster ? 1.4 : 0.9
+          })
+        });
+      };
+    }
+
     // 8. Padrão genérico
     return new ol.style.Style({
       fill: s.fillColor ? new ol.style.Fill({ color: s.fillColor }) : undefined,
@@ -728,5 +751,27 @@ export class LayerManager {
 
   getConfig(layerId) {
     return this.configs.get(layerId);
+  }
+
+  /**
+   * Atualiza dinamicamente a cor da camada Curvas de nível — 10 m
+   * Troca instantânea na simbologia sem novo download do GeoJSON
+   * @param {string} color Código HEX (#795548, #222222, #D32F2F)
+   */
+  setContourColor(color) {
+    this.contourColor = color;
+    const config = this.configs.get('curvas_nivel_10m');
+    const layer = this.layers.get('curvas_nivel_10m');
+
+    if (config && config.style) {
+      config.style.strokeColor = color;
+      config.style.previewColor = color;
+      config.contourColor = color;
+    }
+
+    if (layer) {
+      layer.setStyle(this.createLayerStyle(config));
+      layer.changed();
+    }
   }
 }
