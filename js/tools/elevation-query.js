@@ -143,7 +143,10 @@ export class ElevationQueryTool {
     this.loadPromise = (async () => {
       try {
         console.log('[ElevationQuery] Baixando matriz DEM otimizada (dem_passo_fundo.bin)...');
-        const response = await fetch('data/dem_passo_fundo.bin');
+        let response = await fetch('dem_passo_fundo.bin');
+        if (!response.ok) {
+          response = await fetch('data/dem_passo_fundo.bin');
+        }
         if (!response.ok) {
           throw new Error(`Falha ao obter DEM: HTTP ${response.status}`);
         }

@@ -15,6 +15,15 @@
       "dest": "/$1"
     },
     {
+      "src": "/(.*\\.bin)",
+      "headers": {
+        "Content-Type": "application/octet-stream",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600"
+      },
+      "dest": "/$1"
+    },
+    {
       "src": "/(.*\\.js)",
       "headers": {
         "Content-Type": "application/javascript; charset=utf-8",
