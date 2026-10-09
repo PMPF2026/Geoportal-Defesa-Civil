@@ -179,3 +179,95 @@
   border-color: var(--dc-orange-primary);
   color: #fff;
 }
+
+/* ==========================================================================
+   Balão Flutuante de Cota Altimétrica (Topografia & Hipsometria)
+   Estilo fiel ao topographic-map.com com seta apontadora e botão fechar
+   ========================================================================== */
+
+.elevation-speech-bubble {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  padding: 5px 8px 5px 12px;
+  border-radius: 6px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.28), 0 1px 4px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  z-index: 1600;
+  user-select: none;
+  white-space: nowrap;
+  animation: elevationBubblePop 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes elevationBubblePop {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.elevation-speech-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -7px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid #ffffff;
+}
+
+.elevation-speech-bubble::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -8px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 9px solid rgba(0, 0, 0, 0.18);
+}
+
+.elevation-bubble-value {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.2px;
+  line-height: 1;
+}
+
+.elevation-bubble-closer {
+  background: transparent;
+  border: none;
+  color: #757575;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 3px;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.elevation-bubble-closer:hover {
+  color: #d32f2f;
+  background-color: rgba(0, 0, 0, 0.06);
+}
+

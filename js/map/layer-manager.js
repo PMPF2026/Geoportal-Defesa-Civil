@@ -253,6 +253,12 @@ export class LayerManager {
       await this.loadLayerData(layerId);
     }
     layer.setVisible(visible);
+
+    if (visible && (layerId === 'hipsometria_relevo' || layerId === 'curvas_nivel_10m')) {
+      if (window.webGis && window.webGis.elevationQueryTool) {
+        window.webGis.elevationQueryTool.loadDemData().catch(() => {});
+      }
+    }
   }
 
   /**
@@ -782,6 +788,11 @@ export class LayerManager {
 
   getLayer(layerId) {
     return this.layers.get(layerId) || this.customLayers.get(layerId);
+  }
+
+  isLayerVisible(layerId) {
+    const layer = this.getLayer(layerId);
+    return layer ? Boolean(layer.getVisible()) : false;
   }
 
   getConfig(layerId) {

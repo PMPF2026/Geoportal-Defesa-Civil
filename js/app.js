@@ -24,6 +24,7 @@ import { WeatherUI } from './weather/weather-ui.js';
 import { Item6ThematicLegendUI } from './ui/thematic-legend-item6.js';
 import { HipsometriaFloatingLegendUI } from './ui/thematic-legend-hipsometria.js';
 import { ClimateMapsUI } from './climate/climate-maps-ui.js';
+import { ElevationQueryTool } from './tools/elevation-query.js';
 
 class WebGisApp {
   constructor() {
@@ -34,6 +35,7 @@ class WebGisApp {
     this.legendUI = null;
     this.searchUI = null;
     this.popupUI = null;
+    this.elevationQueryTool = null;
     this.identifyTool = null;
     this.measureTool = null;
     this.spatialAnalysisTool = null;
@@ -74,8 +76,11 @@ class WebGisApp {
       // 7. Initialize Search UI
       this.searchUI = new SearchUI(this.mapEngine, this.layerManager, this.popupUI);
 
-      // 8. Initialize Identify Tool
-      this.identifyTool = new IdentifyTool(this.mapEngine, this.layerManager, this.popupUI);
+      // 8. Initialize Elevation Query Tool (Topografia & Hipsometria)
+      this.elevationQueryTool = new ElevationQueryTool(this.mapEngine, this.layerManager);
+
+      // 8.1. Initialize Identify Tool
+      this.identifyTool = new IdentifyTool(this.mapEngine, this.layerManager, this.popupUI, this.elevationQueryTool);
 
       // 9. Initialize Measurement Tool
       this.measureTool = new MeasureTool(this.mapEngine);
