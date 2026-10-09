@@ -90,6 +90,16 @@ export const DOWNLOAD_THEMATIC_GROUPS = [
       'limite_plano_diretor',
       'municipios_rs'
     ]
+  },
+  {
+    id: 'topografia_relevo',
+    title: 'Topografia, Hipsometria & Relevo',
+    shortTitle: 'Topografia',
+    iconName: 'mountain',
+    layerIds: [
+      'curvas_nivel_10m',
+      'hipsometria_relevo'
+    ]
   }
 ];
 
@@ -156,7 +166,9 @@ export class DownloadsUI {
       'bairros': 'Delimitação das regiões urbanas, vilas e bairros municipais com população residente do Censo 2022.',
       'distritos': 'Sedes dos distritos municipais de Passo Fundo (Sede, São Roque, Bom Recreio, Bela Vista, Capinzal, Sede Independência e Pulador).',
       'limite_plano_diretor': 'Perímetro e zoneamento urbano oficial do Plano Diretor Municipal de Passo Fundo.',
-      'municipios_rs': 'Malha territorial dos 7 municípios limítrofes que fazem fronteira com Passo Fundo (IBGE).'
+      'municipios_rs': 'Malha territorial dos 7 municípios limítrofes que fazem fronteira com Passo Fundo (IBGE).',
+      'curvas_nivel_10m': '2.679 isolinhas altimétricas vetoriais com equidistância vertical de 10 metros geradas a partir do Modelo Digital de Elevação de Passo Fundo/RS (cotas de 470 m a 750 m).',
+      'hipsometria_relevo': 'Modelo Digital de Elevação (MDE) e composição hipsométrica de Passo Fundo com faixas de 474 m a 755 m e resolução espacial nativa de 28,53 metros (SIRGAS 2000 / UTM 22S).'
     };
 
     const layerMetaMap = {};
@@ -170,15 +182,17 @@ export class DownloadsUI {
     });
 
     this.downloadableLayers = LAYERS_CONFIG
-      .filter(l => !l.isRaster && l.fileName && l.fileName.endsWith('.geojson'))
+      .filter(l => (!l.isRaster && l.fileName && l.fileName.endsWith('.geojson')) || l.id === 'hipsometria_relevo')
       .map(l => {
         const meta = layerMetaMap[l.id] || { groupId: 'outros', groupTitle: 'Outros' };
-        const geom = this.getGeometryInfo(l.geometryType);
+        const geom = l.isRaster
+          ? { icon: 'mountain', label: 'Raster / MDE' }
+          : this.getGeometryInfo(l.geometryType);
         return {
           ...l,
           thematicGroupId: meta.groupId,
           thematicGroupTitle: meta.groupTitle,
-          description: descriptions[l.id] || l.description || `Dados geoespaciais vetoriais da camada ${l.name}.`,
+          description: descriptions[l.id] || l.description || `Dados geoespaciais da camada ${l.name}.`,
           geomIcon: geom.icon,
           geomLabel: geom.label
         };
