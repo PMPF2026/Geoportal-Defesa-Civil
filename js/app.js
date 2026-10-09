@@ -22,6 +22,7 @@ import { DashboardUI } from './dashboard/dashboard.js';
 import { DownloadsUI } from './ui/downloads.js';
 import { WeatherUI } from './weather/weather-ui.js';
 import { Item6ThematicLegendUI } from './ui/thematic-legend-item6.js';
+import { HipsometriaFloatingLegendUI } from './ui/thematic-legend-hipsometria.js';
 import { ClimateMapsUI } from './climate/climate-maps-ui.js';
 
 class WebGisApp {
@@ -43,6 +44,7 @@ class WebGisApp {
     this.dashboardUI = null;
     this.weatherUI = null;
     this.item6ThematicLegendUI = null;
+    this.hipsometriaFloatingLegendUI = null;
     this.climateMapsUI = null;
   }
 
@@ -115,6 +117,10 @@ class WebGisApp {
       // 15.1. Inicializar Legenda Cartográfica Temática Dinâmica do Item 6 (População & Vulnerabilidade Social)
       this.item6ThematicLegendUI = new Item6ThematicLegendUI(this.layerManager, 'item6-floating-legend');
       this.item6ThematicLegendUI.init();
+
+      // 15.2. Inicializar Legenda Cartográfica Flutuante da Camada Hipsométrica (Canto Inferior Direito)
+      this.hipsometriaFloatingLegendUI = new HipsometriaFloatingLegendUI(this.layerManager, 'hipsometria-floating-legend');
+      this.hipsometriaFloatingLegendUI.init();
 
       // 16. Refresh Lucide Icons across all rendered components
       this.refreshIcons();
