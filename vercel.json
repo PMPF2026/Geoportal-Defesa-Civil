@@ -24,6 +24,15 @@
       "dest": "/$1"
     },
     {
+      "src": "/(.*\\.tif)",
+      "headers": {
+        "Content-Type": "image/tiff",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600"
+      },
+      "dest": "/$1"
+    },
+    {
       "src": "/(.*\\.js)",
       "headers": {
         "Content-Type": "application/javascript; charset=utf-8",
