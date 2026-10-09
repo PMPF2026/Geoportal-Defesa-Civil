@@ -666,17 +666,52 @@ export class LayerManager {
       };
     }
 
-    // 7.5. Curvas de nível — 10 m (Topografia & Relevo) com seletor dinâmico de 3 cores
+    // 7.5. Curvas de nível — 10 m (Topografia & Relevo) com cotas altimétricas e seletor dinâmico de 3 cores
     if (config.id === 'curvas_nivel_10m') {
-      return (feature) => {
+      return (feature, resolution) => {
         const activeColor = this.contourColor || config.style?.strokeColor || '#795548';
-        const z = feature.get('Z') ?? feature.get('ELEV') ?? 0;
-        const isMaster = Math.round(z) % 50 === 0;
+        const rawZ = feature.get('Z') ?? feature.get('ELEV') ?? 0;
+        const zNum = parseFloat(rawZ);
+        const isMaster = Math.round(zNum) % 50 === 0;
+
+        // Regra de espessura cartográfica: curvas mestras (a cada 50m) com destaque sutil
+        const strokeWidth = isMaster ? 1.4 : 0.85;
+
+        // Controle de densidade e escala para os rótulos de cotas:
+        // - resolution > 10 (~Zoom < 14): Sem rótulos para evitar saturação visual em escala macro municipal
+        // - resolution > 4.5 e <= 10 (~Zoom 14 a 15): Apenas curvas mestras (múltiplos de 50 m)
+        // - resolution <= 4.5 (~Zoom 15+): Todas as curvas de nível (equidistância de 10 m)
+        let textStyle = null;
+        const showMasterLabels = resolution <= 10 && isMaster;
+        const showAllLabels = resolution <= 4.5;
+
+        if (showMasterLabels || showAllLabels) {
+          const zText = Number.isInteger(zNum) ? `${zNum} m` : `${zNum.toFixed(1)} m`;
+
+          textStyle = new ol.style.Text({
+            text: zText,
+            font: isMaster ? 'bold 10.5px "Inter", sans-serif' : '500 9.5px "Inter", sans-serif',
+            placement: 'line',
+            repeat: resolution <= 2.5 ? 350 : 500, // Espaçamento calibrado em pixels ao longo da isolinha
+            maxAngle: Math.PI / 4,
+            overflow: false,
+            keepUpright: true,
+            fill: new ol.style.Fill({
+              color: activeColor
+            }),
+            stroke: new ol.style.Stroke({
+              color: 'rgba(255, 255, 255, 0.95)',
+              width: 3.2
+            })
+          });
+        }
+
         return new ol.style.Style({
           stroke: new ol.style.Stroke({
             color: activeColor,
-            width: isMaster ? 1.4 : 0.9
-          })
+            width: strokeWidth
+          }),
+          text: textStyle
         });
       };
     }
