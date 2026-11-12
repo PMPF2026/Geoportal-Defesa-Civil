@@ -58,11 +58,13 @@
 
 html, body {
   width: 100%;
+  max-width: 100vw;
   height: 100%;
   height: 100dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;
+  overflow-x: hidden;
   background-color: var(--bg-app);
   color: var(--text-primary);
   font-family: var(--font-family);
@@ -74,26 +76,29 @@ html, body {
 /* ================= VIEWPORT PRINCIPAL (100dvh) ================= */
 .app-viewport {
   width: 100%;
+  max-width: 100vw;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  overflow-x: hidden;
   padding-top: var(--safe-top);
 }
 
 /* ================= CABEÇALHO MOBILE ================= */
 .app-header {
-  height: 48px;
-  min-height: 48px;
+  height: 46px;
+  min-height: 46px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 10px;
   z-index: 1000;
   flex-shrink: 0;
+  gap: 8px;
 }
 
 .header-brand {
@@ -101,6 +106,8 @@ html, body {
   align-items: center;
   gap: 8px;
   overflow: hidden;
+  min-width: 0;
+  flex: 1;
 }
 
 .header-logo {
@@ -116,37 +123,43 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .header-inst {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-app-name {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: #ffffff;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .header-live-badge {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: var(--radius-full);
 }
 
@@ -165,24 +178,25 @@ html, body {
 }
 
 .live-text {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: var(--dc-green-light);
   text-transform: uppercase;
 }
 
 .btn-header-menu {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .btn-header-menu:active {
@@ -194,52 +208,61 @@ html, body {
 .river-monitoring-panel {
   background: linear-gradient(180deg, #0f172a 0%, #0b1120 100%);
   border-bottom: 1px solid rgba(2, 132, 199, 0.35);
-  padding: 8px 10px 9px 10px;
+  padding: 6px 8px 7px 8px;
   z-index: 995;
   flex-shrink: 0;
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .river-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
+  gap: 4px;
 }
 
 .river-title-block {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .river-icon {
-  font-size: 14px;
+  font-size: 13px;
+  flex-shrink: 0;
 }
 
 .river-panel-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   color: var(--dc-blue-light);
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .river-sensor-type-badge {
-  font-size: 9px;
+  font-size: 8.5px;
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.05);
-  padding: 2px 5px;
+  padding: 2px 4px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Grid com as 3 Estações Hidrológicas */
 .river-stations-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
   width: 100%;
 }
 
@@ -247,30 +270,32 @@ html, body {
   background: rgba(30, 41, 59, 0.7);
   border: 1px solid rgba(2, 132, 199, 0.25);
   border-radius: var(--radius-sm);
-  padding: 6px 7px;
+  padding: 5px 6px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  min-width: 0;
+  cursor: pointer;
 }
 
-.river-card.active-selected {
+.river-card:active {
   border-color: var(--dc-blue-light);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+  background: rgba(2, 132, 199, 0.2);
 }
 
 .river-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+  gap: 3px;
   margin-bottom: 2px;
 }
 
 .river-card-name {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   color: #f1f5f9;
   white-space: nowrap;
@@ -280,8 +305,8 @@ html, body {
 }
 
 .sensor-status-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -304,24 +329,26 @@ html, body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 2px 0 3px 0;
+  margin: 1px 0 2px 0;
+  min-width: 0;
 }
 
 .river-card-val {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 900;
   color: #38bdf8;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .river-card-val small {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 .river-id-tag {
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 700;
   color: var(--text-muted);
 }
@@ -335,7 +362,7 @@ html, body {
 }
 
 .river-time {
-  font-size: 8.5px;
+  font-size: 8px;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -657,7 +684,11 @@ html, body {
 }
 
 .bottom-sheet.collapsed {
-  max-height: 128px;
+  max-height: 104px;
+}
+
+.bottom-sheet.collapsed .sheet-expanded-content {
+  display: none !important;
 }
 
 .bottom-sheet.expanded {
@@ -975,31 +1006,34 @@ html, body {
 
 /* ================= BARRA FIXA INFERIOR DE EMERGÊNCIA ================= */
 .emergency-footer {
-  height: calc(54px + var(--safe-bottom));
+  height: calc(52px + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
   background: var(--bg-glass-strong);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border-subtle);
   display: grid;
-  grid-template-columns: 1.25fr 1fr 1fr;
-  gap: 6px;
-  padding: 6px 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  padding: 5px 8px;
   z-index: 1000;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .btn-emergency-call {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   border-radius: var(--radius-sm);
   text-decoration: none;
   color: #ffffff;
   font-weight: 800;
   transition: all 0.2s ease;
   padding: 0 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .btn-emergency-call:active {
@@ -1022,12 +1056,32 @@ html, body {
 }
 
 .emg-icon {
-  font-size: 16px;
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .emg-label-block {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.emg-label-block strong {
+  font-size: 10.5px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.emg-label-block small {
+  font-size: 7.5px;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
   text-align: left;
 }
 
