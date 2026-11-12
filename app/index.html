@@ -7,14 +7,14 @@
   
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ea580c">
+  <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Defesa Civil PF">
   <link rel="apple-touch-icon" href="../assets/logo-defesa-civil.jpg">
   <link rel="icon" type="image/jpeg" href="../assets/logo-defesa-civil.jpg">
 
-  <!-- Leaflet CSS (Lightweight Mobile Map - 40 KB) -->
+  <!-- Leaflet CSS (Lightweight Mobile Map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <!-- App Stylesheet -->
@@ -22,146 +22,284 @@
 </head>
 <body>
 
-  <!-- ================= HEADER MOBILE ================= -->
-  <header class="app-header">
-    <div class="header-brand">
-      <img src="../assets/logo-defesa-civil.jpg" alt="Defesa Civil Passo Fundo" class="header-logo">
-      <div class="header-titles">
-        <span class="header-inst">Prefeitura de Passo Fundo</span>
-        <span class="header-title">
-          Defesa Civil
-          <span class="header-badge">ALERTA</span>
-        </span>
+  <!-- ================= MAPA FULL-SCREEN DE FUNDO ================= -->
+  <div id="mobile-map" class="fullscreen-map"></div>
+
+  <!-- ================= TOP FLOATING HUD ================= -->
+  <header class="top-hud">
+    <!-- Botão Menu Drawer (Abas laterais) -->
+    <button class="hud-btn hud-btn-menu" id="btn-open-drawer" aria-label="Abrir menu de informações e abrigos">
+      <span class="icon-bars">☰</span>
+    </button>
+
+    <!-- Branding Compacto -->
+    <div class="hud-brand" id="hud-brand-title">
+      <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="hud-logo">
+      <div class="hud-brand-text">
+        <span class="hud-inst">Defesa Civil Passo Fundo</span>
+        <span class="hud-subtitle">Alerta, Risco & Abrigos</span>
       </div>
     </div>
-    <button class="btn-header-locate" id="btn-header-locate" title="Atualizar localização GPS">
-      <span>📍</span>
-      <span>Localizar</span>
-    </button>
+
+    <!-- Controles Rápidos da Direita: Camadas e GPS -->
+    <div class="hud-actions">
+      <!-- Alternar Mapa: Ruas vs Satélite -->
+      <button class="hud-btn hud-btn-pill" id="btn-toggle-basemap" title="Alternar Mapa (Ruas / Satélite)">
+        <span id="basemap-icon">🛰️</span>
+      </button>
+
+      <!-- Botão Recarregar GPS -->
+      <button class="hud-btn hud-btn-pill hud-btn-gps" id="btn-recenter-gps" title="Minha Localização GPS">
+        <span>📍</span>
+      </button>
+    </div>
   </header>
 
-  <!-- ================= CONTEÚDO PRINCIPAL ================= -->
-  <main class="app-container">
-
-    <!-- Banner de Instalação PWA -->
-    <div class="pwa-install-banner" id="pwa-banner">
-      <div class="pwa-text">
-        📱 <strong>Instalar Aplicativo Oficial</strong><br>
-        Acesso rápido a abrigos e rotas na sua tela inicial
+  <!-- ================= PILULA FLUTUANTE DE STATUS DE RISCO ================= -->
+  <div class="status-pill-container" id="status-pill-container">
+    <div class="status-pill status-loading" id="status-pill">
+      <span class="pill-icon" id="pill-icon">⏳</span>
+      <div class="pill-text-block">
+        <span class="pill-title" id="pill-title">Identificando GPS...</span>
+        <span class="pill-desc" id="pill-desc">Cruzando coordenadas com áreas de risco</span>
       </div>
-      <button class="btn-pwa-install" id="btn-pwa-install">Instalar</button>
+      <span class="pill-expand-arrow" id="btn-expand-status">ℹ️</span>
     </div>
 
-    <!-- CARD 1: DIAGNÓSTICO DE RISCO (STATUS DO USUÁRIO) -->
-    <section class="card card-risk-status loading" id="card-risk-status">
-      <div class="risk-header">
-        <div class="risk-icon-wrapper" id="risk-icon">📍</div>
-        <div class="risk-title-box">
-          <span class="risk-badge" id="risk-badge">OBTENDO GPS</span>
-          <h2 class="risk-title" id="risk-title">Identificando sua localização...</h2>
-        </div>
-      </div>
-      <p class="risk-desc" id="risk-desc">
-        Aguardando sinal de satélite para cruzar suas coordenadas com as manchas de inundação e áreas de atenção hidrológica de Passo Fundo.
-      </p>
-      <div class="risk-location-footer" id="risk-location-footer">
-        <span>📍 Aguardando precisão GPS...</span>
-        <span>Passo Fundo / RS</span>
-      </div>
-    </section>
+    <!-- Sub-aviso telemétrico quando há chuva forte ou rio subindo -->
+    <div class="telemetry-pill-alert" id="telemetry-pill-alert" style="display: none;">
+      <!-- Preenchido via JavaScript se alerta ativo -->
+    </div>
+  </div>
 
-    <!-- CARD 2: MONITORAMENTO EM TEMPO REAL (CHUVA E RIO) -->
-    <section class="card card-telemetry">
-      <div class="card-heading">
-        <span>🌧️</span>
-        <span>Monitoramento Local em Tempo Real</span>
-      </div>
-      <div class="telemetry-grid">
-        <!-- Telemetria Chuva -->
-        <div class="telemetry-box">
-          <span class="telemetry-label">Chuva Estação Mais Próxima</span>
-          <div class="telemetry-val" id="telemetry-rain-val">
-            -- <span class="telemetry-unit">mm</span>
-          </div>
-          <span class="telemetry-sub" id="telemetry-rain-sub">Consultando rede telemétrica...</span>
-          <div class="telemetry-alert-badge" id="telemetry-rain-badge" style="display: none;"></div>
-        </div>
+  <!-- ================= BANNER PWA COMPACTO ================= -->
+  <div class="pwa-banner-floating" id="pwa-banner" style="display: none;">
+    <div class="pwa-info">
+      <span>📱 <strong>Instalar App Oficial</strong> na tela inicial</span>
+    </div>
+    <div class="pwa-actions">
+      <button class="btn-pwa-add" id="btn-pwa-install">Instalar</button>
+      <button class="btn-pwa-dismiss" id="btn-pwa-dismiss">✕</button>
+    </div>
+  </div>
 
-        <!-- Telemetria Rio Passo Fundo -->
-        <div class="telemetry-box">
-          <span class="telemetry-label">Cota Rio Passo Fundo</span>
-          <div class="telemetry-val" id="telemetry-river-val">
-            -- <span class="telemetry-unit">m</span>
-          </div>
-          <span class="telemetry-sub" id="telemetry-river-sub">Estação DCRS-00016</span>
-          <div class="telemetry-alert-badge" id="telemetry-river-badge" style="display: none;"></div>
-        </div>
-      </div>
-    </section>
+  <!-- ================= BOTTOM SHEET: ABRIGO MAIS PRÓXIMO & NAVEGAÇÃO ================= -->
+  <div class="bottom-sheet" id="bottom-sheet">
+    <div class="sheet-drag-handle" id="sheet-handle"></div>
 
-    <!-- CARD 3: ABRIGO MAIS PRÓXIMO (HERO ACTION) -->
-    <section class="card card-shelter-hero" id="card-shelter-hero">
-      <div class="shelter-distance-badge" id="shelter-nearest-dist">
-        🟢 Calculando abrigo mais próximo...
+    <div class="sheet-header">
+      <div class="sheet-badge-dist" id="sheet-dist-badge">
+        <span class="pulse-dot"></span>
+        <span id="sheet-dist-text">Buscando abrigo mais próximo...</span>
       </div>
-      <h3 class="shelter-name" id="shelter-nearest-name">Carregando rede de acolhimento...</h3>
-      <div class="shelter-type-row" id="shelter-nearest-type">Centro de Acolhimento de Emergência</div>
-      <div class="shelter-address" id="shelter-nearest-address">
-        📍 <span>Passo Fundo / RS</span>
-      </div>
-
-      <!-- Botões de Rota e Navegação GPS -->
-      <div class="nav-buttons-row">
-        <a href="#" class="btn-nav btn-google-maps" id="btn-route-google" target="_blank">
-          <span>🚗</span>
-          <span>Google Maps</span>
-        </a>
-        <a href="#" class="btn-nav btn-waze" id="btn-route-waze" target="_blank">
-          <span>🚙</span>
-          <span>Navegar Waze</span>
-        </a>
-      </div>
-    </section>
-
-    <!-- CARD 4: MAPA MOBILE INTERATIVO -->
-    <section class="card" style="padding: 10px;">
-      <div class="card-heading" style="margin-bottom: 8px;">
-        <span>🗺️</span>
-        <span>Mapa de Emergência & Abrigos</span>
-      </div>
-      <div class="map-container-box">
-        <div id="mobile-map"></div>
-      </div>
-    </section>
-
-    <!-- CARD 5: LISTA COMPLETA DOS 17 ABRIGOS -->
-    <section class="card" style="padding: 12px;">
-      <button class="shelters-toggle-btn" id="btn-toggle-shelters" type="button">
-        <span>Ver todos os 17 abrigos cadastrados</span>
-        <span>▼</span>
+      <button class="btn-sheet-view-all" id="sheet-btn-view-all">
+        Ver 17 abrigos ❯
       </button>
-      <div class="shelters-list" id="shelters-list">
-        <!-- Renderizado dinamicamente pelo JavaScript -->
-      </div>
-    </section>
+    </div>
 
-  </main>
+    <div class="sheet-body">
+      <h3 class="sheet-shelter-name" id="sheet-shelter-name">Carregando rede de acolhimento...</h3>
+      <div class="sheet-shelter-meta" id="sheet-shelter-meta">Centro de Acolhimento de Emergência</div>
+      <div class="sheet-shelter-address" id="sheet-shelter-address">📍 Passo Fundo / RS</div>
+
+      <!-- Botões de Ação Imediata (Rotas) -->
+      <div class="sheet-nav-grid">
+        <a href="#" class="btn-nav-action btn-nav-maps" id="btn-nav-google" target="_blank" rel="noopener">
+          <span class="nav-icon">🗺️</span>
+          <div class="nav-btn-text">
+            <strong>Google Maps</strong>
+            <small>Abrir Rota</small>
+          </div>
+        </a>
+        <a href="#" class="btn-nav-action btn-nav-waze" id="btn-nav-waze" target="_blank" rel="noopener">
+          <span class="nav-icon">🚙</span>
+          <div class="nav-btn-text">
+            <strong>Waze</strong>
+            <small>Navegar Agora</small>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= BARRA FIXA INFERIOR DE EMERGÊNCIA ================= -->
-  <footer class="fixed-bottom-bar">
-    <a href="https://wa.me/5554991940449?text=Ol%C3%A1%2C%20preciso%20de%20informa%C3%A7%C3%B5es%20e%20apoio%20da%20Defesa%20Civil%20de%20Passo%20Fundo." class="btn-emergency btn-whatsapp" target="_blank">
-      <span style="font-size: 15px;">💬</span>
-      <span>WhatsApp</span>
+  <footer class="emergency-bar">
+    <a href="https://wa.me/5554991940449?text=Ol%C3%A1%2C%20preciso%20de%20informa%C3%A7%C3%B5es%20e%20apoio%20da%20Defesa%20Civil%20de%20Passo%20Fundo." class="btn-emg btn-emg-whatsapp" target="_blank" rel="noopener">
+      <span class="emg-icon">💬</span>
+      <div class="emg-text">
+        <strong>WhatsApp</strong>
+        <small>Plantão DC</small>
+      </div>
     </a>
-    <a href="tel:199" class="btn-emergency btn-call-199">
-      <span style="font-size: 15px;">📞</span>
-      <span>Discar 199</span>
+    <a href="tel:199" class="btn-emg btn-emg-199">
+      <span class="emg-icon">📞</span>
+      <div class="emg-text">
+        <strong>Discar 199</strong>
+        <small>Defesa Civil</small>
+      </div>
     </a>
-    <a href="tel:193" class="btn-emergency btn-call-193">
-      <span style="font-size: 15px;">🚒</span>
-      <span>Bombeiros 193</span>
+    <a href="tel:193" class="btn-emg btn-emg-193">
+      <span class="emg-icon">🚒</span>
+      <div class="emg-text">
+        <strong>193</strong>
+        <small>Bombeiros</small>
+      </div>
     </a>
   </footer>
+
+  <!-- ================= SIDE DRAWER (MENU LATERAL / ABAS LATERAIS) ================= -->
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  
+  <aside class="side-drawer" id="side-drawer">
+    <!-- Header do Drawer -->
+    <div class="drawer-header">
+      <div class="drawer-header-title">
+        <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="drawer-logo">
+        <div>
+          <h3>Defesa Civil Passo Fundo</h3>
+          <span>Painel Informativo & Recursos</span>
+        </div>
+      </div>
+      <button class="drawer-btn-close" id="btn-close-drawer" aria-label="Fechar menu">✕</button>
+    </div>
+
+    <!-- Navegação de Abas do Drawer -->
+    <div class="drawer-nav-tabs">
+      <button class="tab-btn active" data-tab="tab-abrigos" id="tab-btn-abrigos">
+        🏠 Abrigos (17)
+      </button>
+      <button class="tab-btn" data-tab="tab-telemetria" id="tab-btn-telemetria">
+        🌧️ Chuva & Rio
+      </button>
+      <button class="tab-btn" data-tab="tab-orientacoes" id="tab-btn-orientacoes">
+        📋 Orientações
+      </button>
+    </div>
+
+    <!-- Conteúdo das Abas -->
+    <div class="drawer-content">
+
+      <!-- ABA 1: LISTA COMPLETA DOS 17 ABRIGOS -->
+      <section class="tab-pane active" id="tab-abrigos">
+        <div class="pane-header-box">
+          <p class="pane-desc">Abrigos cadastrados para acolhimento de famílias em eventos climáticos. Ordenados por proximidade do seu GPS.</p>
+          <input type="text" id="shelter-search" class="drawer-search-input" placeholder="🔍 Buscar abrigo ou bairro...">
+        </div>
+        <div class="drawer-shelters-list" id="drawer-shelters-list">
+          <!-- Renderizado dinamicamente pelo JavaScript -->
+        </div>
+      </section>
+
+      <!-- ABA 2: MONITORAMENTO TELEMÉTRICO (CHUVA E RIO) -->
+      <section class="tab-pane" id="tab-telemetria">
+        <!-- Card Rio Passo Fundo -->
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>🌊</span>
+            <strong>Rio Passo Fundo (Estação DCRS-00016)</strong>
+          </div>
+          <div class="telemetry-main-row">
+            <div>
+              <span class="telemetry-kpi-val" id="drawer-river-val">-- <small>m</small></span>
+              <span class="telemetry-kpi-sub" id="drawer-river-trend">Tendência: Consultando...</span>
+            </div>
+            <div id="drawer-river-badge-box"></div>
+          </div>
+          <div class="river-cotas-info">
+            <span>Normal: &lt; 2,00m</span>
+            <span>Atenção: 2,50m</span>
+            <span>Alerta: 3,00m</span>
+            <span>Inundação: 3,50m</span>
+          </div>
+        </div>
+
+        <!-- Card Pluviômetros Plugfield -->
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>🌧️</span>
+            <strong>Rede Pluviométrica Municipal (16 Estações)</strong>
+          </div>
+          <p class="pane-desc" style="margin-bottom: 8px;">
+            Estação mais próxima de você: <strong id="drawer-station-nearest-name">Identificando...</strong>
+          </p>
+          <div class="telemetry-main-row">
+            <div>
+              <span class="telemetry-kpi-val" id="drawer-rain-val">-- <small>mm</small></span>
+              <span class="telemetry-kpi-sub" id="drawer-rain-sub">Acumulado nas últimas horas</span>
+            </div>
+            <div id="drawer-rain-badge-box"></div>
+          </div>
+
+          <!-- Mini Lista das Estações -->
+          <div class="stations-accordion-box">
+            <div class="stations-header">
+              <span>Leitura por Bairro</span>
+              <span class="stations-count">16 Sensores</span>
+            </div>
+            <div class="stations-scroll-list" id="drawer-stations-list">
+              <!-- Preenchido via JavaScript -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 3: ORIENTAÇÕES E CONTATOS -->
+      <section class="tab-pane" id="tab-orientacoes">
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>⚠️</span>
+            <strong>O que fazer em caso de Inundação?</strong>
+          </div>
+          <ul class="drawer-guide-list">
+            <li>Desligue a chave geral de energia elétrica e o registro de água/gás.</li>
+            <li>Coloque documentos e medicamentos em sacos plásticos impermeáveis.</li>
+            <li>Não atravesse ruas alagadas ou pontilhões submersos (a correnteza pode arrastar veículos).</li>
+            <li>Dirija-se imediatamente para o abrigo mais próximo ou ponto mais alto.</li>
+            <li>Em situações de risco iminente, ligue <strong>199 (Defesa Civil)</strong> ou <strong>193 (Bombeiros)</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>📱</span>
+            <strong>Aplicativo Oficial PWA</strong>
+          </div>
+          <p class="pane-desc">
+            Este aplicativo funciona direto no navegador e pode ser instalado no celular sem precisar da loja de aplicativos. Ele armazena offline as rotas e localizações dos abrigos.
+          </p>
+          <button class="btn-drawer-install" id="btn-drawer-install-app">
+            📲 Instalar Aplicativo no Celular
+          </button>
+        </div>
+
+        <div class="drawer-card">
+          <div class="drawer-card-title">
+            <span>🏛️</span>
+            <strong>Contatos Oficiais</strong>
+          </div>
+          <div class="drawer-contacts-list">
+            <div class="contact-row">
+              <span>Defesa Civil (Plantão 24h)</span>
+              <strong>199 / (54) 99194-0449</strong>
+            </div>
+            <div class="contact-row">
+              <span>Corpo de Bombeiros Militar</span>
+              <strong>193</strong>
+            </div>
+            <div class="contact-row">
+              <span>SAMU Emergência Médica</span>
+              <strong>192</strong>
+            </div>
+            <div class="contact-row">
+              <span>Brigada Militar</span>
+              <strong>190</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </aside>
 
   <!-- Scripts: Proj4js (Coordenadas) e Leaflet (Mapa Leve) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
