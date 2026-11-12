@@ -67,6 +67,12 @@ export class StatsEngine {
       },
       floodAreaKm2: 4.91,
       floodAreaHa: 490.9,
+      atencaoHidrologicaHa: 148.22,
+      atencaoHidrologicaKm2: 1.48,
+      atencaoHidrologicaM2: 1482150.05,
+      atencaoHidrologicaPoligonos: 22,
+      residenciasAtencaoHidrologica: 187,
+      residenciasAtencaoPct: 58.8,
       residenciasApp: 318,
       app30mHa: 130.49,
       rioPassoFundoKm: 17.68,
@@ -216,6 +222,24 @@ export class StatsEngine {
   }
 
   /**
+   * Recalculate flood attention statistics dynamically from loaded features
+   */
+  recalculateFromAtencaoHidrologicaFeatures(features) {
+    if (!features || features.length === 0) return;
+    this.cachedStats.atencaoHidrologicaPoligonos = features.length;
+    let totalAreaM2 = 0;
+    features.forEach(f => {
+      const a = parseFloat(f.get('Area'));
+      if (!isNaN(a)) totalAreaM2 += a;
+    });
+    if (totalAreaM2 > 0) {
+      this.cachedStats.atencaoHidrologicaM2 = totalAreaM2;
+      this.cachedStats.atencaoHidrologicaHa = +(totalAreaM2 / 10000).toFixed(2);
+      this.cachedStats.atencaoHidrologicaKm2 = +(totalAreaM2 / 1000000).toFixed(2);
+    }
+  }
+
+  /**
    * Returns current consolidated statistics with dynamic derivation from layer if loaded
    */
   async getConsolidatedStats() {
@@ -225,6 +249,13 @@ export class StatsEngine {
         const features = layer.getSource().getFeatures();
         if (features && features.length > 0) {
           this.recalculateFromSetoresFeatures(features);
+        }
+      }
+      const atencaoLayer = this.layerManager.getLayer('areas_atencao_hidrologica');
+      if (atencaoLayer && atencaoLayer.getSource()) {
+        const atencaoFeatures = atencaoLayer.getSource().getFeatures();
+        if (atencaoFeatures && atencaoFeatures.length > 0) {
+          this.recalculateFromAtencaoHidrologicaFeatures(atencaoFeatures);
         }
       }
     }

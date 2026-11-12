@@ -27,6 +27,7 @@ export const DOWNLOAD_THEMATIC_GROUPS = [
     iconName: 'alert-triangle',
     layerIds: [
       'areas_enchente_2024',
+      'areas_atencao_hidrologica',
       'app_30metros',
       'edificacoes_app',
       'mapeamento_sgb_2025',
@@ -138,6 +139,7 @@ export class DownloadsUI {
       'cobertura_abrigos_2km': 'Área de influência e cobertura territorial de 2 km ao redor dos 17 abrigos da Defesa Civil.',
       'zph_helicoptero': '9 Zonas de Pouso de Helicóptero (ZPH) cadastradas para pouso de emergência e resgate aéreo da Defesa Civil.',
       'areas_enchente_2024': 'Mancha oficial de inundação do evento hidrológico extremo de Maio/2024 (Decreto Estadual 57.600/2024 - ADA).',
+      'areas_atencao_hidrologica': '22 polígonos de atenção e suscetibilidade a inundações ao longo da planície do Rio Passo Fundo totalizando 148,22 hectares.',
       'app_30metros': 'Faixa de Proteção Permanente (APP) de 30 metros ao longo do Rio Passo Fundo (Lei Federal 12.651/2012).',
       'edificacoes_app': '318 edificações residenciais e comerciais localizadas dentro da Faixa de 30 metros com distâncias métricas ao rio.',
       'mapeamento_sgb_2025': '25 polígonos de setores de risco geológico e hidrológico alto e muito alto (R3 e R4) mapeados pelo Serviço Geológico do Brasil (SGB, 2025).',

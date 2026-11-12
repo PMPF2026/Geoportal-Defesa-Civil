@@ -152,6 +152,38 @@ export const LAYERS_CONFIG = [
     searchFields: ['mun_nm', 'st_dec_576', 'corede']
   },
   {
+    id: 'areas_atencao_hidrologica',
+    name: 'Áreas de Atenção Hidrológica',
+    fileName: 'Áreas de Atenção Hidrológica.geojson',
+    source: 'Defesa Civil / Mapeamento Técnico de Suscetibilidade',
+    refDate: '2026',
+    group: 'defesa_civil',
+    geometryType: 'MultiPolygon',
+    defaultVisible: false,
+    defaultOpacity: 0.85,
+    zIndex: 60,
+    isCore: true,
+    isLazy: false,
+    style: {
+      fillColor: 'rgba(249, 115, 22, 0.35)',
+      strokeColor: '#ea580c',
+      strokeWidth: 2.2,
+      previewColor: '#ea580c'
+    },
+    popupConfig: {
+      titleField: 'Inundaçã',
+      titlePrefix: 'Atenção Hidrológica — ',
+      defaultTitle: 'Área de Atenção Hidrológica',
+      fields: [
+        { key: 'id', label: 'Identificador (ID)' },
+        { key: 'Inundaçã', label: 'Setor / Margem', badgeColor: '#ea580c' },
+        { key: 'Area', label: 'Área do Setor', format: 'area' }
+      ]
+    },
+    searchable: true,
+    searchFields: ['Inundaçã', 'id']
+  },
+  {
     id: 'app_30metros',
     name: 'Faixa de 30 metros — Rio Passo Fundo',
     fileName: 'APP_30metros.geojson',

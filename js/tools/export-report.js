@@ -594,6 +594,11 @@ export class ExportReportTool {
               <td><strong style="color:#dc2626;">${formatNumber(stats.floodAreaKm2, 2)} km² (${formatNumber(stats.floodAreaHa, 2)} hectares)</strong></td>
               <td><span class="badge-alert">Decreto Emergencial 57.600/2024 (ADA)</span></td>
             </tr>
+            <tr class="alert-row" style="background: rgba(249, 115, 22, 0.08);">
+              <td><strong>Áreas de Atenção Hidrológica (Suscetibilidade)</strong></td>
+              <td><strong style="color:#ea580c;">${formatNumber(stats.atencaoHidrologicaHa, 2)} ha (${formatNumber(stats.atencaoHidrologicaPoligonos, 0)} polígonos)</strong></td>
+              <td>Delimitação técnica de suscetibilidade a inundações ao longo da planície fluvial</td>
+            </tr>
             <tr>
               <td><strong>Extensão Total da Malha Hidrográfica</strong></td>
               <td>${formatNumber(stats.hidroKm, 2)} km (${formatNumber(3739, 0)} trechos fluviais)</td>
@@ -852,6 +857,16 @@ export class ExportReportTool {
               <td><strong>Mancha de Inundação Oficial (ADA)</strong></td>
               <td><strong>${formatNumber(stats.floodAreaKm2, 2)} km²</strong> (${formatNumber(stats.floodAreaHa, 2)} hectares)</td>
               <td>Mapeamento oficial pós-evento extremo de 2024</td>
+            </tr>
+            <tr class="alert-row" style="background: rgba(249, 115, 22, 0.08);">
+              <td><strong>Áreas de Atenção Hidrológica (Suscetibilidade)</strong></td>
+              <td><strong style="color:#ea580c;">${formatNumber(stats.atencaoHidrologicaHa, 2)} ha (${formatNumber(stats.atencaoHidrologicaPoligonos, 0)} polígonos)</strong></td>
+              <td>Mapeamento de 22 setores de planície com suscetibilidade hidrológica direta</td>
+            </tr>
+            <tr>
+              <td><strong>Residências em Faixa de APP Interceptadas</strong></td>
+              <td><strong style="color:#ea580c;">${formatNumber(stats.residenciasAtencaoHidrologica, 0)} residências</strong> (${formatNumber(stats.residenciasAtencaoPct, 1)}% das 318 mapeadas)</td>
+              <td>Sobreposição espacial direta com os 22 polígonos de atenção hidrológica</td>
             </tr>
             <tr>
               <td><strong>Setores Censitários no Perímetro</strong></td>
@@ -1202,6 +1217,9 @@ export class ExportReportTool {
           </p>
           <p style="margin-top:8px;">
             A mancha de inundação do evento extremo de 2024 totalizou <strong>${formatNumber(stats.floodAreaKm2, 2)} km² (${formatNumber(stats.floodAreaHa, 2)} hectares)</strong>, demonstrando a necessidade de manter o monitoramento contínuo das réguas hidrológicas ao longo dos <strong>${formatNumber(stats.rioPassoFundoKm, 2)} km</strong> do curso principal e dos <strong>${formatNumber(stats.hidroKm, 2)} km</strong> de malha hídrica municipal.
+          </p>
+          <p style="margin-top:8px;">
+            A delimitação das <strong>Áreas de Atenção Hidrológica</strong> agrega <strong>22 polígonos setoriais cobrindo 148,22 hectares</strong> ao longo da planície aluvial do Rio Passo Fundo. O cruzamento espacial evidencia que <strong>${formatNumber(stats.residenciasAtencaoHidrologica, 0)} edificações mapeadas na faixa de APP (58,8% do total)</strong> encontram-se diretamente no interior desses polígonos, constituindo o núcleo geográfico prioritário para monitoramento de réguas, ações de evacuação preventiva e planos de contingência do Município.
           </p>
           <p style="margin-top:8px;">
             A análise integrada de <strong>Exposição e Cobertura de Proteção</strong> demonstra que os <strong>25 setores de risco mapeados pelo SGB (2025)</strong>, englobando <strong>617 edificações e 2.468 moradores</strong>, contam com <strong>99,8% de cobertura da rede municipal de abrigos no raio de 2 km (2.464 moradores)</strong> e <strong>66,3% de cobertura imediata no raio de 1 km (1.636 moradores)</strong>, permitindo resposta célere em situações de contingência e evacuação.
