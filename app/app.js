@@ -960,14 +960,18 @@ class MobileEmergencyApp {
       });
     }
 
-    // 5. Clique nos 3 Cards do Rio para focar no mapa
+    // 5. Clique nos 3 Cards do Rio para focar no mapa e abrir popup
     [4431, 4714, 4965].forEach(devId => {
       const cfg = RIVER_STATIONS_CONFIG[devId];
       const card = document.getElementById(cfg.cardId);
       if (card) {
         card.addEventListener('click', () => {
-          if (this.map) {
-            this.map.setView([cfg.lat, cfg.lon], 16, { animate: true });
+          const st = this.riverStationsData[devId] || cfg;
+          if (this.map && st.lat && st.lon) {
+            this.map.setView([st.lat, st.lon], 16, { animate: true });
+            if (st.marker) {
+              setTimeout(() => st.marker.openPopup(), 250);
+            }
           }
         });
       }
