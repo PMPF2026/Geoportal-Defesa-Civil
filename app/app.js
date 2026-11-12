@@ -113,9 +113,10 @@ class MobileEmergencyApp {
       attributionControl: false
     }).setView([-28.2628, -52.4067], 13);
 
-    // Basemap Dark elegante e de alta performance
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
+    // Basemap OpenStreetMap público e de alta performance (sem necessidade de API key)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
     }).addTo(this.map);
 
     L.control.zoom({ position: 'topright' }).addTo(this.map);
