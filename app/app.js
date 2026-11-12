@@ -21,8 +21,8 @@ const RIVER_STATIONS_CONFIG = {
     valId: 'river-val-4431',
     timeId: 'river-time-4431',
     dotId: 'status-dot-4431',
-    lat: -28.253607,
-    lon: -52.396017
+    lat: -28.25360,
+    lon: -52.39576
   },
   4714: {
     deviceId: 4714,
@@ -32,8 +32,8 @@ const RIVER_STATIONS_CONFIG = {
     valId: 'river-val-4714',
     timeId: 'river-time-4714',
     dotId: 'status-dot-4714',
-    lat: -28.2120,
-    lon: -52.3480
+    lat: -28.25644,
+    lon: -52.38236
   },
   4965: {
     deviceId: 4965,
@@ -43,8 +43,8 @@ const RIVER_STATIONS_CONFIG = {
     valId: 'river-val-4965',
     timeId: 'river-time-4965',
     dotId: 'status-dot-4965',
-    lat: -28.2430,
-    lon: -52.3820
+    lat: -28.24178,
+    lon: -52.41040
   }
 };
 
