@@ -1,0 +1,18 @@
+{
+  "name": "Defesa Civil Passo Fundo — Emergência & Abrigos",
+  "short_name": "Defesa Civil PF",
+  "description": "Aplicativo oficial de emergência, localização de abrigos, rotas GPS e alerta hidrológico da Defesa Civil de Passo Fundo / RS",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#090d16",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "../assets/logo-defesa-civil.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
