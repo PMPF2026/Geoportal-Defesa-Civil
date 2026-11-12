@@ -159,7 +159,7 @@ export const LAYERS_CONFIG = [
     refDate: '2026',
     group: 'defesa_civil',
     geometryType: 'MultiPolygon',
-    defaultVisible: false,
+    defaultVisible: true,
     defaultOpacity: 0.85,
     zIndex: 60,
     isCore: true,
@@ -1347,7 +1347,7 @@ export const LAYERS_CONFIG = [
     refDate: '2025',
     group: 'mapeamento_sgb',
     geometryType: 'MultiPolygon',
-    defaultVisible: true,
+    defaultVisible: false,
     defaultOpacity: 0.85,
     zIndex: 60,
     isCore: true,
@@ -1529,8 +1529,8 @@ export const OPERATIONAL_PRESETS = [
   {
     id: 'preset_defesa_civil',
     name: '🚨 Cenário de Risco & Enchentes',
-    description: 'Foco em mancha de inundação 2024, Faixa de 30 metros, abrigos de emergência e sua cobertura de 2 km, malha hídrica e bairros',
-    activeLayers: ['areas_enchente_2024', 'app_30metros', 'cobertura_abrigos_2km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
+    description: 'Foco em mancha de inundação 2024, Áreas de Atenção Hidrológica, Faixa de 30 metros, abrigos de emergência e sua cobertura de 2 km, malha hídrica e bairros',
+    activeLayers: ['areas_enchente_2024', 'areas_atencao_hidrologica', 'app_30metros', 'cobertura_abrigos_2km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'bairros', 'distritos', 'limite_territorial']
   },
   {
     id: 'preset_logistica',
@@ -1548,6 +1548,6 @@ export const OPERATIONAL_PRESETS = [
     id: 'preset_geral',
     name: '🏛️ Visão Geral Padrão',
     description: 'Configuração institucional inicial com camadas territoriais e de risco',
-    activeLayers: ['areas_enchente_2024', 'rio_passo_fundo', 'app_30metros', 'cobertura_abrigos_2km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
+    activeLayers: ['areas_enchente_2024', 'areas_atencao_hidrologica', 'rio_passo_fundo', 'app_30metros', 'cobertura_abrigos_2km', 'edificacoes_app', 'abrigos_defesa_civil', 'malha_hidrica', 'rodovia_federal', 'rodovia_estadual', 'estradas_municipais', 'ferrovia', 'pontes', 'limite_territorial', 'bairros', 'distritos']
   }
 ];
