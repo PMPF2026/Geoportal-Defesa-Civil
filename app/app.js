@@ -362,6 +362,7 @@ class MobileEmergencyApp {
         </div>
       `);
 
+      st.marker = marker;
       this.layerRiverStationsGroup.addLayer(marker);
     });
   }
