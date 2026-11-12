@@ -1,16 +1,52 @@
 /**
  * Defesa Civil Passo Fundo — PWA Mobile Emergency App Engine
- * Resposta rápida para emergências climáticas, localização de abrigos e rotas GPS
- * Versão Full-Screen Map HUD + Bottom Sheet + Side Drawer
+ * Arquitetura Mobile-First • Monitoramento Hidrológico (3 Estações Plugfield) • Mapa Central • Resposta Rápida
  */
 
-// 1. Definições de Projeção SIRGAS 2000 UTM 22S (EPSG:31982) e WGS84
+// 1. Projeção SIRGAS 2000 UTM 22S (EPSG:31982) e WGS84
 const EPSG_UTM22S = '+proj=utm +zone=22 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs';
 
 if (typeof proj4 !== 'undefined') {
   proj4.defs('EPSG:31982', EPSG_UTM22S);
   proj4.defs('EPSG:4326', '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');
 }
+
+// 2. As 3 Estações Plugfield com Sensores de Nível do Rio Passo Fundo
+const RIVER_STATIONS_CONFIG = {
+  4431: {
+    deviceId: 4431,
+    name: 'Avenida Brasil (Largo da Literatura)',
+    shortName: 'Av. Brasil (Largo)',
+    cardId: 'river-card-4431',
+    valId: 'river-val-4431',
+    timeId: 'river-time-4431',
+    dotId: 'status-dot-4431',
+    lat: -28.253607,
+    lon: -52.396017
+  },
+  4714: {
+    deviceId: 4714,
+    name: 'Lobo da Costa (Entre Rios)',
+    shortName: 'Lobo da Costa',
+    cardId: 'river-card-4714',
+    valId: 'river-val-4714',
+    timeId: 'river-time-4714',
+    dotId: 'status-dot-4714',
+    lat: -28.2120,
+    lon: -52.3480
+  },
+  4965: {
+    deviceId: 4965,
+    name: 'Quinto Giongo (Victor Issler)',
+    shortName: 'Quinto Giongo',
+    cardId: 'river-card-4965',
+    valId: 'river-val-4965',
+    timeId: 'river-time-4965',
+    dotId: 'status-dot-4965',
+    lat: -28.2430,
+    lon: -52.3820
+  }
+};
 
 class MobileEmergencyApp {
   constructor() {
@@ -19,15 +55,22 @@ class MobileEmergencyApp {
     this.attentionPolygons = null;
     this.flood2024Polygons = null;
     this.plugfieldStations = [];
-    this.riverTelemetry = null;
-    
+    this.riverStationsData = {};
+
     this.map = null;
     this.baseLayers = {};
     this.currentBaseLayer = 'osm';
+    
+    // Camadas vetoriais
+    this.layerAttention = null;
+    this.layerFlood = null;
+    this.layerSheltersGroup = null;
+    this.layerRiverStationsGroup = null;
     this.userMarker = null;
     this.userAccuracyCircle = null;
-    this.shelterMarkers = [];
+
     this.deferredPrompt = null;
+    this.isSheetExpanded = false;
 
     this.init();
   }
@@ -38,206 +81,356 @@ class MobileEmergencyApp {
     this.initMap();
     this.bindEvents();
 
-    // Carregar bases de dados e telemetrias em paralelo
+    // Carregamento simultâneo de dados
     await Promise.all([
-      this.loadSheltersData(),
       this.loadRiskPolygons(),
-      this.loadWeatherTelemetry()
+      this.loadSheltersData(),
+      this.loadPlugfieldData()
     ]);
 
-    // Solicitar GPS do usuário
+    // Solicita localização do usuário
     this.requestUserLocation();
+
+    // Polling de telemetria a cada 60 segundos
+    setInterval(() => {
+      this.loadPlugfieldData();
+    }, 60000);
   }
 
   // -------------------------------------------------------------
-  // REGISTRO DO SERVICE WORKER (PWA)
+  // PWA & SERVICE WORKER
   // -------------------------------------------------------------
   registerServiceWorker() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('[PWA] Service Worker registrado:', reg.scope))
-        .catch(err => console.warn('[PWA] Falha ao registrar SW:', err));
+        .then(reg => console.log('[PWA] Service Worker ativo:', reg.scope))
+        .catch(err => console.warn('[PWA] Erro ao registrar SW:', err));
     }
   }
 
   setupPwaInstall() {
-    const installBanner = document.getElementById('pwa-banner');
-    const installBtn = document.getElementById('btn-pwa-install');
-    const dismissBtn = document.getElementById('btn-pwa-dismiss');
-    const drawerInstallBtn = document.getElementById('btn-drawer-install-app');
-
+    const drawerInstallBtn = document.getElementById('btn-drawer-install');
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.deferredPrompt = e;
-      if (installBanner) installBanner.style.display = 'flex';
     });
 
-    const triggerInstall = async () => {
-      if (!this.deferredPrompt) {
-        alert('O aplicativo já está instalado ou seu navegador não suporta instalação direta. No Chrome/Safari, use o menu "Adicionar à tela inicial".');
-        return;
-      }
-      this.deferredPrompt.prompt();
-      const { outcome } = await this.deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        if (installBanner) installBanner.style.display = 'none';
-      }
-      this.deferredPrompt = null;
-    };
-
-    if (installBtn) installBtn.addEventListener('click', triggerInstall);
-    if (drawerInstallBtn) drawerInstallBtn.addEventListener('click', triggerInstall);
-    if (dismissBtn) {
-      dismissBtn.addEventListener('click', () => {
-        if (installBanner) installBanner.style.display = 'none';
+    if (drawerInstallBtn) {
+      drawerInstallBtn.addEventListener('click', async () => {
+        if (!this.deferredPrompt) {
+          alert('O aplicativo já está instalado ou seu navegador não suporta instalação direta. Use o menu do navegador "Adicionar à tela inicial".');
+          return;
+        }
+        this.deferredPrompt.prompt();
+        await this.deferredPrompt.userChoice;
+        this.deferredPrompt = null;
       });
     }
   }
 
   // -------------------------------------------------------------
-  // MAPA FULL-SCREEN (LEAFLET) & CAMADAS BASE
+  // MAPA LEAFLET
   // -------------------------------------------------------------
   initMap() {
     const mapEl = document.getElementById('mobile-map');
     if (!mapEl || typeof L === 'undefined') return;
 
-    // Centro inicial: Passo Fundo / RS
     this.map = L.map('mobile-map', {
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: false
     }).setView([-28.2628, -52.4067], 14);
 
-    // Camada 1: OpenStreetMap (Ruas detalhadas)
+    // Camada Ruas: OpenStreetMap
     this.baseLayers.osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
     });
 
-    // Camada 2: ESRI World Imagery (Satélite de alta resolução)
+    // Camada Satélite: ESRI World Imagery
     this.baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       attribution: '© ESRI World Imagery'
     });
 
-    // Adiciona OpenStreetMap como camada inicial padrão
     this.baseLayers.osm.addTo(this.map);
     this.currentBaseLayer = 'osm';
+
+    this.layerSheltersGroup = L.layerGroup().addTo(this.map);
+    this.layerRiverStationsGroup = L.layerGroup().addTo(this.map);
   }
 
-  toggleBasemap() {
+  setBasemap(type) {
     if (!this.map) return;
-    const iconEl = document.getElementById('basemap-icon');
+    const icon = document.getElementById('icon-basemap');
+    const chkSatellite = document.getElementById('chk-layer-satellite');
 
-    if (this.currentBaseLayer === 'osm') {
-      this.map.removeLayer(this.baseLayers.osm);
-      this.baseLayers.satellite.addTo(this.map);
-      this.currentBaseLayer = 'satellite';
-      if (iconEl) iconEl.textContent = '🗺️';
+    if (type === 'satellite') {
+      if (this.currentBaseLayer !== 'satellite') {
+        this.map.removeLayer(this.baseLayers.osm);
+        this.baseLayers.satellite.addTo(this.map);
+        this.currentBaseLayer = 'satellite';
+        if (icon) icon.textContent = '🗺️';
+        if (chkSatellite) chkSatellite.checked = true;
+      }
     } else {
-      this.map.removeLayer(this.baseLayers.satellite);
-      this.baseLayers.osm.addTo(this.map);
-      this.currentBaseLayer = 'osm';
-      if (iconEl) iconEl.textContent = '🛰️';
+      if (this.currentBaseLayer !== 'osm') {
+        this.map.removeLayer(this.baseLayers.satellite);
+        this.baseLayers.osm.addTo(this.map);
+        this.currentBaseLayer = 'osm';
+        if (icon) icon.textContent = '🛰️';
+        if (chkSatellite) chkSatellite.checked = false;
+      }
     }
   }
 
   // -------------------------------------------------------------
-  // EVENTOS DE INTERFACE & GAVETA LATERAL
+  // MONITORAMENTO HIDROLÓGICO (3 ESTAÇÕES PLUGFIELD)
   // -------------------------------------------------------------
-  bindEvents() {
-    // 1. Alternar Mapa Base (Ruas / Satélite)
-    const toggleMapBtn = document.getElementById('btn-toggle-basemap');
-    if (toggleMapBtn) {
-      toggleMapBtn.addEventListener('click', () => this.toggleBasemap());
+  async loadPlugfieldData() {
+    try {
+      const resp = await fetch('../api/weather/plugfield?action=devices');
+      const data = await resp.json();
+      
+      if (!data || !data.data || !data.data.stations) {
+        throw new Error('Formato de resposta inválido da API Plugfield');
+      }
+
+      this.plugfieldStations = data.data.stations;
+      console.log('[Plugfield] 16 estações carregadas com sucesso');
+
+      // Processar e exibir as 3 estações hidrológicas com destaque
+      this.updateRiverMonitoringUI();
+      this.renderRiverStationsOnMap();
+
+      // Processar monitoramento meteorológico (chuva)
+      this.updateWeatherMonitoringUI();
+
+    } catch (err) {
+      console.warn('[Plugfield] Falha ao consultar rede telemétrica:', err);
+      this.handleRiverStationsOffline();
     }
+  }
 
-    // 2. Recentralizar GPS
-    const recenterGpsBtn = document.getElementById('btn-recenter-gps');
-    if (recenterGpsBtn) {
-      recenterGpsBtn.addEventListener('click', () => {
-        this.requestUserLocation(true);
-      });
-    }
+  updateRiverMonitoringUI() {
+    const liveText = document.getElementById('header-live-text');
+    if (liveText) liveText.textContent = 'Ao Vivo';
 
-    // 3. Abrir e Fechar Side Drawer
-    const openDrawerBtn = document.getElementById('btn-open-drawer');
-    const closeDrawerBtn = document.getElementById('btn-close-drawer');
-    const drawerBackdrop = document.getElementById('drawer-backdrop');
-    const sideDrawer = document.getElementById('side-drawer');
-    const viewAllSheltersBtn = document.getElementById('sheet-btn-view-all');
+    // Para cada uma das 3 estações de nível
+    [4431, 4714, 4965].forEach(devId => {
+      const cfg = RIVER_STATIONS_CONFIG[devId];
+      if (!cfg) return;
 
-    const openDrawer = (targetTab = null) => {
-      if (sideDrawer) sideDrawer.classList.add('active');
-      if (drawerBackdrop) drawerBackdrop.classList.add('active');
-      if (targetTab) this.switchDrawerTab(targetTab);
-    };
+      const cardEl = document.getElementById(cfg.cardId);
+      const valEl = document.getElementById(cfg.valId);
+      const timeEl = document.getElementById(cfg.timeId);
+      const dotEl = document.getElementById(cfg.dotId);
 
-    const closeDrawer = () => {
-      if (sideDrawer) sideDrawer.classList.remove('active');
-      if (drawerBackdrop) drawerBackdrop.classList.remove('active');
-    };
+      const st = this.plugfieldStations.find(s => (s.id == devId || s.deviceId == devId));
 
-    if (openDrawerBtn) openDrawerBtn.addEventListener('click', () => openDrawer());
-    if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
-    if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
-    if (viewAllSheltersBtn) {
-      viewAllSheltersBtn.addEventListener('click', () => openDrawer('tab-abrigos'));
-    }
-
-    // 4. Abas do Drawer
-    const tabBtns = document.querySelectorAll('.drawer-nav-tabs .tab-btn');
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-tab');
-        this.switchDrawerTab(targetId);
-      });
-    });
-
-    // 5. Busca de Abrigos no Drawer
-    const searchInput = document.getElementById('shelter-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const query = (e.target.value || '').toLowerCase().trim();
-        this.filterSheltersList(query);
-      });
-    }
-
-    // 6. Clique na Pílula de Risco para recentralizar ou expandir
-    const statusPill = document.getElementById('status-pill');
-    if (statusPill) {
-      statusPill.addEventListener('click', () => {
-        if (this.userLocation && this.map) {
-          this.map.setView([this.userLocation.lat, this.userLocation.lon], 16, { animate: true });
+      if (st) {
+        const dash = st.dashboard || {};
+        
+        // 1. Extração precisa do nível do sensor (sc, riverLevel, levelAdditional)
+        let riverLevel = null;
+        if (st.riverLevel != null && !isNaN(parseFloat(st.riverLevel))) {
+          riverLevel = parseFloat(st.riverLevel);
+        } else if (dash.sc != null && dash.sc !== '' && !isNaN(parseFloat(dash.sc))) {
+          riverLevel = parseFloat(dash.sc);
+        } else if (dash.riverLevel != null && dash.riverLevel !== '' && !isNaN(parseFloat(dash.riverLevel))) {
+          riverLevel = parseFloat(dash.riverLevel);
+        } else if (dash.levelAdditional != null && dash.levelAdditional !== '' && !isNaN(parseFloat(dash.levelAdditional))) {
+          riverLevel = parseFloat(dash.levelAdditional);
         }
-      });
-    }
+
+        // 2. Extração do Timestamp oficial
+        const ts = st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null);
+        let timeStr = 'Hoje';
+        let isOnline = false;
+
+        if (ts) {
+          const numTs = ts < 10000000000 ? ts * 1000 : ts;
+          const dt = new Date(numTs);
+          const diffMin = Math.round((Date.now() - numTs) / (1000 * 60));
+
+          const hh = String(dt.getHours()).padStart(2, '0');
+          const mm = String(dt.getMinutes()).padStart(2, '0');
+          timeStr = `Hoje às ${hh}:${mm}`;
+
+          if (diffMin <= 120) {
+            isOnline = true;
+          }
+        }
+
+        // Armazena dados normalizados
+        this.riverStationsData[devId] = {
+          name: cfg.name,
+          level: riverLevel,
+          timeStr,
+          isOnline,
+          lat: cfg.lat,
+          lon: cfg.lon
+        };
+
+        // 3. Atualização dos Elementos Visuais na Tela Inicial
+        if (cardEl) cardEl.classList.remove('loading');
+
+        if (valEl) {
+          if (riverLevel !== null) {
+            valEl.innerHTML = `${riverLevel.toFixed(2).replace('.', ',')} <small>m</small>`;
+          } else {
+            valEl.innerHTML = `<span style="font-size:12px; color:#94a3b8;">Dado indisponível</span>`;
+          }
+        }
+
+        if (timeEl) timeEl.textContent = timeStr;
+
+        if (dotEl) {
+          dotEl.className = 'sensor-status-dot';
+          if (isOnline) {
+            dotEl.classList.add('online');
+            dotEl.title = 'Sensor Online e Transmitindo';
+          } else {
+            dotEl.classList.add('delayed');
+            dotEl.title = 'Comunicação atrasada';
+          }
+        }
+
+      } else {
+        // Estação não encontrada na resposta
+        if (cardEl) cardEl.classList.remove('loading');
+        if (valEl) valEl.innerHTML = `<span style="font-size:11px; color:#ef4444;">Sem comunicação</span>`;
+        if (timeEl) timeEl.textContent = 'Indisponível';
+        if (dotEl) {
+          dotEl.className = 'sensor-status-dot offline';
+          dotEl.title = 'Sem comunicação';
+        }
+      }
+    });
   }
 
-  switchDrawerTab(tabId) {
-    const tabBtns = document.querySelectorAll('.drawer-nav-tabs .tab-btn');
-    const panes = document.querySelectorAll('.drawer-content .tab-pane');
+  handleRiverStationsOffline() {
+    [4431, 4714, 4965].forEach(devId => {
+      const cfg = RIVER_STATIONS_CONFIG[devId];
+      if (!cfg) return;
+      const valEl = document.getElementById(cfg.valId);
+      const timeEl = document.getElementById(cfg.timeId);
+      const dotEl = document.getElementById(cfg.dotId);
 
-    tabBtns.forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+      if (valEl) valEl.innerHTML = `<span style="font-size:11px; color:#f87171;">Sem comunicação</span>`;
+      if (timeEl) timeEl.textContent = 'Consultando...';
+      if (dotEl) {
+        dotEl.className = 'sensor-status-dot delayed';
+      }
     });
+  }
 
-    panes.forEach(p => {
-      p.classList.toggle('active', p.id === tabId);
+  renderRiverStationsOnMap() {
+    if (!this.map || !this.layerRiverStationsGroup) return;
+    this.layerRiverStationsGroup.clearLayers();
+
+    [4431, 4714, 4965].forEach(devId => {
+      const st = this.riverStationsData[devId] || RIVER_STATIONS_CONFIG[devId];
+      if (!st) return;
+
+      const levelText = st.level !== null && st.level !== undefined
+        ? `${st.level.toFixed(2).replace('.', ',')} m`
+        : 'Indisponível';
+
+      const marker = L.circleMarker([st.lat, st.lon], {
+        radius: 9,
+        fillColor: '#0284c7',
+        color: '#38bdf8',
+        weight: 3,
+        opacity: 1,
+        fillOpacity: 0.95
+      });
+
+      marker.bindPopup(`
+        <div style="font-family:sans-serif; min-width:200px;">
+          <div style="color:#38bdf8; font-weight:800; font-size:12px; margin-bottom:4px;">
+            🌊 SENSOR DE NÍVEL DO RIO
+          </div>
+          <strong style="color:#ffffff; font-size:13px;">${st.name}</strong><br>
+          <div style="margin:8px 0; background:rgba(2,132,199,0.2); padding:6px 10px; border-radius:6px; border:1px solid rgba(56,189,248,0.4);">
+            <span style="font-size:10px; color:#cbd5e1;">Nível do Rio Atual:</span><br>
+            <span style="font-size:20px; font-weight:900; color:#38bdf8;">${levelText}</span>
+          </div>
+          <div style="font-size:10px; color:#94a3b8;">
+            Sensor: Ultrassônico 10M (Plugfield)<br>
+            Leitura: ${st.timeStr || 'Em tempo real'}
+          </div>
+        </div>
+      `);
+
+      this.layerRiverStationsGroup.addLayer(marker);
     });
   }
 
   // -------------------------------------------------------------
-  // CARREGAMENTO DOS DADOS (GEOJSON)
+  // MONITORAMENTO METEOROLÓGICO (CHUVA)
+  // -------------------------------------------------------------
+  updateWeatherMonitoringUI() {
+    const rainValEl = document.getElementById('weather-nearest-rain');
+    const rainNameEl = document.getElementById('weather-nearest-name');
+    const activeCountEl = document.getElementById('weather-active-count');
+    const lastUpdateEl = document.getElementById('weather-last-update');
+
+    if (!rainValEl || this.plugfieldStations.length === 0) return;
+
+    if (activeCountEl) {
+      activeCountEl.textContent = `${this.plugfieldStations.length} Estações`;
+    }
+
+    // Identificar a estação mais próxima da posição do usuário
+    let nearestSt = null;
+    let minDist = Infinity;
+
+    if (this.userLocation) {
+      for (const st of this.plugfieldStations) {
+        const d = this.calculateDistance(this.userLocation.lat, this.userLocation.lon, st.lat, st.lon);
+        if (d < minDist) {
+          minDist = d;
+          nearestSt = st;
+        }
+      }
+    } else {
+      // Fallback: Centro (Fredolino Chimango)
+      nearestSt = this.plugfieldStations.find(s => (s.name && s.name.includes('Centro'))) || this.plugfieldStations[0];
+    }
+
+    if (nearestSt) {
+      const dash = nearestSt.dashboard || {};
+      const rain = dash.rain24h ?? dash.rainAccum ?? dash.rain ?? 0;
+      const rainNum = parseFloat(rain) || 0;
+
+      const distStr = minDist !== Infinity
+        ? ` (${(minDist / 1000).toFixed(1).replace('.', ',')} km de você)`
+        : '';
+
+      rainValEl.innerHTML = `${rainNum.toFixed(1).replace('.', ',')} <small>mm</small>`;
+      if (rainNameEl) rainNameEl.textContent = `${nearestSt.name}${distStr}`;
+
+      if (lastUpdateEl) {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        lastUpdateEl.textContent = `Hoje às ${hh}:${mm}`;
+      }
+    }
+  }
+
+  // -------------------------------------------------------------
+  // CARREGAMENTO DOS ABRIGOS E ÁREAS DE RISCO
   // -------------------------------------------------------------
   async loadSheltersData() {
     try {
       const resp = await fetch('../Abrigos da Defesa Civil.geojson');
       const data = await resp.json();
-      
+
       this.shelters = (data.features || []).map(f => {
         const props = f.properties || {};
         const coords = f.geometry ? f.geometry.coordinates : [0, 0];
-        
+
         let lon = 0, lat = 0;
         if (typeof proj4 !== 'undefined' && coords[0] > 1000) {
           const pt = proj4('EPSG:31982', 'EPSG:4326', [coords[0], coords[1]]);
@@ -259,237 +452,136 @@ class MobileEmergencyApp {
       });
 
       this.renderSheltersOnMap();
-      this.renderSheltersDrawerList();
+      this.calculateNearestShelter();
     } catch (e) {
       console.warn('[PWA] Erro ao carregar abrigos:', e);
     }
   }
 
   async loadRiskPolygons() {
-    // 1. Áreas de Atenção Hidrológica (Camada recente em Laranja)
+    // 1. Áreas de Atenção Hidrológica (Laranja)
     try {
       const respAtencao = await fetch('../Áreas de Atenção Hidrológica.geojson');
       this.attentionPolygons = await respAtencao.json();
 
-      if (this.map && typeof L !== 'undefined' && this.attentionPolygons) {
-        this.renderGeoJsonLayer(this.attentionPolygons, {
+      if (this.map && this.attentionPolygons) {
+        this.layerAttention = this.createGeoJsonLayer(this.attentionPolygons, {
           color: '#ea580c',
-          weight: 2.2,
+          weight: 2,
           fillColor: '#f97316',
           fillOpacity: 0.38
-        }, 'Área de Atenção Hidrológica');
+        }, 'Área de Atenção Hidrológica').addTo(this.map);
       }
     } catch (e) {
       console.warn('[PWA] Erro ao carregar Áreas de Atenção:', e);
     }
 
-    // 2. Áreas de Enchente 2024 (Perímetro Histórico em Vermelho)
+    // 2. Perímetro Histórico de Enchente 2024 (Vermelho)
     try {
       const respEnchente = await fetch('../Áreas de Enchente 2024.geojson');
       this.flood2024Polygons = await respEnchente.json();
 
-      if (this.map && typeof L !== 'undefined' && this.flood2024Polygons) {
-        this.renderGeoJsonLayer(this.flood2024Polygons, {
+      if (this.map && this.flood2024Polygons) {
+        this.layerFlood = this.createGeoJsonLayer(this.flood2024Polygons, {
           color: '#dc2626',
-          weight: 2,
+          weight: 1.8,
           fillColor: '#ef4444',
           fillOpacity: 0.28
-        }, 'Perímetro Histórico de Enchente (2024)');
+        }, 'Perímetro Enchente 2024').addTo(this.map);
       }
     } catch (e) {
       console.warn('[PWA] Erro ao carregar Áreas de Enchente 2024:', e);
     }
   }
 
-  renderGeoJsonLayer(geojsonData, style, label) {
-    if (!this.map || !geojsonData) return;
-    
+  createGeoJsonLayer(geojsonData, style, label) {
     const wgsFeatures = {
       type: 'FeatureCollection',
       features: (geojsonData.features || []).map(f => {
         const geom = f.geometry;
         if (!geom) return f;
-        
+
         let newCoords = null;
         if (geom.type === 'MultiPolygon') {
-          newCoords = geom.coordinates.map(polygon => 
-            polygon.map(ring => 
-              ring.map(pt => proj4('EPSG:31982', 'EPSG:4326', [pt[0], pt[1]]))
-            )
+          newCoords = geom.coordinates.map(poly =>
+            poly.map(ring => ring.map(pt => proj4('EPSG:31982', 'EPSG:4326', [pt[0], pt[1]])))
           );
         } else if (geom.type === 'Polygon') {
-          newCoords = geom.coordinates.map(ring => 
+          newCoords = geom.coordinates.map(ring =>
             ring.map(pt => proj4('EPSG:31982', 'EPSG:4326', [pt[0], pt[1]]))
           );
         }
 
         return {
           ...f,
-          geometry: {
-            ...geom,
-            coordinates: newCoords
-          }
+          geometry: { ...geom, coordinates: newCoords }
         };
       })
     };
 
-    L.geoJSON(wgsFeatures, {
+    return L.geoJSON(wgsFeatures, {
       style,
       onEachFeature: (feature, layer) => {
-        const nome = feature.properties ? (feature.properties['Inundaçã'] || feature.properties['Nome'] || label) : label;
-        layer.bindTooltip(nome, { sticky: true });
+        const title = feature.properties ? (feature.properties['Inundaçã'] || feature.properties['Nome'] || label) : label;
+        layer.bindTooltip(title, { sticky: true });
       }
-    }).addTo(this.map);
+    });
   }
 
-  // -------------------------------------------------------------
-  // MONITORAMENTO TELEMÉTRICO (ESTAÇÕES PLUGFIELD + RIO PASSO FUNDO)
-  // -------------------------------------------------------------
-  async loadWeatherTelemetry() {
-    // 1. Nível do Rio Passo Fundo
-    try {
-      const respRio = await fetch('../api/weather/defesacivil?action=telemetry&station=DCRS-00016');
-      const dataRio = await respRio.json();
-      if (dataRio && dataRio.data) {
-        this.riverTelemetry = dataRio.data;
-        this.updateRiverTelemetryUI();
-      }
-    } catch (err) {
-      console.warn('[PWA] Falha ao consultar nível do rio:', err);
-    }
+  renderSheltersOnMap() {
+    if (!this.map || !this.layerSheltersGroup || this.shelters.length === 0) return;
+    this.layerSheltersGroup.clearLayers();
 
-    // 2. Estações Pluviométricas Plugfield (16 sensores)
-    try {
-      const respPf = await fetch('../api/weather/plugfield?action=devices');
-      const dataPf = await respPf.json();
-      if (dataPf && dataPf.data && dataPf.data.stations) {
-        this.plugfieldStations = dataPf.data.stations;
-        this.updateStationTelemetryUI();
-        this.renderStationsDrawerList();
-      }
-    } catch (err) {
-      console.warn('[PWA] Falha ao consultar estações Plugfield:', err);
-    }
-  }
+    this.shelters.forEach((s, idx) => {
+      const marker = L.circleMarker([s.lat, s.lon], {
+        radius: 8,
+        fillColor: '#10b981',
+        color: '#ffffff',
+        weight: 2.5,
+        opacity: 1,
+        fillOpacity: 0.95
+      });
 
-  updateRiverTelemetryUI() {
-    const valEl = document.getElementById('drawer-river-val');
-    const trendEl = document.getElementById('drawer-river-trend');
-    const badgeBox = document.getElementById('drawer-river-badge-box');
-    const pillAlert = document.getElementById('telemetry-pill-alert');
+      const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
+      const wazeUrl = `https://waze.com/ul?ll=${s.lat},${s.lon}&navigate=yes`;
 
-    if (!valEl) return;
-
-    if (this.riverTelemetry && this.riverTelemetry.rio) {
-      const nivel = parseFloat(this.riverTelemetry.rio.nivel);
-      const tendencia = (this.riverTelemetry.rio.tendencia || '').toUpperCase();
-      
-      let trendText = '↔️ Estável';
-      if (tendencia.includes('SUB') || tendencia.includes('ELEV')) trendText = '⬆️ Subindo';
-      else if (tendencia.includes('DESC') || tendencia.includes('BAIX')) trendText = '⬇️ Descendo';
-
-      valEl.innerHTML = `${nivel.toFixed(2).replace('.', ',')} <small>m</small>`;
-      if (trendEl) trendEl.innerHTML = `Tendência: <strong>${trendText}</strong>`;
-
-      if (badgeBox) {
-        if (tendencia.includes('SUB') || nivel >= 2.5) {
-          badgeBox.innerHTML = `<span style="background:rgba(220,38,38,0.25); color:#f87171; font-weight:800; font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid rgba(220,38,38,0.5);">⚠️ ELEVAÇÃO</span>`;
-        } else {
-          badgeBox.innerHTML = `<span style="background:rgba(16,185,129,0.2); color:#34d399; font-weight:700; font-size:11px; padding:4px 8px; border-radius:6px;">NORMAL</span>`;
-        }
-      }
-
-      // Alerta flutuante de cabeçalho
-      if (pillAlert && (tendencia.includes('SUB') || nivel >= 2.8)) {
-        pillAlert.style.display = 'flex';
-        pillAlert.innerHTML = `<span>🌊 Rio Passo Fundo em elevação (${nivel.toFixed(2).replace('.', ',')} m)</span>`;
-      }
-    }
-  }
-
-  updateStationTelemetryUI() {
-    const valEl = document.getElementById('drawer-rain-val');
-    const nearestNameEl = document.getElementById('drawer-station-nearest-name');
-    const badgeBox = document.getElementById('drawer-rain-badge-box');
-    const pillAlert = document.getElementById('telemetry-pill-alert');
-
-    let station = null;
-    let distanceKm = null;
-
-    if (this.userLocation && this.plugfieldStations.length > 0) {
-      let minDist = Infinity;
-      for (const st of this.plugfieldStations) {
-        const d = this.calculateDistance(this.userLocation.lat, this.userLocation.lon, st.lat, st.lon);
-        if (d < minDist) {
-          minDist = d;
-          station = st;
-          distanceKm = (d / 1000).toFixed(1).replace('.', ',');
-        }
-      }
-    } else if (this.plugfieldStations.length > 0) {
-      station = this.plugfieldStations.find(s => s.name?.includes('Centro')) || this.plugfieldStations[0];
-    }
-
-    if (station && valEl) {
-      const rain = station.dashboard?.rain24h ?? station.dashboard?.rainAccum ?? 0;
-      const rainNum = parseFloat(rain) || 0;
-
-      valEl.innerHTML = `${rainNum.toFixed(1).replace('.', ',')} <small>mm</small>`;
-      if (nearestNameEl) nearestNameEl.textContent = `${station.name} ${distanceKm ? `(${distanceKm} km)` : ''}`;
-
-      if (badgeBox) {
-        if (rainNum >= 70) {
-          badgeBox.innerHTML = `<span style="background:rgba(220,38,38,0.25); color:#f87171; font-weight:800; font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid rgba(220,38,38,0.5);">🚨 CHUVA CRÍTICA</span>`;
-          if (pillAlert) {
-            pillAlert.style.display = 'flex';
-            pillAlert.innerHTML = `<span>🌧️ Chuva Crítica: ${rainNum.toFixed(1)} mm no setor</span>`;
-          }
-        } else if (rainNum >= 40) {
-          badgeBox.innerHTML = `<span style="background:rgba(234,88,12,0.25); color:#fb923c; font-weight:800; font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid rgba(234,88,12,0.5);">⚠️ CHUVA FORTE</span>`;
-          if (pillAlert) {
-            pillAlert.style.display = 'flex';
-            pillAlert.innerHTML = `<span>🌧️ Chuva Forte: ${rainNum.toFixed(1)} mm no setor</span>`;
-          }
-        } else {
-          badgeBox.innerHTML = `<span style="background:rgba(16,185,129,0.2); color:#34d399; font-weight:700; font-size:11px; padding:4px 8px; border-radius:6px;">ESTÁVEL</span>`;
-        }
-      }
-    }
-  }
-
-  renderStationsDrawerList() {
-    const listEl = document.getElementById('drawer-stations-list');
-    if (!listEl || this.plugfieldStations.length === 0) return;
-
-    listEl.innerHTML = this.plugfieldStations.map(st => {
-      const rain = st.dashboard?.rain24h ?? st.dashboard?.rainAccum ?? 0;
-      const rainVal = parseFloat(rain) || 0;
-      return `
-        <div class="station-item-row">
-          <span class="station-item-name">${st.name}</span>
-          <span class="station-item-rain">${rainVal.toFixed(1).replace('.', ',')} mm</span>
+      marker.bindPopup(`
+        <div style="font-family:sans-serif; min-width:210px;">
+          <strong style="color:#34d399; font-size:13px;">${s.name}</strong><br>
+          <span style="font-size:10.5px; color:#94a3b8;">${s.type} • ${s.area}</span>
+          <div style="margin:6px 0 8px 0; font-size:11px; color:#cbd5e1;">📍 ${s.address}</div>
+          <div style="display:flex; gap:6px;">
+            <a href="${googleUrl}" target="_blank" style="flex:1; background:#15803d; color:#fff; text-align:center; padding:6px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:11px;">
+              🗺️ Maps
+            </a>
+            <a href="${wazeUrl}" target="_blank" style="flex:1; background:#0284c7; color:#fff; text-align:center; padding:6px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:11px;">
+              🚙 Waze
+            </a>
+          </div>
         </div>
-      `;
-    }).join('');
+      `);
+
+      this.layerSheltersGroup.addLayer(marker);
+    });
   }
 
   // -------------------------------------------------------------
-  // GEOLOCALIZAÇÃO E DIAGNÓSTICO DE RISCO (STATUS DO USUÁRIO)
+  // LOCALIZAÇÃO GPS DO USUÁRIO & DIAGNÓSTICO DE RISCO
   // -------------------------------------------------------------
-  requestUserLocation(forceAnimate = false) {
-    const pillEl = document.getElementById('status-pill');
-    const pillIcon = document.getElementById('pill-icon');
-    const pillTitle = document.getElementById('pill-title');
-    const pillDesc = document.getElementById('pill-desc');
+  requestUserLocation(forceCenter = false) {
+    const pill = document.getElementById('user-risk-pill');
+    const pillIcon = document.getElementById('risk-pill-icon');
+    const pillTitle = document.getElementById('risk-pill-title');
+    const pillDesc = document.getElementById('risk-pill-desc');
 
     if (!navigator.geolocation) {
       if (pillTitle) pillTitle.textContent = 'GPS Indisponível';
-      if (pillDesc) pillDesc.textContent = 'Ative a localização no navegador';
+      if (pillDesc) pillDesc.textContent = 'Ative a localização do seu dispositivo';
       return;
     }
 
-    if (pillTitle) pillTitle.textContent = 'Buscando GPS...';
-    if (pillEl) pillEl.className = 'status-pill status-loading';
+    if (pillTitle) pillTitle.textContent = 'Obtendo GPS...';
+    if (pill) pill.className = 'map-status-pill status-loading';
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -505,12 +597,12 @@ class MobileEmergencyApp {
         }
 
         this.userLocation = { lat, lon, utmX, utmY, accuracy };
-        console.log('[GPS] Localização obtida:', this.userLocation);
+        console.log('[GPS] Posição obtida:', this.userLocation);
 
         this.evaluateUserRisk();
-        this.updateStationTelemetryUI();
         this.calculateNearestShelter();
-        this.updateUserMarkerOnMap(forceAnimate);
+        this.updateWeatherMonitoringUI();
+        this.updateUserMarkerOnMap(forceCenter);
       },
       (err) => {
         console.warn('[GPS] Erro ao obter posição:', err);
@@ -536,32 +628,32 @@ class MobileEmergencyApp {
   }
 
   evaluateUserRisk() {
-    const pillEl = document.getElementById('status-pill');
-    const pillIcon = document.getElementById('pill-icon');
-    const pillTitle = document.getElementById('pill-title');
-    const pillDesc = document.getElementById('pill-desc');
+    const pill = document.getElementById('user-risk-pill');
+    const pillIcon = document.getElementById('risk-pill-icon');
+    const pillTitle = document.getElementById('risk-pill-title');
+    const pillDesc = document.getElementById('risk-pill-desc');
 
-    if (!this.userLocation || !pillEl) return;
+    if (!this.userLocation || !pill) return;
     const utmPoint = [this.userLocation.utmX, this.userLocation.utmY];
 
     const atencaoFeature = this.checkPointInGeoJson(utmPoint, this.attentionPolygons);
     const enchenteFeature = this.checkPointInGeoJson(utmPoint, this.flood2024Polygons);
 
     if (atencaoFeature) {
-      pillEl.className = 'status-pill status-hazard';
+      pill.className = 'map-status-pill status-hazard';
       pillIcon.textContent = '⚠️';
-      pillTitle.textContent = 'Área de Atenção Hidrológica!';
+      pillTitle.textContent = 'Atenção: Área de Risco Hidrológico!';
       pillDesc.textContent = `${atencaoFeature.properties['Inundaçã'] || 'Planície de inundação ativa'}`;
     } else if (enchenteFeature) {
-      pillEl.className = 'status-pill status-extreme';
+      pill.className = 'map-status-pill status-extreme';
       pillIcon.textContent = '🚨';
-      pillTitle.textContent = 'Perímetro Enchente 2024!';
+      pillTitle.textContent = 'Alerta: Perímetro Enchente 2024!';
       pillDesc.textContent = 'Cota atingida no evento histórico';
     } else {
-      pillEl.className = 'status-pill status-safe';
+      pill.className = 'map-status-pill status-safe';
       pillIcon.textContent = '🛡️';
       pillTitle.textContent = 'Você está em Local Seguro';
-      pillDesc.textContent = `Fora das manchas de risco (±${this.userLocation.accuracy}m)`;
+      pillDesc.textContent = `Fora das manchas de risco cadastradas (±${this.userLocation.accuracy}m)`;
     }
   }
 
@@ -595,169 +687,18 @@ class MobileEmergencyApp {
     return inside;
   }
 
-  // -------------------------------------------------------------
-  // ABRIGO MAIS PRÓXIMO & BOTTOM SHEET
-  // -------------------------------------------------------------
-  calculateNearestShelter() {
-    if (!this.userLocation || this.shelters.length === 0) return;
-
-    const uLat = this.userLocation.lat;
-    const uLon = this.userLocation.lon;
-
-    this.shelters.forEach(s => {
-      s.distanceMeters = this.calculateDistance(uLat, uLon, s.lat, s.lon);
-    });
-
-    this.shelters.sort((a, b) => a.distanceMeters - b.distanceMeters);
-
-    const nearest = this.shelters[0];
-    this.renderNearestShelterSheet(nearest);
-    this.renderSheltersDrawerList();
-  }
-
-  renderNearestShelterSheet(s) {
-    if (!s) return;
-
-    const distText = document.getElementById('sheet-dist-text');
-    const nameEl = document.getElementById('sheet-shelter-name');
-    const metaEl = document.getElementById('sheet-shelter-meta');
-    const addressEl = document.getElementById('sheet-shelter-address');
-    const btnGoogle = document.getElementById('btn-nav-google');
-    const btnWaze = document.getElementById('btn-nav-waze');
-
-    const distStr = s.distanceMeters < 1000
-      ? `${s.distanceMeters} metros de você`
-      : `${(s.distanceMeters / 1000).toFixed(1).replace('.', ',')} km de você`;
-
-    if (distText) distText.textContent = `Mais próximo: ${distStr}`;
-    if (nameEl) nameEl.textContent = s.name;
-    if (metaEl) metaEl.textContent = `${s.type} • Área: ${s.area}`;
-    if (addressEl) addressEl.textContent = `📍 ${s.address}`;
-
-    const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`;
-    const wazeUrl = `https://waze.com/ul?ll=${s.lat},${s.lon}&navigate=yes`;
-
-    if (btnGoogle) btnGoogle.href = googleUrl;
-    if (btnWaze) btnWaze.href = wazeUrl;
-  }
-
-  // -------------------------------------------------------------
-  // LISTAGEM DOS ABRIGOS NO SIDE DRAWER
-  // -------------------------------------------------------------
-  renderSheltersDrawerList() {
-    const listEl = document.getElementById('drawer-shelters-list');
-    if (!listEl) return;
-
-    listEl.innerHTML = this.shelters.map((s, idx) => {
-      const distStr = s.distanceMeters !== undefined
-        ? (s.distanceMeters < 1000 ? `${s.distanceMeters} m` : `${(s.distanceMeters / 1000).toFixed(1).replace('.', ',')} km`)
-        : '';
-
-      const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
-      const wazeUrl = `https://waze.com/ul?ll=${s.lat},${s.lon}&navigate=yes`;
-
-      return `
-        <div class="drawer-shelter-card" data-idx="${idx}" data-name="${s.name.toLowerCase()}" data-address="${s.address.toLowerCase()}">
-          <div class="shelter-card-top">
-            <span class="shelter-card-title">${idx + 1}. ${s.name}</span>
-            ${distStr ? `<span class="shelter-card-dist">${distStr}</span>` : ''}
-          </div>
-          <div class="shelter-card-address">${s.address}</div>
-          <div class="shelter-card-actions">
-            <a href="${googleUrl}" target="_blank" class="btn-shelter-route">
-              <span>🚗 Maps</span>
-            </a>
-            <a href="${wazeUrl}" target="_blank" class="btn-shelter-route" style="color:#38bdf8; border-color:rgba(56,189,248,0.3); background:rgba(2,132,199,0.15);">
-              <span>🚙 Waze</span>
-            </a>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Adiciona evento de clique para focar abrigo no mapa ao clicar no card
-    const cards = listEl.querySelectorAll('.drawer-shelter-card');
-    cards.forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('a')) return; // se clicou no link de rota deixa abrir
-        const idx = parseInt(card.getAttribute('data-idx'));
-        const s = this.shelters[idx];
-        if (s && this.map) {
-          this.map.setView([s.lat, s.lon], 16, { animate: true });
-          // Fechar drawer
-          const sideDrawer = document.getElementById('side-drawer');
-          const drawerBackdrop = document.getElementById('drawer-backdrop');
-          if (sideDrawer) sideDrawer.classList.remove('active');
-          if (drawerBackdrop) drawerBackdrop.classList.remove('active');
-        }
-      });
-    });
-  }
-
-  filterSheltersList(query) {
-    const cards = document.querySelectorAll('.drawer-shelter-card');
-    cards.forEach(card => {
-      const name = card.getAttribute('data-name') || '';
-      const address = card.getAttribute('data-address') || '';
-      const matches = !query || name.includes(query) || address.includes(query);
-      card.style.display = matches ? 'block' : 'none';
-    });
-  }
-
-  // -------------------------------------------------------------
-  // MARCADORES NO MAPA (ABRIGOS & USUÁRIO)
-  // -------------------------------------------------------------
-  renderSheltersOnMap() {
-    if (!this.map || typeof L === 'undefined' || this.shelters.length === 0) return;
-
-    this.shelters.forEach((s, idx) => {
-      const marker = L.circleMarker([s.lat, s.lon], {
-        radius: 8,
-        fillColor: '#10b981',
-        color: '#ffffff',
-        weight: 2.5,
-        opacity: 1,
-        fillOpacity: 0.95
-      }).addTo(this.map);
-
-      const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
-      const wazeUrl = `https://waze.com/ul?ll=${s.lat},${s.lon}&navigate=yes`;
-
-      marker.bindPopup(`
-        <div style="font-family:sans-serif; font-size:12px; color:#f8fafc; min-width: 220px;">
-          <strong style="color:#34d399; font-size:13.5px; display:block; margin-bottom:2px;">${s.name}</strong>
-          <span style="font-size:11px; color:#94a3b8;">${s.type} • ${s.area}</span>
-          <div style="margin:6px 0 10px 0; font-size:11px; color:#cbd5e1;">📍 ${s.address}</div>
-          <div style="display:flex; gap:6px;">
-            <a href="${googleUrl}" target="_blank" style="flex:1; background:#15803d; color:#fff; text-align:center; padding:6px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:11px;">
-              🚗 Google Maps
-            </a>
-            <a href="${wazeUrl}" target="_blank" style="flex:1; background:#0284c7; color:#fff; text-align:center; padding:6px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:11px;">
-              🚙 Waze
-            </a>
-          </div>
-        </div>
-      `);
-
-      this.shelterMarkers.push(marker);
-    });
-  }
-
-  updateUserMarkerOnMap(forceAnimate = false) {
-    if (!this.map || typeof L === 'undefined' || !this.userLocation) return;
-
+  updateUserMarkerOnMap(forceCenter = false) {
+    if (!this.map || !this.userLocation) return;
     const latLon = [this.userLocation.lat, this.userLocation.lon];
 
     if (!this.userMarker) {
-      // Anel translúcido de precisão
       this.userAccuracyCircle = L.circle(latLon, {
         radius: this.userLocation.accuracy || 20,
         fillColor: '#38bdf8',
-        fillOpacity: 0.15,
+        fillOpacity: 0.18,
         stroke: false
       }).addTo(this.map);
 
-      // Ponto azul do usuário
       this.userMarker = L.circleMarker(latLon, {
         radius: 9,
         fillColor: '#0284c7',
@@ -774,12 +715,311 @@ class MobileEmergencyApp {
         this.userAccuracyCircle.setLatLng(latLon);
         this.userAccuracyCircle.setRadius(this.userLocation.accuracy || 20);
       }
-      if (forceAnimate) {
+      if (forceCenter) {
         this.map.setView(latLon, 16, { animate: true });
       }
     }
   }
 
+  // -------------------------------------------------------------
+  // ABRIGO MAIS PRÓXIMO & BOTTOM SHEET
+  // -------------------------------------------------------------
+  calculateNearestShelter() {
+    if (!this.userLocation || this.shelters.length === 0) return;
+
+    const uLat = this.userLocation.lat;
+    const uLon = this.userLocation.lon;
+
+    this.shelters.forEach(s => {
+      s.distanceMeters = this.calculateDistance(uLat, uLon, s.lat, s.lon);
+    });
+
+    this.shelters.sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+    const nearest = this.shelters[0];
+    this.renderNearestShelterUI(nearest);
+    this.renderSheltersListInSheet();
+  }
+
+  renderNearestShelterUI(s) {
+    if (!s) return;
+
+    const distText = document.getElementById('sheet-nearest-dist-text');
+    const nameEl = document.getElementById('sheet-nearest-name');
+    const btnGmaps = document.getElementById('btn-nav-gmaps');
+    const btnWaze = document.getElementById('btn-nav-waze');
+
+    const distStr = s.distanceMeters < 1000
+      ? `${s.distanceMeters} metros de você`
+      : `${(s.distanceMeters / 1000).toFixed(1).replace('.', ',')} km de você`;
+
+    if (distText) distText.textContent = `Mais próximo: ${distStr}`;
+    if (nameEl) nameEl.textContent = s.name;
+
+    const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`;
+    const wazeUrl = `https://waze.com/ul?ll=${s.lat},${s.lon}&navigate=yes`;
+
+    if (btnGmaps) btnGmaps.href = googleUrl;
+    if (btnWaze) btnWaze.href = wazeUrl;
+  }
+
+  renderSheltersListInSheet(filterQuery = '') {
+    const listEl = document.getElementById('sheet-shelters-list');
+    if (!listEl) return;
+
+    const query = filterQuery.toLowerCase().trim();
+    const filtered = this.shelters.filter(s => {
+      return !query || s.name.toLowerCase().includes(query) || s.address.toLowerCase().includes(query);
+    });
+
+    listEl.innerHTML = filtered.map((s, idx) => {
+      const distStr = s.distanceMeters !== undefined
+        ? (s.distanceMeters < 1000 ? `${s.distanceMeters} m` : `${(s.distanceMeters / 1000).toFixed(1).replace('.', ',')} km`)
+        : '';
+
+      const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
+
+      return `
+        <div class="shelter-row-item" data-idx="${idx}" data-lat="${s.lat}" data-lon="${s.lon}">
+          <div class="shelter-info-col">
+            <span class="shelter-name-row">${s.name}</span>
+            <span class="shelter-addr-row">${s.address}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            ${distStr ? `<span class="shelter-dist-pill">${distStr}</span>` : ''}
+            <a href="${googleUrl}" target="_blank" style="text-decoration:none; font-size:15px; color:#10b981;" title="Abrir no Maps">🧭</a>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Clique em qualquer abrigo da lista: foca no mapa
+    listEl.querySelectorAll('.shelter-row-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('a')) return;
+        const lat = parseFloat(item.getAttribute('data-lat'));
+        const lon = parseFloat(item.getAttribute('data-lon'));
+        if (this.map && !isNaN(lat) && !isNaN(lon)) {
+          this.map.setView([lat, lon], 16, { animate: true });
+          this.toggleBottomSheet(false); // Recolhe sheet para ver o abrigo
+        }
+      });
+    });
+  }
+
+  // -------------------------------------------------------------
+  // EVENTOS E FERRAMENTAS LATERAIS
+  // -------------------------------------------------------------
+  bindEvents() {
+    // 1. Alternar Bottom Sheet (Compacto / Expandido)
+    const sheetDragZone = document.getElementById('sheet-drag-zone');
+    const sheetToggleBtn = document.getElementById('btn-toggle-expand-sheet');
+    if (sheetDragZone) sheetDragZone.addEventListener('click', () => this.toggleBottomSheet());
+    if (sheetToggleBtn) sheetToggleBtn.addEventListener('click', () => this.toggleBottomSheet());
+
+    // 2. Busca de Abrigos
+    const searchInput = document.getElementById('input-search-shelters');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.renderSheltersListInSheet(e.target.value);
+      });
+    }
+
+    // 3. Ferramentas da Lateral Direita
+    // GPS
+    const toolGps = document.getElementById('tool-gps');
+    const btnQuickGps = document.getElementById('btn-quick-gps');
+    if (toolGps) toolGps.addEventListener('click', () => this.requestUserLocation(true));
+    if (btnQuickGps) btnQuickGps.addEventListener('click', () => this.requestUserLocation(true));
+
+    // Camadas
+    const toolLayers = document.getElementById('tool-layers');
+    const popupLayers = document.getElementById('popup-layers');
+    const btnCloseLayers = document.getElementById('btn-close-layers');
+    if (toolLayers && popupLayers) {
+      toolLayers.addEventListener('click', () => {
+        popupLayers.style.display = popupLayers.style.display === 'none' ? 'block' : 'none';
+        if (popupLegend) popupLegend.style.display = 'none';
+      });
+    }
+    if (btnCloseLayers && popupLayers) {
+      btnCloseLayers.addEventListener('click', () => { popupLayers.style.display = 'none'; });
+    }
+
+    // Checkboxes de Camadas
+    const chkSatellite = document.getElementById('chk-layer-satellite');
+    if (chkSatellite) {
+      chkSatellite.addEventListener('change', (e) => {
+        this.setBasemap(e.target.checked ? 'satellite' : 'osm');
+      });
+    }
+
+    const chkAttention = document.getElementById('chk-layer-attention');
+    if (chkAttention) {
+      chkAttention.addEventListener('change', (e) => {
+        if (!this.map || !this.layerAttention) return;
+        if (e.target.checked) this.map.addLayer(this.layerAttention);
+        else this.map.removeLayer(this.layerAttention);
+      });
+    }
+
+    const chkFlood = document.getElementById('chk-layer-flood');
+    if (chkFlood) {
+      chkFlood.addEventListener('change', (e) => {
+        if (!this.map || !this.layerFlood) return;
+        if (e.target.checked) this.map.addLayer(this.layerFlood);
+        else this.map.removeLayer(this.layerFlood);
+      });
+    }
+
+    const chkShelters = document.getElementById('chk-layer-shelters');
+    if (chkShelters) {
+      chkShelters.addEventListener('change', (e) => {
+        if (!this.map || !this.layerSheltersGroup) return;
+        if (e.target.checked) this.map.addLayer(this.layerSheltersGroup);
+        else this.map.removeLayer(this.layerSheltersGroup);
+      });
+    }
+
+    const chkStations = document.getElementById('chk-layer-stations');
+    if (chkStations) {
+      chkStations.addEventListener('change', (e) => {
+        if (!this.map || !this.layerRiverStationsGroup) return;
+        if (e.target.checked) this.map.addLayer(this.layerRiverStationsGroup);
+        else this.map.removeLayer(this.layerRiverStationsGroup);
+      });
+    }
+
+    // Legenda
+    const toolLegend = document.getElementById('tool-legend');
+    const popupLegend = document.getElementById('popup-legend');
+    const btnCloseLegend = document.getElementById('btn-close-legend');
+    if (toolLegend && popupLegend) {
+      toolLegend.addEventListener('click', () => {
+        popupLegend.style.display = popupLegend.style.display === 'none' ? 'block' : 'none';
+        if (popupLayers) popupLayers.style.display = 'none';
+      });
+    }
+    if (btnCloseLegend && popupLegend) {
+      btnCloseLegend.addEventListener('click', () => { popupLegend.style.display = 'none'; });
+    }
+
+    // Zoom Leaflet
+    const toolZoomIn = document.getElementById('tool-zoom-in');
+    const toolZoomOut = document.getElementById('tool-zoom-out');
+    if (toolZoomIn) toolZoomIn.addEventListener('click', () => { if (this.map) this.map.zoomIn(); });
+    if (toolZoomOut) toolZoomOut.addEventListener('click', () => { if (this.map) this.map.zoomOut(); });
+
+    // Expandir Mapa em Tela Cheia
+    const toolFullscreen = document.getElementById('tool-fullscreen-map');
+    const btnRestore = document.getElementById('btn-restore-panels');
+    const viewport = document.getElementById('app-viewport');
+    if (toolFullscreen && viewport) {
+      toolFullscreen.addEventListener('click', () => {
+        viewport.classList.add('fullscreen-active');
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 350);
+      });
+    }
+    if (btnRestore && viewport) {
+      btnRestore.addEventListener('click', () => {
+        viewport.classList.remove('fullscreen-active');
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 350);
+      });
+    }
+
+    // 4. Ferramentas da Lateral Esquerda
+    // Atalho Abrigos
+    const toolShelters = document.getElementById('tool-shelters');
+    if (toolShelters) {
+      toolShelters.addEventListener('click', () => {
+        if (this.shelters.length > 0 && this.map) {
+          const nearest = this.shelters[0];
+          this.map.setView([nearest.lat, nearest.lon], 16, { animate: true });
+        }
+        this.toggleBottomSheet(true);
+      });
+    }
+
+    // Atalho Áreas de Risco
+    const toolRiskAreas = document.getElementById('tool-risk-areas');
+    if (toolRiskAreas) {
+      toolRiskAreas.addEventListener('click', () => {
+        if (this.layerAttention && this.map) {
+          const bounds = this.layerAttention.getBounds();
+          if (bounds.isValid()) this.map.fitBounds(bounds, { padding: [20, 20], animate: true });
+        }
+      });
+    }
+
+    // Atalho Chuva
+    const toolWeather = document.getElementById('tool-weather');
+    if (toolWeather) {
+      toolWeather.addEventListener('click', () => {
+        this.toggleBottomSheet(true);
+      });
+    }
+
+    // 5. Clique nos 3 Cards do Rio para focar no mapa
+    [4431, 4714, 4965].forEach(devId => {
+      const cfg = RIVER_STATIONS_CONFIG[devId];
+      const card = document.getElementById(cfg.cardId);
+      if (card) {
+        card.addEventListener('click', () => {
+          if (this.map) {
+            this.map.setView([cfg.lat, cfg.lon], 16, { animate: true });
+          }
+        });
+      }
+    });
+
+    // 6. Menu Lateral (Drawer)
+    const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
+    const btnCloseDrawer = document.getElementById('btn-close-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    const sideDrawer = document.getElementById('side-drawer');
+
+    const openDrawer = () => {
+      if (sideDrawer) sideDrawer.classList.add('active');
+      if (drawerBackdrop) drawerBackdrop.classList.add('active');
+    };
+
+    const closeDrawer = () => {
+      if (sideDrawer) sideDrawer.classList.remove('active');
+      if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+    };
+
+    if (btnToggleDrawer) btnToggleDrawer.addEventListener('click', openDrawer);
+    if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', closeDrawer);
+    if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+  }
+
+  toggleBottomSheet(forceState = null) {
+    const sheet = document.getElementById('bottom-sheet');
+    const toggleText = document.getElementById('sheet-toggle-text');
+    if (!sheet) return;
+
+    if (forceState !== null) {
+      this.isSheetExpanded = forceState;
+    } else {
+      this.isSheetExpanded = !this.isSheetExpanded;
+    }
+
+    if (this.isSheetExpanded) {
+      sheet.classList.remove('collapsed');
+      sheet.classList.add('expanded');
+      if (toggleText) toggleText.textContent = 'Recolher';
+    } else {
+      sheet.classList.remove('expanded');
+      sheet.classList.add('collapsed');
+      if (toggleText) toggleText.textContent = 'Ver Mais';
+    }
+
+    setTimeout(() => {
+      if (this.map) this.map.invalidateSize();
+    }, 350);
+  }
+
+  // Fórmula de Haversine para distâncias em metros
   calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const phi1 = lat1 * Math.PI / 180;
@@ -794,7 +1034,7 @@ class MobileEmergencyApp {
   }
 }
 
-// Inicialização automática ao carregar
+// Inicialização automática
 document.addEventListener('DOMContentLoaded', () => {
   window.mobileApp = new MobileEmergencyApp();
 });

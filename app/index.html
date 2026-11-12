@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Defesa Civil Passo Fundo — Alerta, Risco & Abrigos</title>
+  <title>Defesa Civil Passo Fundo — Monitoramento & Abrigos</title>
   
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#070a10">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Defesa Civil PF">
   <link rel="apple-touch-icon" href="../assets/logo-defesa-civil.jpg">
   <link rel="icon" type="image/jpeg" href="../assets/logo-defesa-civil.jpg">
 
-  <!-- Leaflet CSS (Lightweight Mobile Map) -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <!-- App Stylesheet -->
@@ -22,284 +22,410 @@
 </head>
 <body>
 
-  <!-- ================= MAPA FULL-SCREEN DE FUNDO ================= -->
-  <div id="mobile-map" class="fullscreen-map"></div>
+  <!-- ================= CONTAINER PRINCIPAL (100dvh) ================= -->
+  <div class="app-viewport" id="app-viewport">
 
-  <!-- ================= TOP FLOATING HUD ================= -->
-  <header class="top-hud">
-    <!-- Botão Menu Drawer (Abas laterais) -->
-    <button class="hud-btn hud-btn-menu" id="btn-open-drawer" aria-label="Abrir menu de informações e abrigos">
-      <span class="icon-bars">☰</span>
-    </button>
-
-    <!-- Branding Compacto -->
-    <div class="hud-brand" id="hud-brand-title">
-      <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="hud-logo">
-      <div class="hud-brand-text">
-        <span class="hud-inst">Defesa Civil Passo Fundo</span>
-        <span class="hud-subtitle">Alerta, Risco & Abrigos</span>
+    <!-- ================= CABEÇALHO MOBILE ================= -->
+    <header class="app-header" id="app-header">
+      <div class="header-brand">
+        <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="header-logo">
+        <div class="header-titles">
+          <span class="header-inst">Prefeitura de Passo Fundo</span>
+          <span class="header-app-name">Defesa Civil • Alerta & Abrigos</span>
+        </div>
       </div>
-    </div>
+      <div class="header-actions">
+        <!-- Status de Conexão Geral -->
+        <span class="header-live-badge" id="header-live-badge" title="Status dos Sensores">
+          <span class="live-dot"></span>
+          <span class="live-text" id="header-live-text">Ao Vivo</span>
+        </span>
+        <!-- Botão Menu Geral / Configurações -->
+        <button class="btn-header-menu" id="btn-toggle-drawer" aria-label="Abrir menu de opções">
+          <span>☰</span>
+        </button>
+      </div>
+    </header>
 
-    <!-- Controles Rápidos da Direita: Camadas e GPS -->
-    <div class="hud-actions">
-      <!-- Alternar Mapa: Ruas vs Satélite -->
-      <button class="hud-btn hud-btn-pill" id="btn-toggle-basemap" title="Alternar Mapa (Ruas / Satélite)">
-        <span id="basemap-icon">🛰️</span>
+    <!-- ================= PAINEL OBRIGATÓRIO: MONITORAMENTO DO NÍVEL DO RIO PASSO FUNDO ================= -->
+    <!-- DESTAQUE NA TELA INICIAL: 3 ESTAÇÕES PLUGFIELD COM SENSORES DE NÍVEL -->
+    <section class="river-monitoring-panel" id="river-monitoring-panel">
+      <div class="river-panel-header">
+        <div class="river-title-block">
+          <span class="river-icon">🌊</span>
+          <h2 class="river-panel-title">MONITORAMENTO DO NÍVEL DO RIO PASSO FUNDO</h2>
+        </div>
+        <span class="river-sensor-type-badge">Sensores Ultrassônicos Plugfield</span>
+      </div>
+
+      <!-- Grid com as 3 Estações Hidrológicas -->
+      <div class="river-stations-grid" id="river-stations-grid">
+
+        <!-- ESTAÇÃO 1: Avenida Brasil (Largo da Literatura) - ID: 4431 -->
+        <article class="river-card loading" id="river-card-4431" data-device-id="4431">
+          <div class="river-card-top">
+            <span class="river-card-name" title="Avenida Brasil (Largo da Literatura)">Av. Brasil (Largo)</span>
+            <span class="sensor-status-dot online" id="status-dot-4431" title="Sensor Operacional"></span>
+          </div>
+          <div class="river-card-level-row">
+            <div class="river-card-val" id="river-val-4431">-- <small>m</small></div>
+            <span class="river-id-tag">ID 4431</span>
+          </div>
+          <div class="river-card-footer">
+            <span class="river-time" id="river-time-4431">Consultando...</span>
+          </div>
+        </article>
+
+        <!-- ESTAÇÃO 2: Lobo da Costa (Entre Rios) - ID: 4714 -->
+        <article class="river-card loading" id="river-card-4714" data-device-id="4714">
+          <div class="river-card-top">
+            <span class="river-card-name" title="Lobo da Costa (Entre Rios)">Lobo da Costa</span>
+            <span class="sensor-status-dot online" id="status-dot-4714" title="Sensor Operacional"></span>
+          </div>
+          <div class="river-card-level-row">
+            <div class="river-card-val" id="river-val-4714">-- <small>m</small></div>
+            <span class="river-id-tag">ID 4714</span>
+          </div>
+          <div class="river-card-footer">
+            <span class="river-time" id="river-time-4714">Consultando...</span>
+          </div>
+        </article>
+
+        <!-- ESTAÇÃO 3: Quinto Giongo (Victor Issler) - ID: 4965 -->
+        <article class="river-card loading" id="river-card-4965" data-device-id="4965">
+          <div class="river-card-top">
+            <span class="river-card-name" title="Quinto Giongo (Victor Issler)">Quinto Giongo</span>
+            <span class="sensor-status-dot online" id="status-dot-4965" title="Sensor Operacional"></span>
+          </div>
+          <div class="river-card-level-row">
+            <div class="river-card-val" id="river-val-4965">-- <small>m</small></div>
+            <span class="river-id-tag">ID 4965</span>
+          </div>
+          <div class="river-card-footer">
+            <span class="river-time" id="river-time-4965">Consultando...</span>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ================= ÁREA CARTOGRÁFICA CENTRAL (65% A 75% DA TELA) ================= -->
+    <main class="map-viewport-wrapper" id="map-viewport-wrapper">
+      
+      <!-- Leaflet Container -->
+      <div id="mobile-map" class="map-container"></div>
+
+      <!-- PÍLULA FLUTUANTE DE STATUS DO USUÁRIO (SEGURO / ATENÇÃO) -->
+      <div class="map-status-pill status-loading" id="user-risk-pill">
+        <span class="status-pill-icon" id="risk-pill-icon">📍</span>
+        <div class="status-pill-info">
+          <strong id="risk-pill-title">Identificando localização...</strong>
+          <small id="risk-pill-desc">Cruzando coordenadas com áreas de risco</small>
+        </div>
+        <button class="status-pill-btn-gps" id="btn-quick-gps" title="Atualizar GPS">🎯</button>
+      </div>
+
+      <!-- BOTÃO DE RESTAURAR PAINÉIS (visível somente quando modo mapa tela cheia está ativo) -->
+      <button class="btn-restore-panels" id="btn-restore-panels" style="display: none;">
+        <span>✕ Sair do Modo Mapa Cheio</span>
       </button>
 
-      <!-- Botão Recarregar GPS -->
-      <button class="hud-btn hud-btn-pill hud-btn-gps" id="btn-recenter-gps" title="Minha Localização GPS">
-        <span>📍</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- ================= PILULA FLUTUANTE DE STATUS DE RISCO ================= -->
-  <div class="status-pill-container" id="status-pill-container">
-    <div class="status-pill status-loading" id="status-pill">
-      <span class="pill-icon" id="pill-icon">⏳</span>
-      <div class="pill-text-block">
-        <span class="pill-title" id="pill-title">Identificando GPS...</span>
-        <span class="pill-desc" id="pill-desc">Cruzando coordenadas com áreas de risco</span>
+      <!-- ================= COLUNA FLUTUANTE LATERAL ESQUERDA ================= -->
+      <div class="floating-toolbar toolbar-left">
+        <!-- Atalho: Focar Abrigos -->
+        <button class="map-tool-btn" id="tool-shelters" title="Localizar Abrigos de Emergência">
+          <span class="tool-icon">🏠</span>
+          <span class="tool-label">Abrigos</span>
+        </button>
+        <!-- Atalho: Consultar Áreas de Risco e Atenção -->
+        <button class="map-tool-btn" id="tool-risk-areas" title="Ver Áreas de Inundação e Atenção">
+          <span class="tool-icon">⚠️</span>
+          <span class="tool-label">Risco</span>
+        </button>
+        <!-- Atalho: Estações Pluviométricas e Chuva -->
+        <button class="map-tool-btn" id="tool-weather" title="Consultar Chuva nas Estações">
+          <span class="tool-icon">🌧️</span>
+          <span class="tool-label">Chuva</span>
+        </button>
       </div>
-      <span class="pill-expand-arrow" id="btn-expand-status">ℹ️</span>
-    </div>
 
-    <!-- Sub-aviso telemétrico quando há chuva forte ou rio subindo -->
-    <div class="telemetry-pill-alert" id="telemetry-pill-alert" style="display: none;">
-      <!-- Preenchido via JavaScript se alerta ativo -->
-    </div>
-  </div>
-
-  <!-- ================= BANNER PWA COMPACTO ================= -->
-  <div class="pwa-banner-floating" id="pwa-banner" style="display: none;">
-    <div class="pwa-info">
-      <span>📱 <strong>Instalar App Oficial</strong> na tela inicial</span>
-    </div>
-    <div class="pwa-actions">
-      <button class="btn-pwa-add" id="btn-pwa-install">Instalar</button>
-      <button class="btn-pwa-dismiss" id="btn-pwa-dismiss">✕</button>
-    </div>
-  </div>
-
-  <!-- ================= BOTTOM SHEET: ABRIGO MAIS PRÓXIMO & NAVEGAÇÃO ================= -->
-  <div class="bottom-sheet" id="bottom-sheet">
-    <div class="sheet-drag-handle" id="sheet-handle"></div>
-
-    <div class="sheet-header">
-      <div class="sheet-badge-dist" id="sheet-dist-badge">
-        <span class="pulse-dot"></span>
-        <span id="sheet-dist-text">Buscando abrigo mais próximo...</span>
+      <!-- ================= COLUNA FLUTUANTE LATERAL DIREITA ================= -->
+      <div class="floating-toolbar toolbar-right">
+        <!-- Localizar GPS -->
+        <button class="map-tool-btn primary" id="tool-gps" title="Minha Localização GPS">
+          <span class="tool-icon">📍</span>
+          <span class="tool-label">GPS</span>
+        </button>
+        <!-- Alternar Camadas (Ruas / Satélite) -->
+        <button class="map-tool-btn" id="tool-layers" title="Controle de Camadas e Satélite">
+          <span class="tool-icon" id="icon-basemap">🛰️</span>
+          <span class="tool-label">Camadas</span>
+        </button>
+        <!-- Legenda Cartográfica -->
+        <button class="map-tool-btn" id="tool-legend" title="Legenda do Mapa">
+          <span class="tool-icon">ℹ️</span>
+          <span class="tool-label">Legenda</span>
+        </button>
+        <!-- Zoom + -->
+        <button class="map-tool-btn zoom-btn" id="tool-zoom-in" title="Aproximar Zoom">
+          <span class="tool-icon">➕</span>
+        </button>
+        <!-- Zoom - -->
+        <button class="map-tool-btn zoom-btn" id="tool-zoom-out" title="Afastar Zoom">
+          <span class="tool-icon">➖</span>
+        </button>
+        <!-- Expandir Mapa para Tela Cheia -->
+        <button class="map-tool-btn" id="tool-fullscreen-map" title="Expandir Mapa em Tela Cheia">
+          <span class="tool-icon" id="icon-fullscreen">⛶</span>
+          <span class="tool-label">Cheia</span>
+        </button>
       </div>
-      <button class="btn-sheet-view-all" id="sheet-btn-view-all">
-        Ver 17 abrigos ❯
-      </button>
-    </div>
 
-    <div class="sheet-body">
-      <h3 class="sheet-shelter-name" id="sheet-shelter-name">Carregando rede de acolhimento...</h3>
-      <div class="sheet-shelter-meta" id="sheet-shelter-meta">Centro de Acolhimento de Emergência</div>
-      <div class="sheet-shelter-address" id="sheet-shelter-address">📍 Passo Fundo / RS</div>
+      <!-- ================= MODAL/CARD DA LEGENDA CARTOGRÁFICA ================= -->
+      <div class="map-floating-popup" id="popup-legend" style="display: none;">
+        <div class="popup-header">
+          <strong>Legenda Cartográfica</strong>
+          <button class="popup-close-btn" id="btn-close-legend">✕</button>
+        </div>
+        <div class="legend-items">
+          <div class="legend-row">
+            <span class="legend-symbol sym-shelter"></span>
+            <span>Abrigos de Emergência (17 Locais)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-symbol sym-attention"></span>
+            <span>Áreas de Atenção Hidrológica</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-symbol sym-flood2024"></span>
+            <span>Perímetro Histórico Enchente 2024</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-symbol sym-river-station"></span>
+            <span>3 Estações de Nível do Rio (Plugfield)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-symbol sym-user-loc"></span>
+            <span>Sua Posição GPS Atual</span>
+          </div>
+        </div>
+      </div>
 
-      <!-- Botões de Ação Imediata (Rotas) -->
-      <div class="sheet-nav-grid">
-        <a href="#" class="btn-nav-action btn-nav-maps" id="btn-nav-google" target="_blank" rel="noopener">
-          <span class="nav-icon">🗺️</span>
-          <div class="nav-btn-text">
+      <!-- ================= MODAL/CARD DO CONTROLE DE CAMADAS ================= -->
+      <div class="map-floating-popup" id="popup-layers" style="display: none;">
+        <div class="popup-header">
+          <strong>Controle de Camadas</strong>
+          <button class="popup-close-btn" id="btn-close-layers">✕</button>
+        </div>
+        <div class="layers-list">
+          <div class="layer-toggle-row">
+            <span>🛰️ Imagem de Satélite HD</span>
+            <input type="checkbox" id="chk-layer-satellite" class="custom-toggle">
+          </div>
+          <div class="layer-toggle-row">
+            <span>🟠 Áreas de Atenção Hidrológica</span>
+            <input type="checkbox" id="chk-layer-attention" class="custom-toggle" checked>
+          </div>
+          <div class="layer-toggle-row">
+            <span>🔴 Perímetro Enchente 2024</span>
+            <input type="checkbox" id="chk-layer-flood" class="custom-toggle" checked>
+          </div>
+          <div class="layer-toggle-row">
+            <span>🏠 Abrigos Cadastrados (17)</span>
+            <input type="checkbox" id="chk-layer-shelters" class="custom-toggle" checked>
+          </div>
+          <div class="layer-toggle-row">
+            <span>🌊 3 Sensores de Nível do Rio</span>
+            <input type="checkbox" id="chk-layer-stations" class="custom-toggle" checked>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ================= PAINEL INFERIOR RETRÁTIL (BOTTOM SHEET) ================= -->
+    <!-- Possui 2 estados: Compacto (visível por padrão) e Expandido (arrastar para cima) -->
+    <div class="bottom-sheet collapsed" id="bottom-sheet">
+      <!-- Barra de Arraste / Toggle do Sheet -->
+      <div class="sheet-drag-zone" id="sheet-drag-zone">
+        <div class="sheet-drag-handle"></div>
+      </div>
+
+      <!-- Cabeçalho do Sheet (Sempre visível no modo compacto) -->
+      <div class="sheet-summary-row" id="sheet-summary-row">
+        <div class="sheet-summary-left">
+          <div class="sheet-badge-dist" id="sheet-dist-badge">
+            <span class="dot-pulse"></span>
+            <span id="sheet-nearest-dist-text">Buscando abrigo mais próximo...</span>
+          </div>
+          <div class="sheet-shelter-title" id="sheet-nearest-name">Carregando abrigos...</div>
+        </div>
+        <button class="btn-sheet-expand-toggle" id="btn-toggle-expand-sheet">
+          <span id="sheet-toggle-text">Ver Mais</span>
+          <span class="chevron-icon" id="sheet-chevron">▲</span>
+        </button>
+      </div>
+
+      <!-- Botões de Ação Imediata (Visíveis no modo compacto e expandido) -->
+      <div class="sheet-quick-nav-grid">
+        <a href="#" class="btn-quick-nav btn-gmaps" id="btn-nav-gmaps" target="_blank" rel="noopener">
+          <span class="nav-btn-icon">🗺️</span>
+          <div class="nav-btn-labels">
             <strong>Google Maps</strong>
             <small>Abrir Rota</small>
           </div>
         </a>
-        <a href="#" class="btn-nav-action btn-nav-waze" id="btn-nav-waze" target="_blank" rel="noopener">
-          <span class="nav-icon">🚙</span>
-          <div class="nav-btn-text">
-            <strong>Waze</strong>
-            <small>Navegar Agora</small>
+        <a href="#" class="btn-quick-nav btn-waze" id="btn-nav-waze" target="_blank" rel="noopener">
+          <span class="nav-btn-icon">🚙</span>
+          <div class="nav-btn-labels">
+            <strong>Navegar Waze</strong>
+            <small>Traçar Rota</small>
           </div>
         </a>
       </div>
-    </div>
-  </div>
 
-  <!-- ================= BARRA FIXA INFERIOR DE EMERGÊNCIA ================= -->
-  <footer class="emergency-bar">
-    <a href="https://wa.me/5554991940449?text=Ol%C3%A1%2C%20preciso%20de%20informa%C3%A7%C3%B5es%20e%20apoio%20da%20Defesa%20Civil%20de%20Passo%20Fundo." class="btn-emg btn-emg-whatsapp" target="_blank" rel="noopener">
-      <span class="emg-icon">💬</span>
-      <div class="emg-text">
-        <strong>WhatsApp</strong>
-        <small>Plantão DC</small>
-      </div>
-    </a>
-    <a href="tel:199" class="btn-emg btn-emg-199">
-      <span class="emg-icon">📞</span>
-      <div class="emg-text">
-        <strong>Discar 199</strong>
-        <small>Defesa Civil</small>
-      </div>
-    </a>
-    <a href="tel:193" class="btn-emg btn-emg-193">
-      <span class="emg-icon">🚒</span>
-      <div class="emg-text">
-        <strong>193</strong>
-        <small>Bombeiros</small>
-      </div>
-    </a>
-  </footer>
+      <!-- Conteúdo Detalhado (Revelado quando o Sheet é Expandido) -->
+      <div class="sheet-expanded-content" id="sheet-expanded-content">
 
-  <!-- ================= SIDE DRAWER (MENU LATERAL / ABAS LATERAIS) ================= -->
-  <div class="drawer-backdrop" id="drawer-backdrop"></div>
-  
-  <aside class="side-drawer" id="side-drawer">
-    <!-- Header do Drawer -->
-    <div class="drawer-header">
-      <div class="drawer-header-title">
-        <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="drawer-logo">
-        <div>
-          <h3>Defesa Civil Passo Fundo</h3>
-          <span>Painel Informativo & Recursos</span>
-        </div>
-      </div>
-      <button class="drawer-btn-close" id="btn-close-drawer" aria-label="Fechar menu">✕</button>
-    </div>
-
-    <!-- Navegação de Abas do Drawer -->
-    <div class="drawer-nav-tabs">
-      <button class="tab-btn active" data-tab="tab-abrigos" id="tab-btn-abrigos">
-        🏠 Abrigos (17)
-      </button>
-      <button class="tab-btn" data-tab="tab-telemetria" id="tab-btn-telemetria">
-        🌧️ Chuva & Rio
-      </button>
-      <button class="tab-btn" data-tab="tab-orientacoes" id="tab-btn-orientacoes">
-        📋 Orientações
-      </button>
-    </div>
-
-    <!-- Conteúdo das Abas -->
-    <div class="drawer-content">
-
-      <!-- ABA 1: LISTA COMPLETA DOS 17 ABRIGOS -->
-      <section class="tab-pane active" id="tab-abrigos">
-        <div class="pane-header-box">
-          <p class="pane-desc">Abrigos cadastrados para acolhimento de famílias em eventos climáticos. Ordenados por proximidade do seu GPS.</p>
-          <input type="text" id="shelter-search" class="drawer-search-input" placeholder="🔍 Buscar abrigo ou bairro...">
-        </div>
-        <div class="drawer-shelters-list" id="drawer-shelters-list">
-          <!-- Renderizado dinamicamente pelo JavaScript -->
-        </div>
-      </section>
-
-      <!-- ABA 2: MONITORAMENTO TELEMÉTRICO (CHUVA E RIO) -->
-      <section class="tab-pane" id="tab-telemetria">
-        <!-- Card Rio Passo Fundo -->
-        <div class="drawer-card">
-          <div class="drawer-card-title">
-            <span>🌊</span>
-            <strong>Rio Passo Fundo (Estação DCRS-00016)</strong>
-          </div>
-          <div class="telemetry-main-row">
-            <div>
-              <span class="telemetry-kpi-val" id="drawer-river-val">-- <small>m</small></span>
-              <span class="telemetry-kpi-sub" id="drawer-river-trend">Tendência: Consultando...</span>
-            </div>
-            <div id="drawer-river-badge-box"></div>
-          </div>
-          <div class="river-cotas-info">
-            <span>Normal: &lt; 2,00m</span>
-            <span>Atenção: 2,50m</span>
-            <span>Alerta: 3,00m</span>
-            <span>Inundação: 3,50m</span>
-          </div>
-        </div>
-
-        <!-- Card Pluviômetros Plugfield -->
-        <div class="drawer-card">
-          <div class="drawer-card-title">
+        <!-- BLOCO 1: DIAGNÓSTICO METEOROLÓGICO LOCAL -->
+        <section class="sheet-section weather-section">
+          <div class="sheet-section-title">
             <span>🌧️</span>
-            <strong>Rede Pluviométrica Municipal (16 Estações)</strong>
+            <h4>MONITORAMENTO METEOROLÓGICO (CHUVA)</h4>
           </div>
-          <p class="pane-desc" style="margin-bottom: 8px;">
-            Estação mais próxima de você: <strong id="drawer-station-nearest-name">Identificando...</strong>
-          </p>
-          <div class="telemetry-main-row">
-            <div>
-              <span class="telemetry-kpi-val" id="drawer-rain-val">-- <small>mm</small></span>
-              <span class="telemetry-kpi-sub" id="drawer-rain-sub">Acumulado nas últimas horas</span>
+          <div class="weather-summary-box">
+            <div class="weather-kpi-main">
+              <span class="weather-kpi-label">Chuva na Estação Mais Próxima</span>
+              <div class="weather-kpi-val" id="weather-nearest-rain">-- <small>mm</small></div>
+              <span class="weather-kpi-sub" id="weather-nearest-name">Calculando estação mais próxima...</span>
             </div>
-            <div id="drawer-rain-badge-box"></div>
+            <div class="weather-kpi-extra">
+              <div class="extra-item">
+                <span class="extra-label">Rede Ativa</span>
+                <strong id="weather-active-count">16 Estações</strong>
+              </div>
+              <div class="extra-item">
+                <span class="extra-label">Última Leitura</span>
+                <strong id="weather-last-update">Consultando...</strong>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <!-- Mini Lista das Estações -->
-          <div class="stations-accordion-box">
-            <div class="stations-header">
-              <span>Leitura por Bairro</span>
-              <span class="stations-count">16 Sensores</span>
-            </div>
-            <div class="stations-scroll-list" id="drawer-stations-list">
-              <!-- Preenchido via JavaScript -->
-            </div>
+        <!-- BLOCO 2: RELAÇÃO COMPLETA DOS 17 ABRIGOS -->
+        <section class="sheet-section shelters-section">
+          <div class="sheet-section-title">
+            <span>🏠</span>
+            <h4>REDE DE ACOLHIMENTO E ABRIGOS (17 LOCAIS)</h4>
+          </div>
+          <p class="section-helper-text">
+            Ordenados pela proximidade da sua localização atual. Toque em qualquer abrigo para traçar a rota ou visualizá-lo no mapa.
+          </p>
+          <input type="text" id="input-search-shelters" class="sheet-search-input" placeholder="🔍 Buscar abrigo por nome ou endereço...">
+          
+          <div class="sheet-shelters-list" id="sheet-shelters-list">
+            <!-- Renderizado dinamicamente pelo JavaScript -->
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ================= BARRA FIXA INFERIOR DE EMERGÊNCIA ================= -->
+    <footer class="emergency-footer" id="emergency-footer">
+      <!-- WhatsApp Defesa Civil -->
+      <a href="https://wa.me/5554991940449?text=Ol%C3%A1%2C%20preciso%20de%20informa%C3%A7%C3%B5es%20e%20apoio%20da%20Defesa%20Civil%20de%20Passo%20Fundo." class="btn-emergency-call btn-emg-wpp" target="_blank" rel="noopener">
+        <span class="emg-icon">💬</span>
+        <div class="emg-label-block">
+          <strong>WhatsApp</strong>
+          <small>(54) 99194-0449</small>
+        </div>
+      </a>
+      <!-- 199 Defesa Civil -->
+      <a href="tel:199" class="btn-emergency-call btn-emg-199">
+        <span class="emg-icon">📞</span>
+        <div class="emg-label-block">
+          <strong>Discar 199</strong>
+          <small>Defesa Civil</small>
+        </div>
+      </a>
+      <!-- 193 Bombeiros -->
+      <a href="tel:193" class="btn-emergency-call btn-emg-193">
+        <span class="emg-icon">🚒</span>
+        <div class="emg-label-block">
+          <strong>193</strong>
+          <small>Bombeiros</small>
+        </div>
+      </a>
+    </footer>
+
+    <!-- ================= MENU GAVETA LATERAL (SIDE DRAWER) ================= -->
+    <div class="side-drawer-backdrop" id="drawer-backdrop"></div>
+    <aside class="side-drawer" id="side-drawer">
+      <div class="drawer-header">
+        <div class="drawer-brand">
+          <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="drawer-logo">
+          <div>
+            <h3>Defesa Civil Passo Fundo</h3>
+            <small>Portal & Aplicativo de Emergência</small>
           </div>
         </div>
-      </section>
+        <button class="drawer-btn-close" id="btn-close-drawer">✕</button>
+      </div>
 
-      <!-- ABA 3: ORIENTAÇÕES E CONTATOS -->
-      <section class="tab-pane" id="tab-orientacoes">
-        <div class="drawer-card">
-          <div class="drawer-card-title">
-            <span>⚠️</span>
-            <strong>O que fazer em caso de Inundação?</strong>
+      <div class="drawer-body">
+        <!-- Acesso Rápido de Instalação PWA -->
+        <div class="drawer-box pwa-box" id="drawer-pwa-box">
+          <div class="pwa-box-header">
+            <span>📱</span>
+            <strong>Instalar Aplicativo Oficial</strong>
           </div>
-          <ul class="drawer-guide-list">
-            <li>Desligue a chave geral de energia elétrica e o registro de água/gás.</li>
-            <li>Coloque documentos e medicamentos em sacos plásticos impermeáveis.</li>
-            <li>Não atravesse ruas alagadas ou pontilhões submersos (a correnteza pode arrastar veículos).</li>
-            <li>Dirija-se imediatamente para o abrigo mais próximo ou ponto mais alto.</li>
-            <li>Em situações de risco iminente, ligue <strong>199 (Defesa Civil)</strong> ou <strong>193 (Bombeiros)</strong>.</li>
+          <p>Adicione à tela inicial do seu celular para acesso instantâneo em situações de emergência climática.</p>
+          <button class="btn-drawer-install" id="btn-drawer-install">Instalar na Tela Inicial</button>
+        </div>
+
+        <!-- Orientações de Defesa Civil -->
+        <div class="drawer-box">
+          <h4>⚠️ Orientações em Caso de Inundação</h4>
+          <ul class="guide-bullets">
+            <li>Em caso de subida rápida das águas, dirija-se imediatamente para os pontos mais altos ou abrigos cadastrados.</li>
+            <li>Desligue os disjuntores gerais e feche os registros de água e gás antes de sair.</li>
+            <li>Nunca tente atravessar ruas alagadas ou pontilhões submersos a pé ou de carro.</li>
+            <li>Acompanhe os avisos e alertas oficiais emitidos pela Defesa Civil de Passo Fundo.</li>
           </ul>
         </div>
 
-        <div class="drawer-card">
-          <div class="drawer-card-title">
-            <span>📱</span>
-            <strong>Aplicativo Oficial PWA</strong>
+        <!-- Telefones Úteis -->
+        <div class="drawer-box">
+          <h4>📞 Telefones de Emergência</h4>
+          <div class="phone-contact-row">
+            <span>Defesa Civil Passo Fundo</span>
+            <strong>199 / (54) 99194-0449</strong>
           </div>
-          <p class="pane-desc">
-            Este aplicativo funciona direto no navegador e pode ser instalado no celular sem precisar da loja de aplicativos. Ele armazena offline as rotas e localizações dos abrigos.
-          </p>
-          <button class="btn-drawer-install" id="btn-drawer-install-app">
-            📲 Instalar Aplicativo no Celular
-          </button>
-        </div>
-
-        <div class="drawer-card">
-          <div class="drawer-card-title">
-            <span>🏛️</span>
-            <strong>Contatos Oficiais</strong>
+          <div class="phone-contact-row">
+            <span>Corpo de Bombeiros</span>
+            <strong>193</strong>
           </div>
-          <div class="drawer-contacts-list">
-            <div class="contact-row">
-              <span>Defesa Civil (Plantão 24h)</span>
-              <strong>199 / (54) 99194-0449</strong>
-            </div>
-            <div class="contact-row">
-              <span>Corpo de Bombeiros Militar</span>
-              <strong>193</strong>
-            </div>
-            <div class="contact-row">
-              <span>SAMU Emergência Médica</span>
-              <strong>192</strong>
-            </div>
-            <div class="contact-row">
-              <span>Brigada Militar</span>
-              <strong>190</strong>
-            </div>
+          <div class="phone-contact-row">
+            <span>SAMU (Ambulância)</span>
+            <strong>192</strong>
+          </div>
+          <div class="phone-contact-row">
+            <span>Brigada Militar</span>
+            <strong>190</strong>
           </div>
         </div>
-      </section>
 
-    </div>
-  </aside>
+        <!-- Versão e Créditos -->
+        <div class="drawer-footer-text">
+          <span>Prefeitura Municipal de Passo Fundo / RS</span><br>
+          <span>Coordenadoria Municipal de Proteção e Defesa Civil</span><br>
+          <small>Integrado à Rede Telemétrica Municipal Plugfield</small>
+        </div>
+      </div>
+    </aside>
+
+  </div>
 
   <!-- Scripts: Proj4js (Coordenadas) e Leaflet (Mapa Leve) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
