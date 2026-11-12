@@ -1,19 +1,21 @@
 // Service Worker - Defesa Civil Passo Fundo PWA
-const CACHE_NAME = 'dc-passofundo-pwa-v2';
+const CACHE_NAME = 'dc-passofundo-pwa-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './app.css',
   './app.js',
   './manifest.json',
+  '../assets/brasao-prefeitura.png',
   '../assets/logo-defesa-civil.jpg',
-  '../Abrigos da Defesa Civil.geojson'
+  '../Abrigos da Defesa Civil.geojson',
+  '../Áreas de Atenção Hidrológica.geojson'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Cache inicial dos recursos de emergência v2...');
+      console.log('[SW] Cache inicial dos recursos de emergência v3...');
       return cache.addAll(ASSETS_TO_CACHE);
     }).catch(err => console.warn('[SW] Falha no pre-cache:', err))
   );

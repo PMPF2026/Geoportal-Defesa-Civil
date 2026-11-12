@@ -53,7 +53,6 @@ class MobileEmergencyApp {
     this.userLocation = null; // { lat, lon, utmX, utmY, accuracy }
     this.shelters = [];
     this.attentionPolygons = null;
-    this.flood2024Polygons = null;
     this.plugfieldStations = [];
     this.riverStationsData = {};
 
@@ -63,7 +62,6 @@ class MobileEmergencyApp {
     
     // Camadas vetoriais
     this.layerAttention = null;
-    this.layerFlood = null;
     this.layerSheltersGroup = null;
     this.layerRiverStationsGroup = null;
     this.userMarker = null;
@@ -460,7 +458,7 @@ class MobileEmergencyApp {
   }
 
   async loadRiskPolygons() {
-    // 1. Áreas de Atenção Hidrológica (Laranja)
+    // Áreas de Atenção Hidrológica (Polígonos Municipais de Risco Hidrológico)
     try {
       const respAtencao = await fetch('../Áreas de Atenção Hidrológica.geojson');
       this.attentionPolygons = await respAtencao.json();
@@ -468,30 +466,13 @@ class MobileEmergencyApp {
       if (this.map && this.attentionPolygons) {
         this.layerAttention = this.createGeoJsonLayer(this.attentionPolygons, {
           color: '#ea580c',
-          weight: 2,
+          weight: 2.2,
           fillColor: '#f97316',
-          fillOpacity: 0.38
+          fillOpacity: 0.42
         }, 'Área de Atenção Hidrológica').addTo(this.map);
       }
     } catch (e) {
-      console.warn('[PWA] Erro ao carregar Áreas de Atenção:', e);
-    }
-
-    // 2. Perímetro Histórico de Enchente 2024 (Vermelho)
-    try {
-      const respEnchente = await fetch('../Áreas de Enchente 2024.geojson');
-      this.flood2024Polygons = await respEnchente.json();
-
-      if (this.map && this.flood2024Polygons) {
-        this.layerFlood = this.createGeoJsonLayer(this.flood2024Polygons, {
-          color: '#dc2626',
-          weight: 1.8,
-          fillColor: '#ef4444',
-          fillOpacity: 0.28
-        }, 'Perímetro Enchente 2024').addTo(this.map);
-      }
-    } catch (e) {
-      console.warn('[PWA] Erro ao carregar Áreas de Enchente 2024:', e);
+      console.warn('[PWA] Erro ao carregar Áreas de Atenção Hidrológica:', e);
     }
   }
 
@@ -638,23 +619,17 @@ class MobileEmergencyApp {
     const utmPoint = [this.userLocation.utmX, this.userLocation.utmY];
 
     const atencaoFeature = this.checkPointInGeoJson(utmPoint, this.attentionPolygons);
-    const enchenteFeature = this.checkPointInGeoJson(utmPoint, this.flood2024Polygons);
 
     if (atencaoFeature) {
       pill.className = 'map-status-pill status-hazard';
       pillIcon.textContent = '⚠️';
-      pillTitle.textContent = 'Atenção: Área de Risco Hidrológico!';
-      pillDesc.textContent = `${atencaoFeature.properties['Inundaçã'] || 'Planície de inundação ativa'}`;
-    } else if (enchenteFeature) {
-      pill.className = 'map-status-pill status-extreme';
-      pillIcon.textContent = '🚨';
-      pillTitle.textContent = 'Alerta: Perímetro Enchente 2024!';
-      pillDesc.textContent = 'Cota atingida no evento histórico';
+      pillTitle.textContent = 'Atenção: Área de Atenção Hidrológica!';
+      pillDesc.textContent = `${atencaoFeature.properties['Inundaçã'] || atencaoFeature.properties['Nome'] || 'Planície com risco hidrológico cadastrado'}`;
     } else {
       pill.className = 'map-status-pill status-safe';
       pillIcon.textContent = '🛡️';
       pillTitle.textContent = 'Você está em Local Seguro';
-      pillDesc.textContent = `Fora das manchas de risco cadastradas (±${this.userLocation.accuracy}m)`;
+      pillDesc.textContent = `Fora das áreas de atenção hidrológica (±${this.userLocation.accuracy}m)`;
     }
   }
 
@@ -861,15 +836,6 @@ class MobileEmergencyApp {
         if (!this.map || !this.layerAttention) return;
         if (e.target.checked) this.map.addLayer(this.layerAttention);
         else this.map.removeLayer(this.layerAttention);
-      });
-    }
-
-    const chkFlood = document.getElementById('chk-layer-flood');
-    if (chkFlood) {
-      chkFlood.addEventListener('change', (e) => {
-        if (!this.map || !this.layerFlood) return;
-        if (e.target.checked) this.map.addLayer(this.layerFlood);
-        else this.map.removeLayer(this.layerFlood);
       });
     }
 

@@ -28,7 +28,10 @@
     <!-- ================= CABEÇALHO MOBILE ================= -->
     <header class="app-header" id="app-header">
       <div class="header-brand">
-        <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="header-logo">
+        <div class="header-logos">
+          <img src="../assets/brasao-prefeitura.png" alt="Brasão Prefeitura de Passo Fundo" class="header-logo header-logo-pmpf">
+          <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="header-logo header-logo-dc">
+        </div>
         <div class="header-titles">
           <span class="header-inst">Prefeitura de Passo Fundo</span>
           <span class="header-app-name">Defesa Civil • Alerta & Abrigos</span>
@@ -197,10 +200,6 @@
             <span>Áreas de Atenção Hidrológica</span>
           </div>
           <div class="legend-row">
-            <span class="legend-symbol sym-flood2024"></span>
-            <span>Perímetro Histórico Enchente 2024</span>
-          </div>
-          <div class="legend-row">
             <span class="legend-symbol sym-river-station"></span>
             <span>3 Estações de Nível do Rio (Plugfield)</span>
           </div>
@@ -225,10 +224,6 @@
           <div class="layer-toggle-row">
             <span>🟠 Áreas de Atenção Hidrológica</span>
             <input type="checkbox" id="chk-layer-attention" class="custom-toggle" checked>
-          </div>
-          <div class="layer-toggle-row">
-            <span>🔴 Perímetro Enchente 2024</span>
-            <input type="checkbox" id="chk-layer-flood" class="custom-toggle" checked>
           </div>
           <div class="layer-toggle-row">
             <span>🏠 Abrigos Cadastrados (17)</span>
@@ -364,10 +359,11 @@
     <aside class="side-drawer" id="side-drawer">
       <div class="drawer-header">
         <div class="drawer-brand">
-          <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="drawer-logo">
+          <img src="../assets/brasao-prefeitura.png" alt="Brasão Prefeitura" class="drawer-logo drawer-logo-pmpf">
+          <img src="../assets/logo-defesa-civil.jpg" alt="Logo Defesa Civil" class="drawer-logo drawer-logo-dc">
           <div>
             <h3>Defesa Civil Passo Fundo</h3>
-            <small>Portal & Aplicativo de Emergência</small>
+            <small>Prefeitura Municipal de Passo Fundo</small>
           </div>
         </div>
         <button class="drawer-btn-close" id="btn-close-drawer">✕</button>
