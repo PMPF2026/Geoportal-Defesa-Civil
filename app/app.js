@@ -391,6 +391,46 @@ class MobileEmergencyApp {
   // -------------------------------------------------------------
   // MONITORAMENTO HIDROLÓGICO (ESTAÇÕES PLUGFIELD)
   // -------------------------------------------------------------
+  parseRiverLevel(st) {
+    if (!st) return null;
+    const dash = st.dashboard || {};
+    const parse = (v) => {
+      if (v == null || v === '') return null;
+      const clean = String(v).trim().replace(',', '.');
+      const num = parseFloat(clean);
+      return (!isNaN(num) && isFinite(num)) ? num : null;
+    };
+
+    // 1. Campo normalizado no objeto raiz
+    let lvl = parse(st.riverLevel);
+    if (lvl !== null) return lvl;
+
+    // 2. Chaves comuns no dashboard
+    lvl = parse(dash.sc);
+    if (lvl !== null) return lvl;
+
+    lvl = parse(dash.riverLevel);
+    if (lvl !== null) return lvl;
+
+    lvl = parse(dash.levelAdditional);
+    if (lvl !== null) return lvl;
+
+    // 3. Inspeção na lista detalhada de sensores
+    if (dash.lastSensorData && Array.isArray(dash.lastSensorData.sensorDataList)) {
+      const scSensor = dash.lastSensorData.sensorDataList.find(s =>
+        s.sensorCode === 'sc' ||
+        s.sensorId === 380 ||
+        (s.sensorName && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.sensorName))
+      );
+      if (scSensor && scSensor.dataValue != null && scSensor.dataValue !== '') {
+        lvl = parse(scSensor.dataValue);
+        if (lvl !== null) return lvl;
+      }
+    }
+
+    return null;
+  }
+
   async loadPlugfieldData() {
     try {
       const resp = await fetch('/api/weather/plugfield?action=devices')
@@ -403,6 +443,33 @@ class MobileEmergencyApp {
 
       this.plugfieldStations = data.data.stations;
       console.log(`[Plugfield] ${this.plugfieldStations.length} estações carregadas com sucesso`);
+
+      // Contingência para as 3 estações hidrológicas do Rio Passo Fundo (4431, 4714, 4965):
+      // Se qualquer uma estiver sem o nível no payload geral (/device), consulta /device/:id
+      const riverIds = [4431, 4714, 4965];
+      await Promise.all(riverIds.map(async (devId) => {
+        const st = this.plugfieldStations.find(s => (s.id == devId || s.deviceId == devId));
+        const lvl = this.parseRiverLevel(st);
+        if (lvl === null) {
+          try {
+            const singleResp = await fetch(`/api/weather/plugfield?action=device&deviceId=${devId}`)
+              .catch(() => fetch(`../api/weather/plugfield?action=device&deviceId=${devId}`));
+            if (singleResp && singleResp.ok) {
+              const singleJson = await singleResp.json();
+              if (singleJson && singleJson.data) {
+                const sIdx = this.plugfieldStations.findIndex(s => (s.id == devId || s.deviceId == devId));
+                if (sIdx !== -1) {
+                  this.plugfieldStations[sIdx] = singleJson.data;
+                } else {
+                  this.plugfieldStations.push(singleJson.data);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn(`[Plugfield] Falha na contingência individual da estação ${devId}:`, e);
+          }
+        }
+      }));
 
       // 1. Processar e exibir as 3 estações hidrológicas com destaque na barra superior
       this.updateRiverMonitoringUI();
@@ -439,17 +506,8 @@ class MobileEmergencyApp {
       if (st) {
         const dash = st.dashboard || {};
 
-        // Extração do nível do sensor
-        let riverLevel = null;
-        if (st.riverLevel != null && !isNaN(parseFloat(st.riverLevel))) {
-          riverLevel = parseFloat(st.riverLevel);
-        } else if (dash.sc != null && dash.sc !== '' && !isNaN(parseFloat(dash.sc))) {
-          riverLevel = parseFloat(dash.sc);
-        } else if (dash.riverLevel != null && dash.riverLevel !== '' && !isNaN(parseFloat(dash.riverLevel))) {
-          riverLevel = parseFloat(dash.riverLevel);
-        } else if (dash.levelAdditional != null && dash.levelAdditional !== '' && !isNaN(parseFloat(dash.levelAdditional))) {
-          riverLevel = parseFloat(dash.levelAdditional);
-        }
+        // Extração robusta do nível do sensor com conversão de vírgula/ponto
+        const riverLevel = this.parseRiverLevel(st);
 
         // Extração do Timestamp oficial
         const ts = st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null);

@@ -222,24 +222,51 @@ function extractRiverLevelFromPayload(dash, sensors) {
   let riverLevel = null;
   let hasRiverSensor = false;
 
-  if (dash?.sc != null && dash.sc !== '' && !isNaN(parseFloat(dash.sc))) {
-    riverLevel = parseFloat(dash.sc);
-    hasRiverSensor = true;
-  } else if (dash?.riverLevel != null && dash.riverLevel !== '' && !isNaN(parseFloat(dash.riverLevel))) {
-    riverLevel = parseFloat(dash.riverLevel);
-    hasRiverSensor = true;
-  } else if (dash?.levelAdditional != null && dash.levelAdditional !== '' && !isNaN(parseFloat(dash.levelAdditional))) {
-    riverLevel = parseFloat(dash.levelAdditional);
-    hasRiverSensor = true;
-  } else if (dash?.lastSensorData?.sensorDataList && Array.isArray(dash.lastSensorData.sensorDataList)) {
+  const parseVal = (v) => {
+    if (v == null || v === '') return null;
+    const str = String(v).trim().replace(',', '.');
+    const num = parseFloat(str);
+    return (!isNaN(num) && isFinite(num)) ? num : null;
+  };
+
+  if (dash?.sc != null && dash.sc !== '') {
+    const val = parseVal(dash.sc);
+    if (val !== null) {
+      riverLevel = val;
+      hasRiverSensor = true;
+    }
+  }
+
+  if (riverLevel === null && dash?.riverLevel != null && dash.riverLevel !== '') {
+    const val = parseVal(dash.riverLevel);
+    if (val !== null) {
+      riverLevel = val;
+      hasRiverSensor = true;
+    }
+  }
+
+  if (riverLevel === null && dash?.levelAdditional != null && dash.levelAdditional !== '') {
+    const val = parseVal(dash.levelAdditional);
+    if (val !== null) {
+      riverLevel = val;
+      hasRiverSensor = true;
+    }
+  }
+
+  if (dash?.lastSensorData?.sensorDataList && Array.isArray(dash.lastSensorData.sensorDataList)) {
     const scSensor = dash.lastSensorData.sensorDataList.find(s =>
       s.sensorCode === 'sc' ||
       s.sensorId === 380 ||
       (s.sensorName && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.sensorName))
     );
-    if (scSensor && scSensor.dataValue != null && !isNaN(parseFloat(scSensor.dataValue))) {
-      riverLevel = parseFloat(scSensor.dataValue);
+    if (scSensor) {
       hasRiverSensor = true;
+      if (riverLevel === null && scSensor.dataValue != null && scSensor.dataValue !== '') {
+        const val = parseVal(scSensor.dataValue);
+        if (val !== null) {
+          riverLevel = val;
+        }
+      }
     }
   }
 
@@ -357,6 +384,36 @@ module.exports = async function handler(req, res) {
             lastUpdateTimestamp: st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null)
           };
         });
+
+      // Contingência para as 3 estações hidrológicas do Rio Passo Fundo (4431, 4714, 4965):
+      // Se alguma estiver sem riverLevel no payload geral (/device), enriquece via /device/:id
+      const riverIds = [4431, 4714, 4965];
+      const pendingRiverStations = filteredStations.filter(st => riverIds.includes(st.id) && st.riverLevel === null);
+      if (pendingRiverStations.length > 0) {
+        await Promise.all(pendingRiverStations.map(async (st) => {
+          try {
+            const detailResp = await fetchPlugfieldWithFallback(`${BASE_URL}/device/${st.id}`, headers, apiKey, accessToken);
+            if (detailResp && detailResp.ok) {
+              const detailRaw = await detailResp.json();
+              const detailDash = detailRaw.dashboard || {};
+              const detailSensors = detailRaw.sensorList || detailRaw.sensors || [];
+              const { riverLevel: dlLevel, hasRiverSensor: dlHas } = extractRiverLevelFromPayload(detailDash, detailSensors);
+              if (dlLevel !== null) {
+                st.riverLevel = dlLevel;
+                st.hasRiverSensor = true;
+                st.dashboard.sc = dlLevel;
+                st.dashboard.riverLevel = dlLevel;
+              }
+              const ts = detailRaw.lastUpdateTimestamp || detailDash.lastUpdateTimestamp || (detailDash.timestamp ? parseInt(detailDash.timestamp, 10) : null);
+              if (ts) {
+                st.lastUpdateTimestamp = ts;
+              }
+            }
+          } catch (e) {
+            console.warn(`[Plugfield API] Falha ao enriquecer estação hidrológica ${st.id}:`, e);
+          }
+        }));
+      }
 
       const resultPayload = {
         totalStations: filteredStations.length,
