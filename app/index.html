@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="../assets/logo-defesa-civil.jpg">
   <link rel="icon" type="image/jpeg" href="../assets/logo-defesa-civil.jpg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="app.css?v=20261113b">
+  <link rel="stylesheet" href="app.css?v=20261113c">
 </head>
 <body>
 
@@ -360,18 +360,113 @@
           </button>
         </div>
 
+        <!-- ORIENTAÇÃO INSTITUCIONAL OFICIAL -->
+        <div class="drawer-box drawer-notice-box">
+          <div class="notice-box-header">
+            <span class="notice-icon">🏛️</span>
+            <strong>Aviso Institucional</strong>
+          </div>
+          <p class="notice-box-text">
+            Este aplicativo é uma ferramenta de apoio à informação, prevenção e gestão de riscos. As informações disponibilizadas auxiliam a população, mas não substituem os alertas e as orientações oficiais da Coordenadoria Municipal de Proteção e Defesa Civil.
+          </p>
+        </div>
+
+        <!-- GUIA E ORIENTAÇÕES DO CIDADÃO -->
         <div class="drawer-box">
-          <h4>Orientações em Caso de Inundação</h4>
+          <h4 style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <span>🧭</span>
+            <span>Guia e Orientações do Aplicativo</span>
+          </h4>
+
+          <div class="drawer-guide-list">
+            <!-- LOCALIZAÇÃO -->
+            <div class="guide-item">
+              <span class="guide-item-title">
+                <span>📍</span>
+                <span>Localização GPS</span>
+              </span>
+              <p class="guide-item-text">
+                A autorização do GPS é fundamental para identificar sua posição geográfica no mapa em tempo real, calcular o abrigo mais próximo com rota de deslocamento e verificar se você está em local seguro fora das manchas mapeadas.
+              </p>
+            </div>
+
+            <!-- CAMADAS DO MAPA -->
+            <div class="guide-item">
+              <span class="guide-item-title">
+                <span>🛰️</span>
+                <span>Camadas do Mapa</span>
+              </span>
+              <p class="guide-item-text">
+                Utilize o botão lateral <strong>CAMADAS</strong> para alternar entre a imagem de satélite de alta definição e o mapa viário municipal. Você também pode consultar a legenda cartográfica e ativar ou desativar feições de interesse.
+              </p>
+            </div>
+
+            <!-- MONITORAMENTO -->
+            <div class="guide-item">
+              <span class="guide-item-title">
+                <span>🌊</span>
+                <span>Monitoramento do Rio Passo Fundo</span>
+              </span>
+              <p class="guide-item-text">
+                Acompanhe o nível da calha do rio nas 3 estações telemétricas da Plugfield com sensores ultrassônicos: <strong>Av. Brasil (Largo da Literatura)</strong>, <strong>Lobo da Costa</strong> e <strong>Quinto Giongo</strong>. Observe sempre a data e horário da última leitura transmitida por cada estação.
+              </p>
+            </div>
+
+            <!-- ABRIGOS -->
+            <div class="guide-item">
+              <span class="guide-item-title">
+                <span>🏠</span>
+                <span>Abrigos Municipais Cadastrados</span>
+              </span>
+              <p class="guide-item-text">
+                O município possui <strong>17 abrigos oficiais mapeados</strong>. Ao tocar em qualquer abrigo ou abrir o painel inferior, você visualiza endereço, capacidade e botões de navegação imediata via Google Maps ou Waze.
+              </p>
+            </div>
+
+            <!-- ÁREAS DE RISCO -->
+            <div class="guide-item">
+              <span class="guide-item-title">
+                <span>⚠️</span>
+                <span>Áreas de Risco e Atenção</span>
+              </span>
+              <p class="guide-item-text">
+                Os polígonos representam áreas com histórico de inundação e setores de atenção hidrológica cadastrados. <strong class="warning-callout">Importante:</strong> a ausência de delimitação no mapa não representa garantia de inexistência de risco durante tempestades severas.
+              </p>
+            </div>
+
+            <!-- EMERGÊNCIAS -->
+            <div class="guide-item">
+              <span class="guide-item-title">
+                <span>🚨</span>
+                <span>Acionamento de Emergências</span>
+              </span>
+              <p class="guide-item-text">
+                Em caso de subida rápida das águas ou risco iminente, utilize os botões da barra inferior para ligação rápida ou entre em contato pelos números oficiais abaixo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ORIENTAÇÕES EM CASO DE INUNDAÇÃO -->
+        <div class="drawer-box">
+          <h4 style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <span>🆘</span>
+            <span>Segurança em Caso de Inundação</span>
+          </h4>
           <ul class="guide-bullets">
             <li>Em caso de subida rápida das águas, busque locais elevados ou um abrigo oficial.</li>
             <li>Desligue a rede de energia elétrica e o registro de gás se houver tempo hábil.</li>
-            <li>Nunca atravesse ruas ou pontes alagadas, seja a pé ou em veículos.</li>
+            <li>Nunca atravesse ruas, pontes ou áreas alagadas, seja a pé ou em veículos.</li>
             <li>Mantenha documentos e medicamentos em sacos plásticos impermeáveis.</li>
           </ul>
         </div>
 
+        <!-- TELEFONES DE EMERGÊNCIA -->
         <div class="drawer-box">
-          <h4>Telefones de Emergência</h4>
+          <h4 style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <span>📞</span>
+            <span>Telefones Oficiais de Emergência</span>
+          </h4>
           <div class="phone-contact-row">
             <span>Defesa Civil Municipal:</span>
             <strong>199 / (54) 99194-0449</strong>
@@ -414,9 +509,17 @@
           </a>
         </div>
 
+        <!-- RODAPÉ INSTITUCIONAL E IDENTIFICAÇÃO DE AUTORIA -->
         <div class="drawer-footer-text">
-          Prefeitura Municipal de Passo Fundo / RS<br>
-          Coordenadoria Municipal de Proteção e Defesa Civil (COMPDEC)
+          <div class="footer-inst-block">
+            <span class="footer-pmpf">Prefeitura Municipal de Passo Fundo / RS</span>
+            <span class="footer-compdec">Coordenadoria Municipal de Proteção e Defesa Civil (COMPDEC)</span>
+          </div>
+          <div class="footer-author-block">
+            <span class="footer-author-title">Aplicativo elaborado por:</span>
+            <strong class="footer-author-name">Vagner A. Duarte</strong>
+            <span class="footer-author-dept">SEPLAN – PMPF</span>
+          </div>
         </div>
       </div>
     </aside>
@@ -579,6 +682,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-  <script src="app.js?v=20261113b"></script>
+  <script src="app.js?v=20261113c"></script>
 </body>
 </html>
