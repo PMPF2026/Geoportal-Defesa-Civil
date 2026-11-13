@@ -69,6 +69,8 @@ html, body {
   color: var(--text-primary);
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -150,7 +152,7 @@ html, body {
 }
 
 .header-inst {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -162,7 +164,7 @@ html, body {
 }
 
 .header-app-name {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #ffffff;
   white-space: nowrap;
@@ -261,7 +263,7 @@ html, body {
 }
 
 .river-panel-title {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.3px;
   color: var(--dc-blue-light);
@@ -272,15 +274,15 @@ html, body {
 }
 
 .river-sensor-type-badge {
-  font-size: 9.5px;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.06);
-  padding: 2px 5px;
+  font-size: 10px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   white-space: nowrap;
   flex-shrink: 0;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Grid com as 3 Estações Hidrológicas */
@@ -292,10 +294,10 @@ html, body {
 }
 
 .river-card {
-  background: rgba(30, 41, 59, 0.75);
-  border: 1px solid rgba(2, 132, 199, 0.3);
+  background: rgba(30, 41, 59, 0.85);
+  border: 1.5px solid rgba(2, 132, 199, 0.35);
   border-radius: var(--radius-sm);
-  padding: 6px 7px;
+  padding: 7px 8px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -320,7 +322,7 @@ html, body {
 }
 
 .river-card-name {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: #f8fafc;
   white-space: nowrap;
@@ -330,20 +332,20 @@ html, body {
 }
 
 .sensor-status-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .sensor-status-dot.online {
   background-color: var(--dc-green);
-  box-shadow: 0 0 5px var(--dc-green);
+  box-shadow: 0 0 6px var(--dc-green);
 }
 
 .sensor-status-dot.delayed {
   background-color: #f59e0b;
-  box-shadow: 0 0 5px #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
 }
 
 .sensor-status-dot.offline {
@@ -359,7 +361,7 @@ html, body {
 }
 
 .river-card-val {
-  font-size: 19px;
+  font-size: 21.5px;
   font-weight: 900;
   color: #38bdf8;
   line-height: 1;
@@ -368,13 +370,13 @@ html, body {
 }
 
 .river-card-val small {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 .river-id-tag {
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 700;
   color: var(--text-muted);
 }
@@ -388,7 +390,7 @@ html, body {
 }
 
 .river-time {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -608,113 +610,74 @@ html, body {
   color: #ffffff;
 }
 
-/* ================= COLUNAS DE FERRAMENTAS LATERAIS FLUTUANTES ================= */
-.map-floating-tools-left {
+/* ================= COLUNAS DE FERRAMENTAS LATERAIS FLUTUANTES (PADRÃO PRINT 2) ================= */
+.floating-toolbar {
   position: absolute;
-  top: 56px;
+  z-index: 850;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.toolbar-left {
+  top: 58px;
   left: 10px;
-  z-index: 850;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  pointer-events: auto;
 }
 
-.map-floating-tools-right {
-  position: absolute;
-  top: 56px;
+.toolbar-right {
+  top: 58px;
   right: 10px;
-  z-index: 850;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  pointer-events: auto;
 }
 
-.tool-btn-chip {
+.map-tool-btn {
   background: var(--bg-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-medium);
+  border: 1.5px solid var(--border-medium);
   border-radius: var(--radius-md);
   color: #ffffff;
-  min-width: 52px;
-  height: 48px;
-  padding: 0 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  box-shadow: var(--shadow-hud);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.tool-btn-chip:active {
-  transform: scale(0.94);
-  background: rgba(234, 88, 12, 0.35);
-  border-color: var(--dc-orange);
-}
-
-.chip-icon {
-  font-size: 18px;
-  line-height: 1;
-}
-
-.chip-label {
-  font-size: 9.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: #e2e8f0;
-  letter-spacing: 0.3px;
-}
-
-.tool-round-btn {
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  color: #ffffff;
-  min-width: 48px;
-  height: 48px;
+  min-width: 60px;
+  width: 60px;
+  height: 60px;
   padding: 0 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   box-shadow: var(--shadow-hud);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tool-round-btn:active {
-  transform: scale(0.94);
+.map-tool-btn:active {
+  transform: scale(0.93);
+  background: rgba(234, 88, 12, 0.35);
+  border-color: var(--dc-orange);
 }
 
-.btn-gps-accent {
-  background: rgba(2, 132, 199, 0.85);
-  border-color: rgba(56, 189, 248, 0.5);
+.map-tool-btn.primary {
+  background: rgba(2, 132, 199, 0.9);
+  border-color: rgba(56, 189, 248, 0.6);
 }
 
-.tool-zoom-btn {
-  height: 40px;
+.map-tool-btn.zoom-btn {
+  height: 46px;
   border-radius: var(--radius-sm);
-  font-size: 16px;
+  font-size: 20px;
 }
 
-.tool-icon {
-  font-size: 18px;
+.map-tool-btn .tool-icon {
+  font-size: 25px;
   line-height: 1;
 }
 
-.tool-lbl {
-  font-size: 9px;
+.map-tool-btn .tool-label {
+  font-size: 10.5px;
   font-weight: 800;
   text-transform: uppercase;
-  color: #e2e8f0;
+  color: #f8fafc;
   letter-spacing: 0.3px;
 }
 
@@ -919,7 +882,7 @@ html, body {
 }
 
 .sheet-nearest-shelter-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   color: #ffffff;
   white-space: nowrap;
@@ -939,8 +902,8 @@ html, body {
 .btn-quick-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 11px;
+  gap: 9px;
+  padding: 9px 12px;
   border-radius: var(--radius-sm);
   text-decoration: none;
   color: #ffffff;
@@ -963,7 +926,7 @@ html, body {
 }
 
 .nav-icon {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .nav-label-block {
@@ -972,14 +935,15 @@ html, body {
 }
 
 .nav-label-block strong {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1.15;
 }
 
 .nav-label-block small {
-  font-size: 9.5px;
-  opacity: 0.9;
+  font-size: 11px;
+  opacity: 0.95;
+  font-weight: 600;
 }
 
 /* Conteúdo Expandido do Sheet */
@@ -1158,16 +1122,15 @@ html, body {
 
 /* ================= BARRA FIXA INFERIOR DE EMERGÊNCIA ================= */
 .emergency-footer {
-  height: calc(56px + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
+  height: calc(58px + var(--safe-bottom));
   background: var(--bg-glass-strong);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border-subtle);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  padding: 6px 8px;
+  gap: 7px;
+  padding: 6px 8px calc(6px + var(--safe-bottom)) 8px;
   z-index: 1000;
   flex-shrink: 0;
   overflow: hidden;
@@ -1208,7 +1171,7 @@ html, body {
 }
 
 .emg-icon {
-  font-size: 18px;
+  font-size: 21px;
   flex-shrink: 0;
 }
 
@@ -1220,7 +1183,7 @@ html, body {
 }
 
 .emg-label-block strong {
-  font-size: 12px;
+  font-size: 13.5px;
   line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
@@ -1229,8 +1192,9 @@ html, body {
 }
 
 .emg-label-block small {
-  font-size: 8.5px;
-  opacity: 0.9;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.95;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

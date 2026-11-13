@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="../assets/logo-defesa-civil.jpg">
   <link rel="icon" type="image/jpeg" href="../assets/logo-defesa-civil.jpg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css?v=20261112c">
 </head>
 <body>
 
@@ -116,34 +116,34 @@
       <!-- BOTÃO DE SAIR DO MODO TELA CHEIA -->
       <button class="btn-restore-panels" id="btn-restore-panels">✕ Restaurar Painéis</button>
 
-      <!-- ATALHOS FLUTUANTES À ESQUERDA -->
-      <aside class="map-floating-tools-left">
-        <button class="tool-btn-chip" id="tool-shelters" title="Abrigos Mais Próximos">
-          <span class="chip-icon">🏠</span><span class="chip-label">ABRIGOS</span>
+      <!-- ATALHOS FLUTUANTES À ESQUERDA (PADRÃO PRINT 2) -->
+      <aside class="floating-toolbar toolbar-left">
+        <button class="map-tool-btn" id="tool-shelters" title="Abrigos Mais Próximos">
+          <span class="tool-icon">🏠</span><span class="tool-label">ABRIGOS</span>
         </button>
-        <button class="tool-btn-chip" id="tool-risk-areas" title="Ver Áreas de Risco">
-          <span class="chip-icon">⚠️</span><span class="chip-label">RISCO</span>
+        <button class="map-tool-btn" id="tool-risk-areas" title="Ver Áreas de Risco">
+          <span class="tool-icon">⚠️</span><span class="tool-label">RISCO</span>
         </button>
-        <button class="tool-btn-chip" id="tool-weather" title="Monitoramento de Chuva">
-          <span class="chip-icon">🌧️</span><span class="chip-label">CHUVA</span>
+        <button class="map-tool-btn" id="tool-weather" title="Monitoramento de Chuva">
+          <span class="tool-icon">🌧️</span><span class="tool-label">CHUVA</span>
         </button>
       </aside>
 
-      <!-- UTILITÁRIOS FLUTUANTES À DIREITA -->
-      <aside class="map-floating-tools-right">
-        <button class="tool-round-btn btn-gps-accent" id="tool-gps" title="Minha Localização GPS">
-          <span class="tool-icon">📍</span><span class="tool-lbl">GPS</span>
+      <!-- UTILITÁRIOS FLUTUANTES À DIREITA (PADRÃO PRINT 2) -->
+      <aside class="floating-toolbar toolbar-right">
+        <button class="map-tool-btn primary" id="tool-gps" title="Minha Localização GPS">
+          <span class="tool-icon">📍</span><span class="tool-label">GPS</span>
         </button>
-        <button class="tool-round-btn" id="tool-layers" title="Camadas do Mapa">
-          <span class="tool-icon" id="icon-basemap">🛰️</span><span class="tool-lbl">CAMADAS</span>
+        <button class="map-tool-btn" id="tool-layers" title="Camadas do Mapa">
+          <span class="tool-icon" id="icon-basemap">🛰️</span><span class="tool-label">CAMADAS</span>
         </button>
-        <button class="tool-round-btn" id="tool-legend" title="Legenda">
-          <span class="tool-icon">ℹ️</span><span class="tool-lbl">LEGENDA</span>
+        <button class="map-tool-btn" id="tool-legend" title="Legenda">
+          <span class="tool-icon">ℹ️</span><span class="tool-label">LEGENDA</span>
         </button>
-        <button class="tool-round-btn tool-zoom-btn" id="tool-zoom-in" title="Aproximar Zoom">➕</button>
-        <button class="tool-round-btn tool-zoom-btn" id="tool-zoom-out" title="Afastar Zoom">➖</button>
-        <button class="tool-round-btn" id="tool-fullscreen-map" title="Expandir Mapa">
-          <span class="tool-icon">⛶</span><span class="tool-lbl">CHEIA</span>
+        <button class="map-tool-btn zoom-btn" id="tool-zoom-in" title="Aproximar Zoom">➕</button>
+        <button class="map-tool-btn zoom-btn" id="tool-zoom-out" title="Afastar Zoom">➖</button>
+        <button class="map-tool-btn" id="tool-fullscreen-map" title="Expandir Mapa">
+          <span class="tool-icon">⛶</span><span class="tool-label">CHEIA</span>
         </button>
       </aside>
 
@@ -385,6 +385,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20261112c"></script>
 </body>
 </html>

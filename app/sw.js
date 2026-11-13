@@ -1,5 +1,5 @@
 // Service Worker - Defesa Civil Passo Fundo PWA
-const CACHE_NAME = 'dc-passofundo-pwa-v4';
+const CACHE_NAME = 'dc-passofundo-pwa-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

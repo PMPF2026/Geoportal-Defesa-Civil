@@ -167,6 +167,11 @@ class MobileEmergencyApp {
     this.layerSheltersGroup = L.layerGroup().addTo(this.map);
     this.layerRiverStationsGroup = L.layerGroup().addTo(this.map);
     this.layerWeatherStationsGroup = L.layerGroup().addTo(this.map);
+
+    // Garante que o Leaflet calcule a altura total do container
+    setTimeout(() => {
+      if (this.map) this.map.invalidateSize();
+    }, 200);
   }
 
   setBasemap(type) {
