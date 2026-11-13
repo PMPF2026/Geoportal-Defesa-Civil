@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="../assets/logo-defesa-civil.jpg">
   <link rel="icon" type="image/jpeg" href="../assets/logo-defesa-civil.jpg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="app.css?v=20261112d">
+  <link rel="stylesheet" href="app.css?v=20261113a">
 </head>
 <body>
 
@@ -104,11 +104,11 @@
       <div id="mobile-map" class="map-leaflet-stage"></div>
 
       <!-- STATUS DE RISCO DO USUÁRIO -->
-      <div class="map-status-pill status-loading" id="user-risk-pill">
+      <div class="map-status-pill status-safe" id="user-risk-pill">
         <span class="pill-icon" id="risk-pill-icon">🛡️</span>
         <div class="pill-text-col">
-          <strong class="pill-title" id="risk-pill-title">Localizando GPS...</strong>
-          <span class="pill-desc" id="risk-pill-desc">Identificando posição geográfica</span>
+          <strong class="pill-title" id="risk-pill-title">Você está em Local Seguro</strong>
+          <span class="pill-desc" id="risk-pill-desc">Fora das manchas de risco cadastradas</span>
         </div>
         <button class="pill-btn-locate" id="btn-quick-gps" title="Centralizar GPS">🎯</button>
       </div>
@@ -227,14 +227,14 @@
         <div class="sheet-compact-header">
           <div class="sheet-nearest-label-group">
             <span class="nearest-pulse-dot"></span>
-            <span class="sheet-nearest-tag" id="sheet-nearest-dist-text">Buscando abrigo mais próximo...</span>
+            <span class="sheet-nearest-tag" id="sheet-nearest-dist-text">17 Abrigos Oficiais Cadastrados</span>
           </div>
           <button class="btn-sheet-toggle" id="btn-toggle-expand-sheet">
             <span id="sheet-toggle-text">Ver Mais</span> ▲
           </button>
         </div>
 
-        <h3 class="sheet-nearest-shelter-title" id="sheet-nearest-name">Carregando abrigos...</h3>
+        <h3 class="sheet-nearest-shelter-title" id="sheet-nearest-name">Abrigos de Emergência de Passo Fundo</h3>
 
         <div class="sheet-quick-nav-grid">
           <a href="#" target="_blank" class="btn-quick-nav btn-gmaps" id="btn-nav-gmaps">
@@ -382,6 +382,13 @@
           </div>
         </div>
 
+        <div class="drawer-box" style="text-align: center; background: rgba(30, 58, 138, 0.25); border: 1px solid rgba(96, 165, 250, 0.3); padding: 12px;">
+          <a href="/?desktop=true" onclick="sessionStorage.setItem('stayOnDesktopPortal','true')" style="color: #93c5fd; font-size: 13.5px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>💻</span>
+            <span>Acessar WebGIS Completo (Desktop)</span>
+          </a>
+        </div>
+
         <div class="drawer-footer-text">
           Prefeitura Municipal de Passo Fundo / RS<br>
           Coordenadoria Municipal de Proteção e Defesa Civil (COMPDEC)
@@ -393,6 +400,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-  <script src="app.js?v=20261112d"></script>
+  <script src="app.js?v=20261113a"></script>
 </body>
 </html>

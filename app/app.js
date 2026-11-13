@@ -50,7 +50,15 @@ const RIVER_STATIONS_CONFIG = {
 
 class MobileEmergencyApp {
   constructor() {
-    this.userLocation = null; // { lat, lon, utmX, utmY, accuracy }
+    // Localização inicial estimada (Passo Fundo Centro) para resposta imediata sem espera
+    this.userLocation = {
+      lat: -28.2628,
+      lon: -52.4067,
+      utmX: 361950,
+      utmY: 6873150,
+      accuracy: 250,
+      isInitial: true
+    };
     this.shelters = [];
     this.attentionPolygons = null;
     this.plugfieldStations = [];
@@ -89,7 +97,12 @@ class MobileEmergencyApp {
       this.loadPlugfieldData()
     ]);
 
-    // Solicita localização do usuário
+    // Diagnóstico e cálculos imediatos com dados iniciais (0ms de latência para o usuário)
+    this.evaluateUserRisk();
+    this.calculateNearestShelter();
+    this.updateWeatherMonitoringUI();
+
+    // Solicita localização precisa do usuário em segundo plano
     this.requestUserLocation();
 
     // Polling de telemetria a cada 60 segundos
@@ -205,7 +218,8 @@ class MobileEmergencyApp {
   // -------------------------------------------------------------
   async loadPlugfieldData() {
     try {
-      const resp = await fetch('../api/weather/plugfield?action=devices');
+      const resp = await fetch('/api/weather/plugfield?action=devices')
+        .catch(() => fetch('../api/weather/plugfield?action=devices'));
       const data = await resp.json();
 
       if (!data || !data.data || !data.data.stations) {
@@ -524,7 +538,9 @@ class MobileEmergencyApp {
   // -------------------------------------------------------------
   async loadSheltersData() {
     try {
-      const resp = await fetch('../Abrigos da Defesa Civil.geojson');
+      const url1 = encodeURI('/Abrigos da Defesa Civil.geojson');
+      const url2 = encodeURI('../Abrigos da Defesa Civil.geojson');
+      const resp = await fetch(url1).catch(() => fetch(url2));
       const data = await resp.json();
 
       this.shelters = (data.features || []).map(f => {
@@ -559,7 +575,9 @@ class MobileEmergencyApp {
 
   async loadRiskPolygons() {
     try {
-      const respAtencao = await fetch('../Áreas de Atenção Hidrológica.geojson');
+      const url1 = encodeURI('/Áreas de Atenção Hidrológica.geojson');
+      const url2 = encodeURI('../Áreas de Atenção Hidrológica.geojson');
+      const respAtencao = await fetch(url1).catch(() => fetch(url2));
       this.attentionPolygons = await respAtencao.json();
 
       if (this.map && this.attentionPolygons) {
@@ -576,7 +594,9 @@ class MobileEmergencyApp {
 
   async loadRioPassoFundo() {
     try {
-      const resp = await fetch('../Rio Passo Fundo.geojson');
+      const url1 = encodeURI('/Rio Passo Fundo.geojson');
+      const url2 = encodeURI('../Rio Passo Fundo.geojson');
+      const resp = await fetch(url1).catch(() => fetch(url2));
       const data = await resp.json();
 
       if (this.map && data) {
@@ -690,18 +710,14 @@ class MobileEmergencyApp {
   // -------------------------------------------------------------
   requestUserLocation(forceCenter = false) {
     const pill = document.getElementById('user-risk-pill');
-    const pillIcon = document.getElementById('risk-pill-icon');
     const pillTitle = document.getElementById('risk-pill-title');
     const pillDesc = document.getElementById('risk-pill-desc');
 
     if (!navigator.geolocation) {
       if (pillTitle) pillTitle.textContent = 'GPS Indisponível';
-      if (pillDesc) pillDesc.textContent = 'Ative a localização do seu dispositivo';
+      if (pillDesc) pillDesc.textContent = 'Posição estimada no Centro de Passo Fundo';
       return;
     }
-
-    if (pillTitle) pillTitle.textContent = 'Obtendo GPS...';
-    if (pill) pill.className = 'map-status-pill status-loading';
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -715,7 +731,7 @@ class MobileEmergencyApp {
           utmY = pt[1];
         }
 
-        this.userLocation = { lat, lon, utmX, utmY, accuracy };
+        this.userLocation = { lat, lon, utmX, utmY, accuracy, isInitial: false };
         console.log('[GPS] Posição obtida:', this.userLocation);
 
         this.evaluateUserRisk();
@@ -724,21 +740,12 @@ class MobileEmergencyApp {
         this.updateUserMarkerOnMap(forceCenter);
       },
       (err) => {
-        console.warn('[GPS] Erro ao obter posição:', err);
-        // Fallback: Centro de Passo Fundo
-        this.userLocation = {
-          lat: -28.2628,
-          lon: -52.4067,
-          utmX: 361950,
-          utmY: 6873150,
-          accuracy: 500,
-          isSimulated: true
-        };
+        console.warn('[GPS] Erro ou permissão negada:', err);
         this.evaluateUserRisk();
         this.calculateNearestShelter();
         this.updateUserMarkerOnMap(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
     );
   }
 

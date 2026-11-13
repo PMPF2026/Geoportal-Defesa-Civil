@@ -6,6 +6,25 @@
   <title>Portal Defesa Civil - WebGIS Municipal Passo Fundo/RS</title>
   <meta name="description" content="Portal Geoespacial e Sistema de Gestão de Riscos e Apoio à Tomada de Decisão - Defesa Civil de Passo Fundo/RS">
 
+  <!-- Detecção e Redirecionamento Automático para PWA Mobile no Celular -->
+  <script>
+    (function() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var forceDesktop = params.get('desktop') === 'true' || sessionStorage.getItem('stayOnDesktopPortal') === 'true';
+        if (!forceDesktop) {
+          var isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          var isSmallTouch = (window.innerWidth <= 768 && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+          if (isMobileUA || isSmallTouch) {
+            window.location.replace('/app/' + window.location.search);
+          }
+        }
+      } catch (e) {
+        console.warn('Mobile detect error:', e);
+      }
+    })();
+  </script>
+
   <!-- Favicon Oficial Defesa Civil Passo Fundo -->
   <link rel="icon" type="image/jpeg" href="assets/logo-defesa-civil.jpg">
   <link rel="shortcut icon" type="image/jpeg" href="assets/logo-defesa-civil.jpg">
@@ -45,6 +64,11 @@
       </div>
 
       <div class="header-tools">
+        <a href="/app/" class="header-btn" id="btn-open-mobile-app" title="Abrir Aplicativo Mobile / PWA para Celular" style="background: rgba(30, 58, 138, 0.45); border-color: rgba(96, 165, 250, 0.4); color: #93c5fd; text-decoration: none;">
+          <span style="font-size: 15px; line-height: 1;">📱</span>
+          <span>App Mobile</span>
+        </a>
+
         <button class="header-btn" id="btn-import-layer" title="Adicionar arquivo GeoJSON ou KML local">
           <i class="lucide-upload"></i>
           <span>Importar Camada</span>
