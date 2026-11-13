@@ -62,6 +62,7 @@ class MobileEmergencyApp {
 
     // Camadas vetoriais
     this.layerAttention = null;
+    this.layerRioPassoFundo = null;
     this.layerSheltersGroup = null;
     this.layerRiverStationsGroup = null;
     this.layerWeatherStationsGroup = null;
@@ -83,6 +84,7 @@ class MobileEmergencyApp {
     // Carregamento simultâneo de dados
     await Promise.all([
       this.loadRiskPolygons(),
+      this.loadRioPassoFundo(),
       this.loadSheltersData(),
       this.loadPlugfieldData()
     ]);
@@ -572,6 +574,30 @@ class MobileEmergencyApp {
     }
   }
 
+  async loadRioPassoFundo() {
+    try {
+      const resp = await fetch('../Rio Passo Fundo.geojson');
+      const data = await resp.json();
+
+      if (this.map && data) {
+        this.layerRioPassoFundo = this.createGeoJsonLayer(
+          data,
+          {
+            color: '#0284c7',
+            weight: 3.2,
+            opacity: 0.95,
+            lineJoin: 'round',
+            lineCap: 'round'
+          },
+          'Rio Passo Fundo (Calha Principal)'
+        ).addTo(this.map);
+        console.log('[PWA] Camada do Rio Passo Fundo carregada com sucesso.');
+      }
+    } catch (e) {
+      console.warn('[PWA] Erro ao carregar Rio Passo Fundo:', e);
+    }
+  }
+
   createGeoJsonLayer(geojsonData, style, label) {
     const wgsFeatures = {
       type: 'FeatureCollection',
@@ -587,6 +613,12 @@ class MobileEmergencyApp {
           newCoords = geom.coordinates.map(ring =>
             ring.map(pt => proj4('EPSG:31982', 'EPSG:4326', [pt[0], pt[1]]))
           );
+        } else if (geom.type === 'MultiLineString') {
+          newCoords = geom.coordinates.map(line =>
+            line.map(pt => proj4('EPSG:31982', 'EPSG:4326', [pt[0], pt[1]]))
+          );
+        } else if (geom.type === 'LineString') {
+          newCoords = geom.coordinates.map(pt => proj4('EPSG:31982', 'EPSG:4326', [pt[0], pt[1]]));
         }
         return { ...f, geometry: { ...geom, coordinates: newCoords } };
       })
@@ -937,6 +969,15 @@ class MobileEmergencyApp {
         if (!this.map || !this.layerAttention) return;
         if (e.target.checked) this.map.addLayer(this.layerAttention);
         else this.map.removeLayer(this.layerAttention);
+      });
+    }
+
+    const chkRio = document.getElementById('chk-layer-rio');
+    if (chkRio) {
+      chkRio.addEventListener('change', (e) => {
+        if (!this.map || !this.layerRioPassoFundo) return;
+        if (e.target.checked) this.map.addLayer(this.layerRioPassoFundo);
+        else this.map.removeLayer(this.layerRioPassoFundo);
       });
     }
 

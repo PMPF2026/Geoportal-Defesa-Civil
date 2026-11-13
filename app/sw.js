@@ -1,5 +1,5 @@
 // Service Worker - Defesa Civil Passo Fundo PWA
-const CACHE_NAME = 'dc-passofundo-pwa-v6';
+const CACHE_NAME = 'dc-passofundo-pwa-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,7 +9,8 @@ const ASSETS_TO_CACHE = [
   '../assets/brasao-prefeitura.png',
   '../assets/logo-defesa-civil.jpg',
   '../Abrigos da Defesa Civil.geojson',
-  '../Áreas de Atenção Hidrológica.geojson'
+  '../Áreas de Atenção Hidrológica.geojson',
+  '../Rio Passo Fundo.geojson'
 ];
 
 self.addEventListener('install', (event) => {

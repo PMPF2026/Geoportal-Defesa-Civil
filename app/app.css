@@ -770,6 +770,7 @@ html, body {
   flex-shrink: 0;
 }
 
+.swatch-river-line { background: #0284c7; height: 5px; border-radius: 2px; }
 .swatch-shelter { background: #10b981; border: 2px solid #ffffff; border-radius: 50%; }
 .swatch-river { background: #0284c7; border: 2px solid #38bdf8; border-radius: 50%; }
 .swatch-weather { background: #0ea5e9; border: 2px solid #7dd3fc; border-radius: 50%; }

@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="../assets/logo-defesa-civil.jpg">
   <link rel="icon" type="image/jpeg" href="../assets/logo-defesa-civil.jpg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="app.css?v=20261112c">
+  <link rel="stylesheet" href="app.css?v=20261112d">
 </head>
 <body>
 
@@ -163,6 +163,10 @@
             <span>Áreas de Risco de Inundação</span>
           </label>
           <label class="layer-toggle-row">
+            <input type="checkbox" id="chk-layer-rio" checked>
+            <span>Rio Passo Fundo (Calha Principal)</span>
+          </label>
+          <label class="layer-toggle-row">
             <input type="checkbox" id="chk-layer-shelters" checked>
             <span>Abrigos (com Nomes)</span>
           </label>
@@ -184,6 +188,10 @@
           <button class="popup-close-btn" id="btn-close-legend">✕</button>
         </div>
         <div class="popup-legend-list">
+          <div class="legend-row">
+            <span class="legend-swatch swatch-river-line"></span>
+            <span>Rio Passo Fundo (Calha Principal)</span>
+          </div>
           <div class="legend-row">
             <span class="legend-swatch swatch-shelter"></span>
             <span>Abrigos Oficiais (17 locais)</span>
@@ -385,6 +393,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-  <script src="app.js?v=20261112c"></script>
+  <script src="app.js?v=20261112d"></script>
 </body>
 </html>
