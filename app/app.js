@@ -131,10 +131,19 @@ class MobileEmergencyApp {
   // MAPA LEAFLET
   // -------------------------------------------------------------
   initMap() {
-    const mapEl = document.getElementById('mobile-map');
+    let mapEl = document.getElementById('mobile-map');
+    if (!mapEl) {
+      const container = document.getElementById('map-container');
+      if (container) {
+        mapEl = document.createElement('div');
+        mapEl.id = 'mobile-map';
+        mapEl.className = 'map-leaflet-stage';
+        container.insertBefore(mapEl, container.firstChild);
+      }
+    }
     if (!mapEl || typeof L === 'undefined') return;
 
-    this.map = L.map('mobile-map', {
+    this.map = L.map(mapEl, {
       zoomControl: false,
       attributionControl: false
     }).setView([-28.2628, -52.4067], 14);

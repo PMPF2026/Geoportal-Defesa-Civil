@@ -1,5 +1,5 @@
 // Service Worker - Defesa Civil Passo Fundo PWA
-const CACHE_NAME = 'dc-passofundo-pwa-v3';
+const CACHE_NAME = 'dc-passofundo-pwa-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -15,7 +15,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Cache inicial dos recursos de emergência v3...');
+      console.log('[SW] Cache inicial dos recursos de emergência v4...');
       return cache.addAll(ASSETS_TO_CACHE);
     }).catch(err => console.warn('[SW] Falha no pre-cache:', err))
   );
