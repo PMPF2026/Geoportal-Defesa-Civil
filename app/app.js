@@ -102,8 +102,17 @@ class MobileEmergencyApp {
     this.calculateNearestShelter();
     this.updateWeatherMonitoringUI();
 
-    // Solicita localização precisa do usuário em segundo plano
-    this.requestUserLocation();
+    // Fluxo de Primeiro Acesso (Onboarding, GPS e Instalação)
+    this.initOnboardingFlow();
+
+    // Se o usuário já concluiu o onboarding em visitas anteriores e não negou o GPS,
+    // atualiza a localização precisa em segundo plano
+    if (localStorage.getItem('dc_pf_onboarding_completed') === 'true') {
+      const gpsStatus = localStorage.getItem('dc_pf_gps_status');
+      if (gpsStatus !== 'denied' && gpsStatus !== 'skipped') {
+        this.requestUserLocation(false);
+      }
+    }
 
     // Polling de telemetria a cada 60 segundos
     setInterval(() => {
@@ -127,19 +136,185 @@ class MobileEmergencyApp {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.deferredPrompt = e;
+      console.log('[PWA] Evento beforeinstallprompt capturado com sucesso');
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] Aplicativo instalado pelo usuário');
+      localStorage.setItem('dc_pf_pwa_installed', 'true');
+      this.deferredPrompt = null;
     });
 
     if (drawerInstallBtn) {
       drawerInstallBtn.addEventListener('click', async () => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                             window.navigator.standalone === true;
+        if (isStandalone) {
+          alert('O aplicativo oficial já está instalado no seu dispositivo!');
+          return;
+        }
+
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) {
+          alert('No iPhone/iPad:\n1. Toque no botão Compartilhar do Safari (⎋)\n2. Selecione "Adicionar à Tela de Início" (⊞)\n3. Confirme em "Adicionar".');
+          return;
+        }
+
         if (!this.deferredPrompt) {
-          alert('O aplicativo já está instalado ou seu navegador não suporta instalação direta. Use o menu do navegador "Adicionar à tela inicial".');
+          alert('Para adicionar o aplicativo à tela inicial, toque no menu do seu navegador (três pontinhos ⋮ ou ⋯) e selecione "Adicionar à tela inicial" ou "Instalar aplicativo".');
           return;
         }
         this.deferredPrompt.prompt();
-        await this.deferredPrompt.userChoice;
+        const choice = await this.deferredPrompt.userChoice;
+        console.log('[PWA Install Outcome]:', choice.outcome);
         this.deferredPrompt = null;
       });
     }
+  }
+
+  // -------------------------------------------------------------
+  // FLUXO DE PRIMEIRO ACESSO (ONBOARDING, GPS E INSTALAÇÃO PWA)
+  // -------------------------------------------------------------
+  initOnboardingFlow() {
+    const isCompleted = localStorage.getItem('dc_pf_onboarding_completed') === 'true';
+    const modal = document.getElementById('onboarding-modal');
+    if (!modal) return;
+
+    if (isCompleted) {
+      modal.style.display = 'none';
+      return;
+    }
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true || 
+                         document.referrer.includes('android-app://');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    modal.style.display = 'flex';
+
+    const btnPermitGps = document.getElementById('btn-onboarding-permit-gps');
+    const btnSkipGps = document.getElementById('btn-onboarding-skip-gps');
+
+    const step1 = document.getElementById('onboarding-step-1');
+    const step2 = document.getElementById('onboarding-step-2');
+    const pill1 = document.getElementById('step-pill-1');
+    const pill2 = document.getElementById('step-pill-2');
+
+    const paneAndroid = document.getElementById('pane-install-android');
+    const paneIos = document.getElementById('pane-install-ios');
+    const paneGeneric = document.getElementById('pane-install-generic');
+
+    const btnInstallAction = document.getElementById('btn-onboarding-install-action');
+    const btnFinishStep2 = document.getElementById('btn-onboarding-finish-step2');
+    const btnFinishIos = document.getElementById('btn-onboarding-finish-ios');
+    const btnFinishGeneric = document.getElementById('btn-onboarding-finish-generic');
+
+    const finishOnboarding = () => {
+      localStorage.setItem('dc_pf_onboarding_completed', 'true');
+      modal.classList.add('fade-out');
+      setTimeout(() => {
+        modal.style.display = 'none';
+        modal.classList.remove('fade-out');
+      }, 300);
+    };
+
+    const goToStep2 = () => {
+      // Se o usuário já estiver em modo standalone (PWA instalado), conclui o fluxo imediatamente
+      if (isStandalone) {
+        finishOnboarding();
+        return;
+      }
+
+      if (step1) step1.style.display = 'none';
+      if (step2) step2.style.display = 'flex';
+      if (pill1) pill1.classList.remove('active');
+      if (pill2) pill2.classList.add('active');
+
+      if (isIOS) {
+        if (paneAndroid) paneAndroid.style.display = 'none';
+        if (paneIos) paneIos.style.display = 'flex';
+        if (paneGeneric) paneGeneric.style.display = 'none';
+      } else if (this.deferredPrompt) {
+        if (paneAndroid) paneAndroid.style.display = 'flex';
+        if (paneIos) paneIos.style.display = 'none';
+        if (paneGeneric) paneGeneric.style.display = 'none';
+      } else {
+        if (paneAndroid) paneAndroid.style.display = 'flex';
+        if (paneIos) paneIos.style.display = 'none';
+        if (paneGeneric) paneGeneric.style.display = 'none';
+      }
+    };
+
+    // Ação: PERMITIR LOCALIZAÇÃO
+    if (btnPermitGps) {
+      btnPermitGps.addEventListener('click', () => {
+        btnPermitGps.disabled = true;
+        btnPermitGps.innerHTML = '<span class="btn-icon">⏳</span><span>Obtendo localização...</span>';
+
+        if (!navigator.geolocation) {
+          localStorage.setItem('dc_pf_gps_status', 'unavailable');
+          goToStep2();
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            localStorage.setItem('dc_pf_gps_status', 'granted');
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            const accuracy = Math.round(pos.coords.accuracy || 20);
+            let utmX = null, utmY = null;
+            if (typeof proj4 !== 'undefined') {
+              const pt = proj4('EPSG:4326', 'EPSG:31982', [lon, lat]);
+              utmX = pt[0];
+              utmY = pt[1];
+            }
+            this.userLocation = { lat, lon, utmX, utmY, accuracy, isInitial: false };
+            this.evaluateUserRisk();
+            this.calculateNearestShelter();
+            this.updateUserMarkerOnMap(true);
+            goToStep2();
+          },
+          (err) => {
+            console.warn('[Onboarding GPS] Permissão negada ou indisponível:', err);
+            localStorage.setItem('dc_pf_gps_status', 'denied');
+            goToStep2();
+          },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
+      });
+    }
+
+    // Ação: Agora não (Pular GPS)
+    if (btnSkipGps) {
+      btnSkipGps.addEventListener('click', () => {
+        localStorage.setItem('dc_pf_gps_status', 'skipped');
+        goToStep2();
+      });
+    }
+
+    // Ação: Instalar Aplicativo no Android / Chromium
+    if (btnInstallAction) {
+      btnInstallAction.addEventListener('click', async () => {
+        if (this.deferredPrompt) {
+          this.deferredPrompt.prompt();
+          const choice = await this.deferredPrompt.userChoice;
+          console.log('[Onboarding PWA] Escolha:', choice.outcome);
+          this.deferredPrompt = null;
+          finishOnboarding();
+        } else {
+          alert('Para adicionar o aplicativo à tela inicial:\nToque no menu do seu navegador (três pontinhos ⋮ ou ⋯) e selecione "Adicionar à tela inicial" ou "Instalar aplicativo".');
+          finishOnboarding();
+        }
+      });
+    }
+
+    // Conclusões da Etapa 2
+    if (btnFinishStep2) btnFinishStep2.addEventListener('click', finishOnboarding);
+    if (btnFinishIos) btnFinishIos.addEventListener('click', finishOnboarding);
+    if (btnFinishGeneric) btnFinishGeneric.addEventListener('click', finishOnboarding);
   }
 
   // -------------------------------------------------------------
@@ -1137,6 +1312,29 @@ class MobileEmergencyApp {
     if (btnToggleDrawer) btnToggleDrawer.addEventListener('click', openDrawer);
     if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', closeDrawer);
     if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+
+    // Drawer: Atualizar Localização GPS
+    const btnDrawerGps = document.getElementById('btn-drawer-gps');
+    if (btnDrawerGps) {
+      btnDrawerGps.addEventListener('click', () => {
+        closeDrawer();
+        this.requestUserLocation(true);
+      });
+    }
+
+    // Drawer: Acordeão de Privacidade e Segurança
+    const drawerPrivacyHeader = document.getElementById('drawer-privacy-header');
+    const drawerPrivacyBody = document.getElementById('drawer-privacy-body');
+    const privacyChevron = document.getElementById('privacy-chevron');
+    if (drawerPrivacyHeader && drawerPrivacyBody) {
+      drawerPrivacyHeader.addEventListener('click', () => {
+        const isHidden = drawerPrivacyBody.style.display === 'none';
+        drawerPrivacyBody.style.display = isHidden ? 'block' : 'none';
+        if (privacyChevron) {
+          privacyChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+      });
+    }
   }
 
   toggleBottomSheet(forceState = null) {

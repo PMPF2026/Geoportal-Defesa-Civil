@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="../assets/logo-defesa-civil.jpg">
   <link rel="icon" type="image/jpeg" href="../assets/logo-defesa-civil.jpg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="app.css?v=20261113a">
+  <link rel="stylesheet" href="app.css?v=20261113b">
 </head>
 <body>
 
@@ -352,6 +352,14 @@
           <button class="btn-drawer-install" id="btn-drawer-install">Adicionar à Tela Inicial</button>
         </div>
 
+        <!-- Ação de Atualizar GPS a qualquer momento -->
+        <div class="drawer-box">
+          <button class="btn-drawer-action" id="btn-drawer-gps" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; background: rgba(2, 132, 199, 0.22); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-sm); color: #38bdf8; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s ease;">
+            <span style="font-size: 16px;">🎯</span>
+            <span>Atualizar Localização GPS</span>
+          </button>
+        </div>
+
         <div class="drawer-box">
           <h4>Orientações em Caso de Inundação</h4>
           <ul class="guide-bullets">
@@ -382,6 +390,23 @@
           </div>
         </div>
 
+        <!-- Seção de Privacidade e Segurança Permanente -->
+        <div class="drawer-box drawer-privacy-accordion" id="drawer-privacy-box" style="border-color: rgba(56, 189, 248, 0.25);">
+          <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" id="drawer-privacy-header">
+            <h4 style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #f8fafc;">
+              <span>🛡️</span>
+              <span>Privacidade e Segurança</span>
+            </h4>
+            <span style="font-size: 11px; color: #94a3b8; transition: transform 0.2s ease;" id="privacy-chevron">▼</span>
+          </div>
+          <div id="drawer-privacy-body" style="display: none; margin-top: 10px; font-size: 12px; line-height: 1.5; color: #cbd5e1; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 8px;">
+            <p style="margin: 0 0 6px 0; font-weight: 700; color: #38bdf8;">Sua privacidade é importante para nós!</p>
+            <p style="margin: 0 0 6px 0;">Este aplicativo não acessa informações sigilosas, contatos, fotografias ou arquivos pessoais armazenados no seu celular.</p>
+            <p style="margin: 0 0 6px 0;">A localização do dispositivo somente é acessada mediante sua autorização e utilizada para as funcionalidades geográficas do aplicativo.</p>
+            <p style="margin: 0;">Seus dados pessoais não são comercializados nem compartilhados com terceiros.</p>
+          </div>
+        </div>
+
         <div class="drawer-box" style="text-align: center; background: rgba(30, 58, 138, 0.25); border: 1px solid rgba(96, 165, 250, 0.3); padding: 12px;">
           <a href="/?desktop=true" onclick="sessionStorage.setItem('stayOnDesktopPortal','true')" style="color: #93c5fd; font-size: 13.5px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
             <span>💻</span>
@@ -396,10 +421,164 @@
       </div>
     </aside>
 
+    <!-- ================= FLUXO DE PRIMEIRO ACESSO (ONBOARDING) ================= -->
+    <div class="onboarding-overlay" id="onboarding-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <div class="onboarding-card">
+        
+        <!-- Cabeçalho do Onboarding: Brasões e Indicador de Etapas -->
+        <div class="onboarding-header">
+          <div class="onboarding-brand">
+            <img src="../assets/brasao-prefeitura.png" alt="Prefeitura de Passo Fundo" class="onboarding-logo-pmpf">
+            <img src="../assets/logo-defesa-civil.jpg" alt="Defesa Civil" class="onboarding-logo-dc">
+          </div>
+          <div class="onboarding-stepper" id="onboarding-stepper" aria-label="Progresso do primeiro acesso">
+            <span class="step-pill active" id="step-pill-1" title="Etapa 1: Localização"></span>
+            <span class="step-pill" id="step-pill-2" title="Etapa 2: Instalação"></span>
+          </div>
+        </div>
+
+        <!-- ETAPA 1 – BOAS-VINDAS E LOCALIZAÇÃO GPS -->
+        <div class="onboarding-step-body active" id="onboarding-step-1">
+          <div class="onboarding-hero-icon-wrap">
+            <div class="onboarding-hero-icon">📍</div>
+          </div>
+
+          <h2 class="onboarding-title" id="onboarding-title">Bem-vindo ao Aplicativo!</h2>
+
+          <p class="onboarding-text">
+            Para proporcionar uma experiência mais completa, precisamos da sua localização. Com sua autorização, poderemos identificar sua posição geográfica e disponibilizar informações territoriais mais relevantes para você.
+          </p>
+
+          <!-- AVISO DE PRIVACIDADE E SEGURANÇA (TRANSPARÊNCIA) -->
+          <div class="onboarding-privacy-card">
+            <div class="privacy-card-header">
+              <span class="privacy-badge-icon">🛡️</span>
+              <h3 class="privacy-card-title">Privacidade e Segurança</h3>
+            </div>
+            <p class="privacy-card-lead">Sua privacidade é importante para nós!</p>
+            <ul class="privacy-card-list">
+              <li>Este aplicativo <strong>não acessa</strong> informações sigilosas, contatos, fotografias ou arquivos pessoais armazenados no seu celular.</li>
+              <li>A localização do dispositivo <strong>somente é acessada mediante sua autorização</strong> e utilizada para as funcionalidades geográficas do aplicativo.</li>
+              <li>Seus dados pessoais <strong>não são comercializados nem compartilhados com terceiros</strong>.</li>
+            </ul>
+          </div>
+
+          <!-- Botões de Ação Etapa 1 -->
+          <div class="onboarding-buttons">
+            <button class="btn-onboarding-primary" id="btn-onboarding-permit-gps">
+              <span class="btn-icon">🎯</span>
+              <span>PERMITIR LOCALIZAÇÃO</span>
+            </button>
+            <button class="btn-onboarding-secondary" id="btn-onboarding-skip-gps">
+              <span>Agora não (Continuar)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 2 – INSTALAÇÃO DO APLICATIVO -->
+        <div class="onboarding-step-body" id="onboarding-step-2" style="display: none;">
+          <div class="onboarding-hero-icon-wrap install-mode">
+            <div class="onboarding-hero-icon">📲</div>
+          </div>
+
+          <h2 class="onboarding-title">Tenha nosso aplicativo na tela inicial!</h2>
+
+          <p class="onboarding-text">
+            Instale o aplicativo no seu celular e tenha acesso rápido, prático e facilitado às informações e funcionalidades disponíveis.
+          </p>
+
+          <!-- Cenário Android / Navegadores compatíveis com BeforeInstallPrompt -->
+          <div class="onboarding-install-pane" id="pane-install-android">
+            <div class="install-features-card">
+              <div class="feature-row">
+                <span class="feat-icon">⚡</span>
+                <div class="feat-info">
+                  <strong>Acesso Imediato</strong>
+                  <span>Abra direto da sua tela inicial sem precisar digitar o site</span>
+                </div>
+              </div>
+              <div class="feature-row">
+                <span class="feat-icon">🛡️</span>
+                <div class="feat-info">
+                  <strong>Alertas e Abrigos</strong>
+                  <span>Rotas de fuga e monitoramento do rio em tempo real</span>
+                </div>
+              </div>
+              <div class="feature-row">
+                <span class="feat-icon">💾</span>
+                <div class="feat-info">
+                  <strong>Leve e Eficiente</strong>
+                  <span>Não consome o armazenamento pesado de lojas de aplicativos</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="onboarding-buttons">
+              <button class="btn-onboarding-primary btn-install-highlight" id="btn-onboarding-install-action">
+                <span class="btn-icon">📥</span>
+                <span>INSTALAR APLICATIVO</span>
+              </button>
+              <button class="btn-onboarding-secondary" id="btn-onboarding-finish-step2">
+                <span>Concluir e Acessar o Mapa</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cenário iOS Safari (Instruções Visuais Claras) -->
+          <div class="onboarding-install-pane" id="pane-install-ios" style="display: none;">
+            <div class="ios-install-card">
+              <div class="ios-instruction-step">
+                <span class="ios-num">1</span>
+                <div class="ios-step-desc">
+                  Toque no botão <strong>Compartilhar</strong> do Safari <span class="ios-glyph">⎋</span> (barra inferior).
+                </div>
+              </div>
+              <div class="ios-instruction-step">
+                <span class="ios-num">2</span>
+                <div class="ios-step-desc">
+                  Role para cima e toque em <strong>"Adicionar à Tela de Início"</strong> <span class="ios-glyph">⊞</span>.
+                </div>
+              </div>
+              <div class="ios-instruction-step">
+                <span class="ios-num">3</span>
+                <div class="ios-step-desc">
+                  Confirme tocando em <strong>"Adicionar"</strong> no canto superior direito.
+                </div>
+              </div>
+            </div>
+
+            <div class="onboarding-buttons">
+              <button class="btn-onboarding-primary" id="btn-onboarding-finish-ios">
+                <span class="btn-icon">✓</span>
+                <span>Entendi, Acessar o Mapa</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cenário Genérico (Navegador sem suporte ou PWA já instalado) -->
+          <div class="onboarding-install-pane" id="pane-install-generic" style="display: none;">
+            <div class="install-features-card">
+              <p style="font-size: 13px; line-height: 1.5; color: #cbd5e1; margin: 0;">
+                Para adicionar o aplicativo à sua tela inicial, toque no menu de opções do seu navegador (<strong>⋮</strong> ou <strong>⋯</strong>) e selecione <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar aplicativo"</strong>.
+              </p>
+            </div>
+
+            <div class="onboarding-buttons">
+              <button class="btn-onboarding-primary" id="btn-onboarding-finish-generic">
+                <span>Acessar o Mapa</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
-  <script src="app.js?v=20261113a"></script>
+  <script src="app.js?v=20261113b"></script>
 </body>
 </html>
