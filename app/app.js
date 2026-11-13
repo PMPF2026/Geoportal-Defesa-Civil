@@ -1,6 +1,6 @@
 /**
  * Defesa Civil Passo Fundo — PWA Mobile Emergency App Engine
- * Arquitetura Mobile-First • Monitoramento Hidrológico (3 Estações Plugfield) • Mapa Central • Resposta Rápida
+ * Arquitetura Mobile-First • Monitoramento Hidrológico • Rótulos Cartográficos nos Abrigos e Estações Pluviométricas
  */
 
 // 1. Projeção SIRGAS 2000 UTM 22S (EPSG:31982) e WGS84
@@ -59,11 +59,12 @@ class MobileEmergencyApp {
     this.map = null;
     this.baseLayers = {};
     this.currentBaseLayer = 'osm';
-    
+
     // Camadas vetoriais
     this.layerAttention = null;
     this.layerSheltersGroup = null;
     this.layerRiverStationsGroup = null;
+    this.layerWeatherStationsGroup = null;
     this.userMarker = null;
     this.userAccuracyCircle = null;
 
@@ -153,8 +154,10 @@ class MobileEmergencyApp {
     this.baseLayers.osm.addTo(this.map);
     this.currentBaseLayer = 'osm';
 
+    // Grupos de camadas vetoriais
     this.layerSheltersGroup = L.layerGroup().addTo(this.map);
     this.layerRiverStationsGroup = L.layerGroup().addTo(this.map);
+    this.layerWeatherStationsGroup = L.layerGroup().addTo(this.map);
   }
 
   setBasemap(type) {
@@ -182,25 +185,28 @@ class MobileEmergencyApp {
   }
 
   // -------------------------------------------------------------
-  // MONITORAMENTO HIDROLÓGICO (3 ESTAÇÕES PLUGFIELD)
+  // MONITORAMENTO HIDROLÓGICO (ESTAÇÕES PLUGFIELD)
   // -------------------------------------------------------------
   async loadPlugfieldData() {
     try {
       const resp = await fetch('../api/weather/plugfield?action=devices');
       const data = await resp.json();
-      
+
       if (!data || !data.data || !data.data.stations) {
         throw new Error('Formato de resposta inválido da API Plugfield');
       }
 
       this.plugfieldStations = data.data.stations;
-      console.log('[Plugfield] 16 estações carregadas com sucesso');
+      console.log(`[Plugfield] ${this.plugfieldStations.length} estações carregadas com sucesso`);
 
-      // Processar e exibir as 3 estações hidrológicas com destaque
+      // 1. Processar e exibir as 3 estações hidrológicas com destaque na barra superior
       this.updateRiverMonitoringUI();
       this.renderRiverStationsOnMap();
 
-      // Processar monitoramento meteorológico (chuva)
+      // 2. Renderizar todas as estações pluviométricas no mapa com nomes e dados de chuva
+      this.renderWeatherStationsOnMap();
+
+      // 3. Processar monitoramento meteorológico (chuva) no painel expansível
       this.updateWeatherMonitoringUI();
 
     } catch (err) {
@@ -227,8 +233,8 @@ class MobileEmergencyApp {
 
       if (st) {
         const dash = st.dashboard || {};
-        
-        // 1. Extração precisa do nível do sensor (sc, riverLevel, levelAdditional)
+
+        // Extração do nível do sensor
         let riverLevel = null;
         if (st.riverLevel != null && !isNaN(parseFloat(st.riverLevel))) {
           riverLevel = parseFloat(st.riverLevel);
@@ -240,7 +246,7 @@ class MobileEmergencyApp {
           riverLevel = parseFloat(dash.levelAdditional);
         }
 
-        // 2. Extração do Timestamp oficial
+        // Extração do Timestamp oficial
         const ts = st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null);
         let timeStr = 'Hoje';
         let isOnline = false;
@@ -249,7 +255,6 @@ class MobileEmergencyApp {
           const numTs = ts < 10000000000 ? ts * 1000 : ts;
           const dt = new Date(numTs);
           const diffMin = Math.round((Date.now() - numTs) / (1000 * 60));
-
           const hh = String(dt.getHours()).padStart(2, '0');
           const mm = String(dt.getMinutes()).padStart(2, '0');
           timeStr = `Hoje às ${hh}:${mm}`;
@@ -262,6 +267,7 @@ class MobileEmergencyApp {
         // Armazena dados normalizados
         this.riverStationsData[devId] = {
           name: cfg.name,
+          shortName: cfg.shortName,
           level: riverLevel,
           timeStr,
           isOnline,
@@ -269,9 +275,7 @@ class MobileEmergencyApp {
           lon: cfg.lon
         };
 
-        // 3. Atualização dos Elementos Visuais na Tela Inicial
         if (cardEl) cardEl.classList.remove('loading');
-
         if (valEl) {
           if (riverLevel !== null) {
             valEl.innerHTML = `${riverLevel.toFixed(2).replace('.', ',')} <small>m</small>`;
@@ -279,9 +283,7 @@ class MobileEmergencyApp {
             valEl.innerHTML = `<span style="font-size:12px; color:#94a3b8;">Dado indisponível</span>`;
           }
         }
-
         if (timeEl) timeEl.textContent = timeStr;
-
         if (dotEl) {
           dotEl.className = 'sensor-status-dot';
           if (isOnline) {
@@ -294,7 +296,6 @@ class MobileEmergencyApp {
         }
 
       } else {
-        // Estação não encontrada na resposta
         if (cardEl) cardEl.classList.remove('loading');
         if (valEl) valEl.innerHTML = `<span style="font-size:11px; color:#ef4444;">Sem comunicação</span>`;
         if (timeEl) timeEl.textContent = 'Indisponível';
@@ -322,6 +323,7 @@ class MobileEmergencyApp {
     });
   }
 
+  // Renderização das 3 Estações de Rio com Rótulos e Níveis
   renderRiverStationsOnMap() {
     if (!this.map || !this.layerRiverStationsGroup) return;
     this.layerRiverStationsGroup.clearLayers();
@@ -330,27 +332,39 @@ class MobileEmergencyApp {
       const st = this.riverStationsData[devId] || RIVER_STATIONS_CONFIG[devId];
       if (!st) return;
 
-      const levelText = st.level !== null && st.level !== undefined
-        ? `${st.level.toFixed(2).replace('.', ',')} m`
+      const levelText = st.level !== null && st.level !== undefined 
+        ? `${st.level.toFixed(2).replace('.', ',')} m` 
         : 'Indisponível';
 
       const marker = L.circleMarker([st.lat, st.lon], {
         radius: 9,
         fillColor: '#0284c7',
-        color: '#38bdf8',
-        weight: 3,
+        color: '#ffffff',
+        weight: 2.5,
         opacity: 1,
         fillOpacity: 0.95
       });
 
+      // Rótulo permanente visível no mapa
+      const shortTitle = st.shortName || st.name;
+      marker.bindTooltip(
+        `<span class="river-label-icon">🌊</span> <span class="river-label-text">${shortTitle}</span> <span class="river-level-tag">${levelText}</span>`,
+        {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -10],
+          className: 'map-badge-tooltip river-station-tooltip'
+        }
+      );
+
       marker.bindPopup(`
-        <div style="font-family:sans-serif; min-width:200px;">
+        <div style="font-family:sans-serif; min-width:210px;">
           <div style="color:#38bdf8; font-weight:800; font-size:12px; margin-bottom:4px;">
             🌊 SENSOR DE NÍVEL DO RIO
           </div>
           <strong style="color:#ffffff; font-size:13px;">${st.name}</strong><br>
           <div style="margin:8px 0; background:rgba(2,132,199,0.2); padding:6px 10px; border-radius:6px; border:1px solid rgba(56,189,248,0.4);">
-            <span style="font-size:10px; color:#cbd5e1;">Nível do Rio Atual:</span><br>
+            <span style="font-size:10.5px; color:#cbd5e1;">Nível do Rio Atual:</span><br>
             <span style="font-size:20px; font-weight:900; color:#38bdf8;">${levelText}</span>
           </div>
           <div style="font-size:10px; color:#94a3b8;">
@@ -362,6 +376,81 @@ class MobileEmergencyApp {
 
       st.marker = marker;
       this.layerRiverStationsGroup.addLayer(marker);
+    });
+  }
+
+  // Renderização de TODAS as Estações Pluviométricas / Meteorológicas da Rede Plugfield com Rótulos
+  renderWeatherStationsOnMap() {
+    if (!this.map || !this.layerWeatherStationsGroup || this.plugfieldStations.length === 0) return;
+    this.layerWeatherStationsGroup.clearLayers();
+
+    this.plugfieldStations.forEach(st => {
+      // Ignorar caso não tenha coordenadas válidas
+      const lat = parseFloat(st.lat || st.latitude);
+      const lon = parseFloat(st.lon || st.longitude || st.lng);
+      if (isNaN(lat) || isNaN(lon)) return;
+
+      const devId = Number(st.id || st.deviceId);
+      const isRiverSensor = [4431, 4714, 4965].includes(devId);
+
+      // Se já for uma estação fluvial, o marcador de rio já a representa
+      if (isRiverSensor) return;
+
+      const dash = st.dashboard || {};
+      const rain = dash.rain24h ?? dash.rainAccum ?? dash.rain ?? 0;
+      const rainNum = parseFloat(rain) || 0;
+      const rainStr = `${rainNum.toFixed(1).replace('.', ',')} mm`;
+
+      const temp = dash.temp ?? dash.temperature ?? null;
+      const tempStr = temp !== null && !isNaN(parseFloat(temp)) ? `${parseFloat(temp).toFixed(1).replace('.', ',')} °C` : '';
+
+      const marker = L.circleMarker([lat, lon], {
+        radius: 7,
+        fillColor: '#0ea5e9',
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.95
+      });
+
+      // Rótulo permanente com nome da estação e acumulado de chuva
+      const cleanName = (st.name || `Estação ${devId}`).replace(/\s*\([^)]*\)/, ''); // versão compacta
+      marker.bindTooltip(
+        `<span class="station-label-icon">🌧️</span> <span class="station-label-text">${cleanName}</span> <span class="rain-val-tag">${rainStr}</span>`,
+        {
+          permanent: true,
+          direction: 'bottom',
+          offset: [0, 9],
+          className: 'map-badge-tooltip weather-station-tooltip'
+        }
+      );
+
+      marker.bindPopup(`
+        <div style="font-family:sans-serif; min-width:210px;">
+          <div style="color:#38bdf8; font-weight:800; font-size:12px; margin-bottom:4px;">
+            🌧️ ESTAÇÃO METEOROLÓGICA PLUGFIELD
+          </div>
+          <strong style="color:#ffffff; font-size:13px;">${st.name}</strong><br>
+          <span style="font-size:10.5px; color:#94a3b8;">${st.type || 'Estação Telemétrica Municipal'}</span>
+          <div style="margin:8px 0; background:rgba(14,165,233,0.15); padding:8px 10px; border-radius:6px; border:1px solid rgba(56,189,248,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:#cbd5e1;">Precipitação Recente:</span>
+              <strong style="font-size:15px; color:#38bdf8;">${rainStr}</strong>
+            </div>
+            ${tempStr ? `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+              <span style="font-size:11px; color:#cbd5e1;">Temperatura:</span>
+              <strong style="font-size:13px; color:#f8fafc;">${tempStr}</strong>
+            </div>` : ''}
+          </div>
+          <div style="font-size:10px; color:#94a3b8;">
+            Sensor: Telemétrico Municipal (Plugfield)<br>
+            ID do Dispositivo: ${devId}
+          </div>
+        </div>
+      `);
+
+      this.layerWeatherStationsGroup.addLayer(marker);
     });
   }
 
@@ -401,14 +490,10 @@ class MobileEmergencyApp {
       const dash = nearestSt.dashboard || {};
       const rain = dash.rain24h ?? dash.rainAccum ?? dash.rain ?? 0;
       const rainNum = parseFloat(rain) || 0;
-
-      const distStr = minDist !== Infinity
-        ? ` (${(minDist / 1000).toFixed(1).replace('.', ',')} km de você)`
-        : '';
+      const distStr = minDist !== Infinity ? ` (${(minDist / 1000).toFixed(1).replace('.', ',')} km de você)` : '';
 
       rainValEl.innerHTML = `${rainNum.toFixed(1).replace('.', ',')} <small>mm</small>`;
       if (rainNameEl) rainNameEl.textContent = `${nearestSt.name}${distStr}`;
-
       if (lastUpdateEl) {
         const now = new Date();
         const hh = String(now.getHours()).padStart(2, '0');
@@ -429,14 +514,12 @@ class MobileEmergencyApp {
       this.shelters = (data.features || []).map(f => {
         const props = f.properties || {};
         const coords = f.geometry ? f.geometry.coordinates : [0, 0];
-
         let lon = 0, lat = 0;
         if (typeof proj4 !== 'undefined' && coords[0] > 1000) {
           const pt = proj4('EPSG:31982', 'EPSG:4326', [coords[0], coords[1]]);
           lon = pt[0];
           lat = pt[1];
         }
-
         return {
           id: props['ID'] || 'Abrigo',
           name: props['Nome'] || 'Abrigo da Defesa Civil',
@@ -452,24 +535,23 @@ class MobileEmergencyApp {
 
       this.renderSheltersOnMap();
       this.calculateNearestShelter();
+
     } catch (e) {
       console.warn('[PWA] Erro ao carregar abrigos:', e);
     }
   }
 
   async loadRiskPolygons() {
-    // Áreas de Atenção Hidrológica (Polígonos Municipais de Risco Hidrológico)
     try {
       const respAtencao = await fetch('../Áreas de Atenção Hidrológica.geojson');
       this.attentionPolygons = await respAtencao.json();
 
       if (this.map && this.attentionPolygons) {
-        this.layerAttention = this.createGeoJsonLayer(this.attentionPolygons, {
-          color: '#ea580c',
-          weight: 2.2,
-          fillColor: '#f97316',
-          fillOpacity: 0.42
-        }, 'Área de Atenção Hidrológica').addTo(this.map);
+        this.layerAttention = this.createGeoJsonLayer(
+          this.attentionPolygons,
+          { color: '#ea580c', weight: 2.2, fillColor: '#f97316', fillOpacity: 0.42 },
+          'Área de Atenção Hidrológica'
+        ).addTo(this.map);
       }
     } catch (e) {
       console.warn('[PWA] Erro ao carregar Áreas de Atenção Hidrológica:', e);
@@ -482,7 +564,6 @@ class MobileEmergencyApp {
       features: (geojsonData.features || []).map(f => {
         const geom = f.geometry;
         if (!geom) return f;
-
         let newCoords = null;
         if (geom.type === 'MultiPolygon') {
           newCoords = geom.coordinates.map(poly =>
@@ -493,11 +574,7 @@ class MobileEmergencyApp {
             ring.map(pt => proj4('EPSG:31982', 'EPSG:4326', [pt[0], pt[1]]))
           );
         }
-
-        return {
-          ...f,
-          geometry: { ...geom, coordinates: newCoords }
-        };
+        return { ...f, geometry: { ...geom, coordinates: newCoords } };
       })
     };
 
@@ -510,11 +587,12 @@ class MobileEmergencyApp {
     });
   }
 
+  // Renderização dos Abrigos com Rótulos Permanentes e Popup Completo
   renderSheltersOnMap() {
     if (!this.map || !this.layerSheltersGroup || this.shelters.length === 0) return;
     this.layerSheltersGroup.clearLayers();
 
-    this.shelters.forEach((s, idx) => {
+    this.shelters.forEach((s) => {
       const marker = L.circleMarker([s.lat, s.lon], {
         radius: 8,
         fillColor: '#10b981',
@@ -524,11 +602,25 @@ class MobileEmergencyApp {
         fillOpacity: 0.95
       });
 
+      // Rótulo permanente visível com o nome do abrigo
+      marker.bindTooltip(
+        `<span class="shelter-label-icon">🏠</span> <span class="shelter-label-text">${s.name}</span>`,
+        {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -9],
+          className: 'map-badge-tooltip shelter-tooltip'
+        }
+      );
+
       const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
       const wazeUrl = `https://waze.com/ul?ll=${s.lat},${s.lon}&navigate=yes`;
 
       marker.bindPopup(`
         <div style="font-family:sans-serif; min-width:210px;">
+          <div style="color:#10b981; font-weight:800; font-size:11px; margin-bottom:2px;">
+            🏠 ABRIGO OFICIAL DA DEFESA CIVIL
+          </div>
           <strong style="color:#34d399; font-size:13px;">${s.name}</strong><br>
           <span style="font-size:10.5px; color:#94a3b8;">${s.type} • ${s.area}</span>
           <div style="margin:6px 0 8px 0; font-size:11px; color:#cbd5e1;">📍 ${s.address}</div>
@@ -570,7 +662,6 @@ class MobileEmergencyApp {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         const accuracy = Math.round(pos.coords.accuracy);
-
         let utmX = 0, utmY = 0;
         if (typeof proj4 !== 'undefined') {
           const pt = proj4('EPSG:4326', 'EPSG:31982', [lon, lat]);
@@ -601,11 +692,7 @@ class MobileEmergencyApp {
         this.calculateNearestShelter();
         this.updateUserMarkerOnMap(false);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 30000
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }
 
@@ -616,8 +703,8 @@ class MobileEmergencyApp {
     const pillDesc = document.getElementById('risk-pill-desc');
 
     if (!this.userLocation || !pill) return;
-    const utmPoint = [this.userLocation.utmX, this.userLocation.utmY];
 
+    const utmPoint = [this.userLocation.utmX, this.userLocation.utmY];
     const atencaoFeature = this.checkPointInGeoJson(utmPoint, this.attentionPolygons);
 
     if (atencaoFeature) {
@@ -702,7 +789,6 @@ class MobileEmergencyApp {
   // -------------------------------------------------------------
   calculateNearestShelter() {
     if (!this.userLocation || this.shelters.length === 0) return;
-
     const uLat = this.userLocation.lat;
     const uLon = this.userLocation.lon;
 
@@ -711,15 +797,14 @@ class MobileEmergencyApp {
     });
 
     this.shelters.sort((a, b) => a.distanceMeters - b.distanceMeters);
-
     const nearest = this.shelters[0];
+
     this.renderNearestShelterUI(nearest);
     this.renderSheltersListInSheet();
   }
 
   renderNearestShelterUI(s) {
     if (!s) return;
-
     const distText = document.getElementById('sheet-nearest-dist-text');
     const nameEl = document.getElementById('sheet-nearest-name');
     const btnGmaps = document.getElementById('btn-nav-gmaps');
@@ -752,7 +837,6 @@ class MobileEmergencyApp {
       const distStr = s.distanceMeters !== undefined
         ? (s.distanceMeters < 1000 ? `${s.distanceMeters} m` : `${(s.distanceMeters / 1000).toFixed(1).replace('.', ',')} km`)
         : '';
-
       const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
 
       return `
@@ -777,7 +861,7 @@ class MobileEmergencyApp {
         const lon = parseFloat(item.getAttribute('data-lon'));
         if (this.map && !isNaN(lat) && !isNaN(lon)) {
           this.map.setView([lat, lon], 16, { animate: true });
-          this.toggleBottomSheet(false); // Recolhe sheet para ver o abrigo
+          this.toggleBottomSheet(false);
         }
       });
     });
@@ -815,11 +899,14 @@ class MobileEmergencyApp {
     if (toolLayers && popupLayers) {
       toolLayers.addEventListener('click', () => {
         popupLayers.style.display = popupLayers.style.display === 'none' ? 'block' : 'none';
+        const popupLegend = document.getElementById('popup-legend');
         if (popupLegend) popupLegend.style.display = 'none';
       });
     }
     if (btnCloseLayers && popupLayers) {
-      btnCloseLayers.addEventListener('click', () => { popupLayers.style.display = 'none'; });
+      btnCloseLayers.addEventListener('click', () => {
+        popupLayers.style.display = 'none';
+      });
     }
 
     // Checkboxes de Camadas
@@ -857,6 +944,15 @@ class MobileEmergencyApp {
       });
     }
 
+    const chkWeather = document.getElementById('chk-layer-weather');
+    if (chkWeather) {
+      chkWeather.addEventListener('change', (e) => {
+        if (!this.map || !this.layerWeatherStationsGroup) return;
+        if (e.target.checked) this.map.addLayer(this.layerWeatherStationsGroup);
+        else this.map.removeLayer(this.layerWeatherStationsGroup);
+      });
+    }
+
     // Legenda
     const toolLegend = document.getElementById('tool-legend');
     const popupLegend = document.getElementById('popup-legend');
@@ -868,14 +964,20 @@ class MobileEmergencyApp {
       });
     }
     if (btnCloseLegend && popupLegend) {
-      btnCloseLegend.addEventListener('click', () => { popupLegend.style.display = 'none'; });
+      btnCloseLegend.addEventListener('click', () => {
+        popupLegend.style.display = 'none';
+      });
     }
 
     // Zoom Leaflet
     const toolZoomIn = document.getElementById('tool-zoom-in');
     const toolZoomOut = document.getElementById('tool-zoom-out');
-    if (toolZoomIn) toolZoomIn.addEventListener('click', () => { if (this.map) this.map.zoomIn(); });
-    if (toolZoomOut) toolZoomOut.addEventListener('click', () => { if (this.map) this.map.zoomOut(); });
+    if (toolZoomIn) toolZoomIn.addEventListener('click', () => {
+      if (this.map) this.map.zoomIn();
+    });
+    if (toolZoomOut) toolZoomOut.addEventListener('click', () => {
+      if (this.map) this.map.zoomOut();
+    });
 
     // Expandir Mapa em Tela Cheia
     const toolFullscreen = document.getElementById('tool-fullscreen-map');
@@ -884,13 +986,17 @@ class MobileEmergencyApp {
     if (toolFullscreen && viewport) {
       toolFullscreen.addEventListener('click', () => {
         viewport.classList.add('fullscreen-active');
-        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 350);
+        setTimeout(() => {
+          if (this.map) this.map.invalidateSize();
+        }, 350);
       });
     }
     if (btnRestore && viewport) {
       btnRestore.addEventListener('click', () => {
         viewport.classList.remove('fullscreen-active');
-        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 350);
+        setTimeout(() => {
+          if (this.map) this.map.invalidateSize();
+        }, 350);
       });
     }
 
@@ -918,10 +1024,17 @@ class MobileEmergencyApp {
       });
     }
 
-    // Atalho Chuva
+    // Atalho Chuva: Liga a camada de estações pluviométricas e expande dados
     const toolWeather = document.getElementById('tool-weather');
     if (toolWeather) {
       toolWeather.addEventListener('click', () => {
+        if (this.map && this.layerWeatherStationsGroup) {
+          if (!this.map.hasLayer(this.layerWeatherStationsGroup)) {
+            this.map.addLayer(this.layerWeatherStationsGroup);
+            const chk = document.getElementById('chk-layer-weather');
+            if (chk) chk.checked = true;
+          }
+        }
         this.toggleBottomSheet(true);
       });
     }
@@ -997,10 +1110,12 @@ class MobileEmergencyApp {
     const phi2 = lat2 * Math.PI / 180;
     const deltaPhi = (lat2 - lat1) * Math.PI / 180;
     const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
     const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
               Math.cos(phi1) * Math.cos(phi2) *
               Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
     return Math.round(R * c);
   }
 }

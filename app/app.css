@@ -229,7 +229,6 @@ html, body {
 }
 
 /* ================= PAINEL: MONITORAMENTO DO NÍVEL DO RIO PASSO FUNDO ================= */
-/* DESTAQUE PRIORITÁRIO NA TELA INICIAL (3 ESTAÇÕES PLUGFIELD) */
 .river-monitoring-panel {
   background: linear-gradient(180deg, #0f172a 0%, #0b1120 100%);
   border-bottom: 1px solid rgba(2, 132, 199, 0.35);
@@ -397,23 +396,23 @@ html, body {
   font-weight: 600;
 }
 
-/* ================= ÁREA CARTOGRÁFICA CENTRAL (65% A 75% DA TELA) ================= */
-.map-viewport-wrapper {
+/* ================= ÁREA CARTOGRÁFICA CENTRAL ================= */
+.map-container {
   flex: 1;
   min-height: 0;
   position: relative;
   overflow: hidden;
   width: 100%;
-}
-
-.map-container {
-  width: 100%;
-  height: 100%;
-  z-index: 10;
   background-color: #0b1120;
 }
 
-/* Oculta controles de zoom nativos do Leaflet (usaremos a barra lateral touch-friendly) */
+.map-leaflet-stage {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+
+/* Oculta controles de zoom nativos do Leaflet */
 .leaflet-control-zoom {
   display: none !important;
 }
@@ -423,6 +422,98 @@ html, body {
   background: rgba(0, 0, 0, 0.6) !important;
   color: rgba(255, 255, 255, 0.5) !important;
   padding: 0 4px !important;
+}
+
+/* ================= RÓTULOS E BADGES PERSONALIZADOS NO MAPA (LEAFLET TOOLTIPS) ================= */
+.map-badge-tooltip {
+  background: rgba(11, 17, 32, 0.92) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-family: var(--font-family) !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.65) !important;
+  white-space: nowrap !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  letter-spacing: 0.2px !important;
+}
+
+.map-badge-tooltip:hover {
+  transform: scale(1.06) !important;
+  z-index: 9999 !important;
+}
+
+/* Rótulos dos Abrigos (Verde Esmeralda) */
+.shelter-tooltip {
+  border: 1.5px solid #10b981 !important;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35) !important;
+}
+.shelter-tooltip .shelter-label-icon {
+  font-size: 11px;
+  margin-right: 2px;
+}
+.shelter-tooltip .shelter-label-text {
+  color: #ffffff !important;
+}
+.leaflet-tooltip-top.shelter-tooltip::before {
+  border-top-color: #10b981 !important;
+}
+
+/* Rótulos das Estações de Nível do Rio (Azul Oceano) */
+.river-station-tooltip {
+  border: 1.5px solid #0284c7 !important;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35) !important;
+}
+.river-station-tooltip .river-label-icon {
+  font-size: 11px;
+  margin-right: 2px;
+}
+.river-station-tooltip .river-label-text {
+  color: #ffffff !important;
+}
+.river-station-tooltip .river-level-tag {
+  background: rgba(2, 132, 199, 0.35);
+  color: #38bdf8;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  margin-left: 4px;
+  font-weight: 800;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.leaflet-tooltip-top.river-station-tooltip::before {
+  border-top-color: #0284c7 !important;
+}
+
+/* Rótulos das Estações Pluviométricas / Meteorológicas (Ciano / Azul Celeste) */
+.weather-station-tooltip {
+  border: 1.5px solid #0ea5e9 !important;
+  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.35) !important;
+}
+.weather-station-tooltip .station-label-icon {
+  font-size: 11px;
+  margin-right: 2px;
+}
+.weather-station-tooltip .station-label-text {
+  color: #f0f9ff !important;
+}
+.weather-station-tooltip .rain-val-tag {
+  background: rgba(14, 165, 233, 0.25);
+  color: #7dd3fc;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  margin-left: 4px;
+  font-weight: 800;
+  border: 1px solid rgba(125, 211, 252, 0.3);
+}
+.leaflet-tooltip-bottom.weather-station-tooltip::before {
+  border-bottom-color: #0ea5e9 !important;
 }
 
 /* ================= PÍLULA FLUTUANTE DE STATUS DE RISCO (SOBRE O MAPA) ================= */
@@ -462,31 +553,24 @@ html, body {
   animation: pulseWarning 2s infinite;
 }
 
-.status-extreme {
-  background: rgba(127, 29, 29, 0.96);
-  border: 1px solid rgba(248, 113, 113, 0.9);
-  box-shadow: 0 4px 24px rgba(220, 38, 38, 0.55);
-  animation: pulseWarning 1.5s infinite;
-}
-
 @keyframes pulseWarning {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.015); }
 }
 
-.status-pill-icon {
+.pill-icon {
   font-size: 18px;
   flex-shrink: 0;
 }
 
-.status-pill-info {
+.pill-text-col {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow: hidden;
 }
 
-.status-pill-info strong {
+.pill-title {
   font-size: 13px;
   font-weight: 800;
   color: #ffffff;
@@ -496,7 +580,7 @@ html, body {
   line-height: 1.2;
 }
 
-.status-pill-info small {
+.pill-desc {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
@@ -505,7 +589,7 @@ html, body {
   font-weight: 500;
 }
 
-.status-pill-btn-gps {
+.pill-btn-locate {
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
@@ -520,8 +604,10 @@ html, body {
 }
 
 /* ================= COLUNAS DE FERRAMENTAS LATERAIS FLUTUANTES ================= */
-.floating-toolbar {
+.map-floating-tools-left {
   position: absolute;
+  top: 56px;
+  left: 10px;
   z-index: 850;
   display: flex;
   flex-direction: column;
@@ -529,17 +615,57 @@ html, body {
   pointer-events: auto;
 }
 
-.toolbar-left {
-  top: 56px;
-  left: 10px;
-}
-
-.toolbar-right {
+.map-floating-tools-right {
+  position: absolute;
   top: 56px;
   right: 10px;
+  z-index: 850;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  pointer-events: auto;
 }
 
-.map-tool-btn {
+.tool-btn-chip {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  min-width: 52px;
+  height: 48px;
+  padding: 0 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: var(--shadow-hud);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tool-btn-chip:active {
+  transform: scale(0.94);
+  background: rgba(234, 88, 12, 0.35);
+  border-color: var(--dc-orange);
+}
+
+.chip-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.chip-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #e2e8f0;
+  letter-spacing: 0.3px;
+}
+
+.tool-round-btn {
   background: var(--bg-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -559,20 +685,19 @@ html, body {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.map-tool-btn:active {
+.tool-round-btn:active {
   transform: scale(0.94);
-  background: rgba(234, 88, 12, 0.35);
-  border-color: var(--dc-orange);
 }
 
-.map-tool-btn.primary {
+.btn-gps-accent {
   background: rgba(2, 132, 199, 0.85);
   border-color: rgba(56, 189, 248, 0.5);
 }
 
-.map-tool-btn.zoom-btn {
+.tool-zoom-btn {
   height: 40px;
   border-radius: var(--radius-sm);
+  font-size: 16px;
 }
 
 .tool-icon {
@@ -580,8 +705,8 @@ html, body {
   line-height: 1;
 }
 
-.tool-label {
-  font-size: 9.5px;
+.tool-lbl {
+  font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
   color: #e2e8f0;
@@ -604,13 +729,13 @@ html, body {
   font-weight: 800;
   box-shadow: var(--shadow-hud);
   cursor: pointer;
-  display: flex;
+  display: none;
   align-items: center;
   gap: 6px;
 }
 
 /* ================= MODAIS FLUTUANTES (LEGENDA E CAMADAS) ================= */
-.map-floating-popup {
+.tools-popup-panel {
   position: absolute;
   top: 56px;
   right: 58px;
@@ -632,7 +757,7 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.popup-header {
+.popup-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -641,7 +766,7 @@ html, body {
   margin-bottom: 8px;
 }
 
-.popup-header strong {
+.popup-panel-header span {
   font-size: 13px;
   font-weight: 800;
   color: #ffffff;
@@ -656,7 +781,7 @@ html, body {
   padding: 2px 4px;
 }
 
-.legend-items, .layers-list {
+.popup-legend-list, .popup-layers-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -666,36 +791,37 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11.5px;
   color: #e2e8f0;
 }
 
-.legend-symbol {
+.legend-swatch {
   width: 14px;
   height: 14px;
   border-radius: 3px;
   flex-shrink: 0;
 }
 
-.sym-shelter { background: #10b981; border: 2px solid #ffffff; border-radius: 50%; }
-.sym-attention { background: #ea580c; border: 1px solid #f97316; opacity: 0.8; }
-.sym-flood2024 { background: #dc2626; border: 1px solid #ef4444; opacity: 0.8; }
-.sym-river-station { background: #0284c7; border: 2px solid #38bdf8; border-radius: 50%; }
-.sym-user-loc { background: #38bdf8; border: 2px solid #ffffff; border-radius: 50%; }
+.swatch-shelter { background: #10b981; border: 2px solid #ffffff; border-radius: 50%; }
+.swatch-river { background: #0284c7; border: 2px solid #38bdf8; border-radius: 50%; }
+.swatch-weather { background: #0ea5e9; border: 2px solid #7dd3fc; border-radius: 50%; }
+.swatch-attention { background: #ea580c; border: 1px solid #f97316; opacity: 0.8; }
+.swatch-user { background: #38bdf8; border: 2px solid #ffffff; border-radius: 50%; }
 
 .layer-toggle-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   font-size: 12px;
   color: #e2e8f0;
+  cursor: pointer;
 }
 
-.custom-toggle {
-  width: 34px;
-  height: 19px;
+.layer-toggle-row input {
   accent-color: var(--dc-orange);
   cursor: pointer;
+  width: 16px;
+  height: 16px;
 }
 
 /* ================= PAINEL INFERIOR RETRÁTIL (BOTTOM SHEET) ================= */
@@ -724,46 +850,40 @@ html, body {
   max-height: 68dvh;
 }
 
-.sheet-drag-zone {
+.sheet-drag-handle-zone {
   padding: 6px 0 3px 0;
   display: flex;
   justify-content: center;
   cursor: pointer;
 }
 
-.sheet-drag-handle {
+.drag-pill {
   width: 38px;
   height: 4px;
   background: rgba(255, 255, 255, 0.35);
   border-radius: 2px;
 }
 
-.sheet-summary-row {
+.sheet-compact-card {
+  padding: 0 12px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sheet-compact-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px 6px 12px;
-  gap: 8px;
 }
 
-.sheet-summary-left {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex: 1;
-}
-
-.sheet-badge-dist {
+.sheet-nearest-label-group {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--dc-green-light);
-  white-space: nowrap;
 }
 
-.dot-pulse {
+.nearest-pulse-dot {
   width: 7px;
   height: 7px;
   background-color: var(--dc-green);
@@ -771,7 +891,29 @@ html, body {
   box-shadow: 0 0 6px var(--dc-green);
 }
 
-.sheet-shelter-title {
+.sheet-nearest-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dc-green-light);
+  white-space: nowrap;
+}
+
+.btn-sheet-toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sheet-nearest-shelter-title {
   font-size: 14px;
   font-weight: 800;
   color: #ffffff;
@@ -781,36 +923,12 @@ html, body {
   line-height: 1.25;
 }
 
-.btn-sheet-expand-toggle {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: #cbd5e1;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 9px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.chevron-icon {
-  font-size: 9px;
-  transition: transform 0.3s ease;
-}
-
-.bottom-sheet.expanded .chevron-icon {
-  transform: rotate(180deg);
-}
-
 /* Botões de Ação Rápida de Rota (Navegação 1-Tap) */
 .sheet-quick-nav-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  padding: 0 12px 8px 12px;
+  margin-top: 2px;
 }
 
 .btn-quick-nav {
@@ -839,22 +957,22 @@ html, body {
   border: 1px solid rgba(56, 189, 248, 0.4);
 }
 
-.nav-btn-icon {
+.nav-icon {
   font-size: 20px;
 }
 
-.nav-btn-labels {
+.nav-label-block {
   display: flex;
   flex-direction: column;
 }
 
-.nav-btn-labels strong {
+.nav-label-block strong {
   font-size: 13px;
   font-weight: 800;
   line-height: 1.15;
 }
 
-.nav-btn-labels small {
+.nav-label-block small {
   font-size: 9.5px;
   opacity: 0.9;
 }
@@ -1185,13 +1303,6 @@ html, body {
   border-radius: var(--radius-xs);
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.drawer-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-xs);
-  object-fit: cover;
 }
 
 .drawer-brand h3 {
