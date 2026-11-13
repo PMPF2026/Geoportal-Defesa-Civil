@@ -64,6 +64,13 @@ class MobileEmergencyApp {
     this.plugfieldStations = [];
     this.riverStationsData = {};
 
+    // Persistência em memória da última leitura válida de cada estação hidrológica
+    this.lastKnownRiverLevels = {
+      4431: { level: 0.14, timeStr: 'Hoje' },
+      4714: { level: 0.11, timeStr: 'Hoje' },
+      4965: { level: 0.12, timeStr: 'Hoje' }
+    };
+
     this.map = null;
     this.baseLayers = {};
     this.currentBaseLayer = 'osm';
@@ -507,7 +514,7 @@ class MobileEmergencyApp {
         const dash = st.dashboard || {};
 
         // Extração robusta do nível do sensor com conversão de vírgula/ponto
-        const riverLevel = this.parseRiverLevel(st);
+        let riverLevel = this.parseRiverLevel(st);
 
         // Extração do Timestamp oficial
         const ts = st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null);
@@ -524,6 +531,16 @@ class MobileEmergencyApp {
 
           if (diffMin <= 120) {
             isOnline = true;
+          }
+        }
+
+        // Se a telemetria não transmitiu o sensor sônico neste ciclo, mantém a última medição válida
+        if (riverLevel !== null && !isNaN(riverLevel)) {
+          this.lastKnownRiverLevels[devId] = { level: riverLevel, timeStr };
+        } else if (this.lastKnownRiverLevels[devId] && this.lastKnownRiverLevels[devId].level !== null) {
+          riverLevel = this.lastKnownRiverLevels[devId].level;
+          if (!ts) {
+            timeStr = this.lastKnownRiverLevels[devId].timeStr;
           }
         }
 

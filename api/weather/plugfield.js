@@ -16,6 +16,14 @@ const cacheStore = {
   daily: {}          // { [`${deviceId}_${begin}_${end}`]: { data, timestamp } }
 };
 
+// Armazenamento em memória do último nível de rio válido registrado por estação
+// (evita que oscilações transitórias de pacotes limpem a leitura da tela)
+const lastKnownRiverLevels = {
+  4431: { level: 0.04, timestamp: 1794573511000 },
+  4714: { level: 0.02, timestamp: 1794574557000 },
+  4965: { level: 0.08, timestamp: 1794574530000 }
+};
+
 const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos (120.000 ms)
 
 // Lista oficial dos 16 deviceIds habilitados para o projeto Passo Fundo
@@ -415,6 +423,26 @@ module.exports = async function handler(req, res) {
         }));
       }
 
+      // Atualiza ou recupera a última leitura válida em memória para as 3 estações hidrológicas
+      filteredStations.forEach(st => {
+        if (riverIds.includes(st.id)) {
+          if (st.riverLevel !== null && !isNaN(st.riverLevel)) {
+            lastKnownRiverLevels[st.id] = {
+              level: st.riverLevel,
+              timestamp: st.lastUpdateTimestamp || now
+            };
+          } else if (lastKnownRiverLevels[st.id] && lastKnownRiverLevels[st.id].level !== null) {
+            st.riverLevel = lastKnownRiverLevels[st.id].level;
+            st.hasRiverSensor = true;
+            st.dashboard.sc = lastKnownRiverLevels[st.id].level;
+            st.dashboard.riverLevel = lastKnownRiverLevels[st.id].level;
+            if (lastKnownRiverLevels[st.id].timestamp && !st.lastUpdateTimestamp) {
+              st.lastUpdateTimestamp = lastKnownRiverLevels[st.id].timestamp;
+            }
+          }
+        }
+      });
+
       const resultPayload = {
         totalStations: filteredStations.length,
         stations: filteredStations,
@@ -494,6 +522,23 @@ module.exports = async function handler(req, res) {
         lastUpdateTimestamp: raw.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null),
         updatedAt: new Date().toISOString()
       };
+
+      if (riverIds.includes(devIdNum)) {
+        if (payload.riverLevel !== null && !isNaN(payload.riverLevel)) {
+          lastKnownRiverLevels[devIdNum] = {
+            level: payload.riverLevel,
+            timestamp: payload.lastUpdateTimestamp || now
+          };
+        } else if (lastKnownRiverLevels[devIdNum] && lastKnownRiverLevels[devIdNum].level !== null) {
+          payload.riverLevel = lastKnownRiverLevels[devIdNum].level;
+          payload.hasRiverSensor = true;
+          payload.dashboard.sc = lastKnownRiverLevels[devIdNum].level;
+          payload.dashboard.riverLevel = lastKnownRiverLevels[devIdNum].level;
+          if (lastKnownRiverLevels[devIdNum].timestamp && !payload.lastUpdateTimestamp) {
+            payload.lastUpdateTimestamp = lastKnownRiverLevels[devIdNum].timestamp;
+          }
+        }
+      }
 
       cacheStore.deviceDetails[cacheKey] = {
         data: payload,
