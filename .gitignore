@@ -21,3 +21,6 @@ Ortofotos/*.tif
 
 # Pasta local de segurança para arquivos legados / órfãos arquivados
 _backup_arquivos_legados/
+
+# Scripts de teste e temporários locais
+scratch/

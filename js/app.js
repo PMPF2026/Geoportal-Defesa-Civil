@@ -25,6 +25,7 @@ import { Item6ThematicLegendUI } from './ui/thematic-legend-item6.js';
 import { HipsometriaFloatingLegendUI } from './ui/thematic-legend-hipsometria.js';
 import { ClimateMapsUI } from './climate/climate-maps-ui.js';
 import { ElevationQueryTool } from './tools/elevation-query.js';
+import { SituationRoomUI } from './situation/situation-room.js';
 
 class WebGisApp {
   constructor() {
@@ -48,6 +49,7 @@ class WebGisApp {
     this.item6ThematicLegendUI = null;
     this.hipsometriaFloatingLegendUI = null;
     this.climateMapsUI = null;
+    this.situationRoomUI = null;
   }
 
   async start() {
@@ -107,6 +109,10 @@ class WebGisApp {
       // 12.3. Initialize Mapas Climáticos UI (Etapa 3 - IDW)
       this.climateMapsUI = new ClimateMapsUI(this.mapEngine);
       this.climateMapsUI.init(this.mapEngine);
+
+      // 12.4. Initialize Sala de Situação & Mosaico Multitelas
+      this.situationRoomUI = new SituationRoomUI(this.layerManager);
+      this.situationRoomUI.init();
 
       // 13. Initialize Dynamic Layer Importer (Drag & Drop)
       this.layerImporter = new LayerImporter(this.mapEngine, this.layerManager, this.sidebarUI);
@@ -291,6 +297,8 @@ class WebGisApp {
         if (shelterModal) shelterModal.classList.remove('active');
         const climateModal = document.getElementById('climate-maps-modal');
         if (climateModal) climateModal.classList.remove('active');
+        const situationModal = document.getElementById('situation-room-modal');
+        if (situationModal && this.situationRoomUI) this.situationRoomUI.close();
       } else if (e.key === '+' || e.key === '=') {
         this.mapEngine.zoomIn();
       } else if (e.key === '-' || e.key === '_') {

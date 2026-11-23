@@ -1,0 +1,496 @@
+/* ==========================================================================
+   SALA DE SITUAÇÃO & MONITORAMENTO MULTITELAS - DEFESA CIVIL PASSO FUNDO
+   Estilos dedicados para o Mosaico 4 Telas (Grid 2x2 e Foco Maximizado)
+   ========================================================================== */
+
+.situation-room-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #080d1a;
+  z-index: 6000;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  overflow: hidden;
+}
+
+.situation-room-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Header da Sala de Situação */
+.situation-room-header {
+  height: 52px;
+  background: #0f172a;
+  border-bottom: 2px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  z-index: 20;
+}
+
+.situation-room-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.situation-room-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 120, 0, 0.4);
+  object-fit: cover;
+}
+
+.situation-room-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.situation-room-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.situation-room-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.situation-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
+.situation-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: situationPulse 1.8s infinite;
+}
+
+@keyframes situationPulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #10b981; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+.situation-room-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.situation-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.situation-btn:hover {
+  background: #334155;
+  border-color: #475569;
+  color: #fff;
+}
+
+.situation-btn.active {
+  background: rgba(255, 120, 0, 0.2);
+  border-color: var(--dc-orange-primary, #ff7800);
+  color: var(--dc-orange-primary, #ff7800);
+}
+
+.situation-btn-close {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  font-size: 16px;
+  padding: 4px 10px;
+}
+
+.situation-btn-close:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+}
+
+/* Área do Mosaico (Grid 2x2) */
+.situation-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+  padding: 6px;
+  background: #050811;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+/* Estado com 1 painel Maximizado */
+.situation-grid.has-maximized .situation-panel:not(.is-maximized) {
+  display: none !important;
+}
+
+.situation-grid.has-maximized .situation-panel.is-maximized {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  width: 100%;
+  height: 100%;
+}
+
+/* Cartão de Cada Quadrante */
+.situation-panel {
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s ease;
+  min-height: 0;
+  min-width: 0;
+}
+
+.situation-panel:hover {
+  border-color: #334155;
+}
+
+.situation-panel.is-maximized {
+  border-color: var(--dc-orange-primary, #ff7800);
+}
+
+/* Cabeçalho do Quadrante (Duas Linhas Limpas) */
+.panel-top-bar {
+  background: #131c31;
+  border-bottom: 1px solid #1e293b;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.panel-left-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.panel-badge-id {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--dc-orange-primary, #ff7800);
+  border-radius: 4px;
+  padding: 2px 6px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.panel-select-source {
+  background: #0b1120;
+  color: #38bdf8;
+  border: 1px solid #334155;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+}
+
+.panel-select-source:hover {
+  border-color: #38bdf8;
+}
+
+/* Barra de Botões Rápidos de Camadas (Print 1) */
+.panel-layers-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 1px 0 3px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+.panel-layers-bar::-webkit-scrollbar {
+  height: 3px;
+}
+
+.panel-layers-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-layers-bar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+.layer-quick-btn {
+  background: #1e293b;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.layer-quick-btn:hover {
+  background: #334155;
+  color: #fff;
+  border-color: #475569;
+}
+
+.layer-quick-btn.active {
+  background: rgba(255, 120, 0, 0.25);
+  color: #ff9d42;
+  border-color: var(--dc-orange-primary, #ff7800);
+  font-weight: 700;
+}
+
+/* Ações do Quadrante (Maximizar, Abrir Site) */
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.panel-action-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.panel-action-btn:hover {
+  color: #fff;
+  background: #334155;
+  border-color: #475569;
+}
+
+.panel-action-btn.active {
+  color: var(--dc-orange-primary, #ff7800);
+  border-color: var(--dc-orange-primary, #ff7800);
+}
+
+/* Corpo do Quadrante com Iframe */
+.panel-view-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #020617;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panel-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #050811;
+  display: block;
+}
+
+.panel-loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity 0.25s ease;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+.panel-loading-spinner.loaded {
+  display: none !important;
+}
+
+.panel-spinner-ring {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 120, 0, 0.2);
+  border-top-color: var(--dc-orange-primary, #ff7800);
+  border-radius: 50%;
+  animation: panelSpin 0.8s linear infinite;
+}
+
+@keyframes panelSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Painel Local de Nível dos Rios de Passo Fundo */
+.local-rivers-card {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: linear-gradient(180deg, #0f172a 0%, #090e17 100%);
+  color: #e2e8f0;
+}
+
+.local-rivers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 10px;
+}
+
+.local-rivers-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.local-station-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.local-station-box {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.local-station-box.station-normal {
+  border-left: 4px solid #10b981;
+}
+
+.local-station-box.station-alert {
+  border-left: 4px solid #f59e0b;
+}
+
+.local-station-box.station-emergency {
+  border-left: 4px solid #ef4444;
+}
+
+.station-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.station-level {
+  font-size: 26px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.station-unit {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.station-status-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.station-updated {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: auto;
+}

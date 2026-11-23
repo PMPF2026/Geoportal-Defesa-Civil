@@ -49,6 +49,7 @@
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/weather.css">
   <link rel="stylesheet" href="css/climate-maps.css">
+  <link rel="stylesheet" href="css/situation-room.css">
 </head>
 <body>
   <div id="app">
@@ -83,6 +84,11 @@
         <button class="header-btn" id="btn-open-weather-modal" title="Central Meteorológica e Avisos (Defesa Civil RS & CPTEC/INPE)">
           <i class="lucide-cloud-sun-rain"></i>
           <span>Central Meteorológica e Avisos</span>
+        </button>
+
+        <button class="header-btn" id="btn-open-situation-room" title="Sala de Situação — Mosaico Multitelas de Monitoramento em Tempo Real (Windy, Ventusky, Satélite, Radares)" style="background: rgba(15, 23, 42, 0.7); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8;">
+          <span style="font-size: 15px; line-height: 1;">🖥️</span>
+          <span>Sala de Situação</span>
         </button>
 
         <button class="header-btn" id="btn-open-shelter-analysis-modal" title="Módulo de Análise Espacial e Populacional dos Abrigos">
@@ -1522,6 +1528,47 @@
 
       </div>
     </div>
+  </div>
+
+  <!-- ================= SALA DE SITUAÇÃO / MOSAICO MULTITELAS ================= -->
+  <div class="situation-room-overlay" id="situation-room-modal">
+    <header class="situation-room-header">
+      <div class="situation-room-brand">
+        <img src="assets/logo-defesa-civil.jpg" alt="Defesa Civil Passo Fundo" class="situation-room-logo">
+        <div class="situation-room-titles">
+          <div class="situation-room-title">
+            <span>SALA DE SITUAÇÃO & MONITORAMENTO MULTITELAS</span>
+            <span class="situation-live-badge">
+              <span class="situation-live-dot"></span>
+              <span>AO VIVO / TEMPO REAL</span>
+            </span>
+          </div>
+          <div class="situation-room-subtitle">Coordenadoria Municipal de Proteção e Defesa Civil — Passo Fundo/RS</div>
+        </div>
+      </div>
+
+      <div class="situation-room-controls">
+        <button class="situation-btn" id="btn-reset-grid-situation-room" title="Restaurar layout em Grade 2x2">
+          <span>🔲</span>
+          <span>Grade 2x2</span>
+        </button>
+        <button class="situation-btn" id="btn-refresh-situation-room" title="Recarregar todos os painéis">
+          <span>🔄</span>
+          <span>Atualizar</span>
+        </button>
+        <button class="situation-btn" id="btn-fs-situation-room" title="Alternar modo Tela Cheia">
+          <span>⛶</span>
+          <span>Tela Cheia</span>
+        </button>
+        <button class="situation-btn situation-btn-close" id="btn-close-situation-room" title="Fechar Sala de Situação (Esc)">
+          ✕
+        </button>
+      </div>
+    </header>
+
+    <main class="situation-grid" id="situation-grid">
+      <!-- Painéis 1 a 4 injetados dinamicamente por SituationRoomUI -->
+    </main>
   </div>
 
   <!-- Loading Overlay -->
