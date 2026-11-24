@@ -1,9 +1,9 @@
 {
-  "enabled": false,
+  "enabled": true,
   "title": "Portal em Atualização Programada",
   "message": "Estamos realizando melhorias técnicas e operacionais no Geoportal da Defesa Civil de Passo Fundo para melhor atender à nossa comunidade.",
   "estimatedReturn": "Retorno previsto em breve.",
-  "updatedAt": "2026-11-24T14:27:00-03:00",
+  "updatedAt": "2026-11-24T15:55:00-03:00",
   "emergencyContacts": {
     "defesaCivil": "199",
     "bombeiros": "193",
