@@ -13,6 +13,7 @@ export class SituationRoomUI {
     this.isFullscreen = false;
     this.maximizedPanelId = null;
     this.initialized = false;
+    this.riverRefreshTimer = null;
 
     // Configuração inicial padrão dos 4 quadrantes (Foco Passo Fundo/RS)
     this.panels = [
@@ -26,9 +27,9 @@ export class SituationRoomUI {
       {
         id: 2,
         title: 'Painel 2',
-        source: 'windy',
-        currentLayer: 'satellite',
-        name: 'Windy — Satélite Meteorológico'
+        source: 'goes16',
+        currentLayer: 'ir_interactive',
+        name: 'Satélite GOES-16 — Tempo Real'
       },
       {
         id: 3,
@@ -40,9 +41,9 @@ export class SituationRoomUI {
       {
         id: 4,
         title: 'Painel 4',
-        source: 'windy',
-        currentLayer: 'rain',
-        name: 'Windy — Chuva, Trovão & Tempestades'
+        source: 'rios_pf',
+        currentLayer: 'live',
+        name: 'Nível Rios Passo Fundo'
       }
     ];
 
@@ -106,7 +107,13 @@ export class SituationRoomUI {
     if (!this.initialized) {
       this.renderPanels();
       this.initialized = true;
+    } else {
+      // Se já inicializado, atualizar dados dos rios
+      this.updateLocalRiverData();
     }
+
+    // Iniciar ciclo de atualização automática de telemetria a cada 45 segundos
+    this.startRiverRefreshCycle();
   }
 
   close() {
@@ -114,9 +121,27 @@ export class SituationRoomUI {
     if (modal) modal.classList.remove('active');
     this.isOpen = false;
 
+    this.stopRiverRefreshCycle();
+
     if (document.fullscreenElement && this.isFullscreen) {
       document.exitFullscreen().catch(() => {});
       this.isFullscreen = false;
+    }
+  }
+
+  startRiverRefreshCycle() {
+    this.stopRiverRefreshCycle();
+    this.riverRefreshTimer = setInterval(() => {
+      if (this.isOpen) {
+        this.updateLocalRiverData();
+      }
+    }, 45000);
+  }
+
+  stopRiverRefreshCycle() {
+    if (this.riverRefreshTimer) {
+      clearInterval(this.riverRefreshTimer);
+      this.riverRefreshTimer = null;
     }
   }
 
@@ -196,7 +221,7 @@ export class SituationRoomUI {
               <select class="panel-select-source" data-panel-id="${config.id}">
                 <option value="windy" ${config.source === 'windy' ? 'selected' : ''}>Windy.com</option>
                 <option value="ventusky" ${config.source === 'ventusky' ? 'selected' : ''}>Ventusky</option>
-                <option value="goes16" ${config.source === 'goes16' ? 'selected' : ''}>Satélite GOES-16 (NOAA/CPTEC)</option>
+                <option value="goes16" ${config.source === 'goes16' ? 'selected' : ''}>Satélite GOES-16 (NOAA)</option>
                 <option value="radar_rs" ${config.source === 'radar_rs' ? 'selected' : ''}>Radares Sul RS (REDEMET)</option>
                 <option value="rios_pf" ${config.source === 'rios_pf' ? 'selected' : ''}>Nível Rios Passo Fundo</option>
               </select>
@@ -302,9 +327,11 @@ export class SituationRoomUI {
       });
     } else if (config.source === 'goes16') {
       const layers = [
-        { id: 'ir', label: '🛰️ Infravermelho Realce' },
-        { id: 'geocolor', label: '🌍 GeoColor / Visível' },
-        { id: 'wv', label: '💧 Vapor d\'Água' }
+        { id: 'ir_interactive', label: '🛰️ Infravermelho (Animado)' },
+        { id: 'geo_interactive', label: '🌍 GeoColor (Animado)' },
+        { id: 'noaa_ir', label: '🔴 NOAA Direto IR' },
+        { id: 'noaa_geo', label: '🌍 NOAA Direto GeoColor' },
+        { id: 'noaa_wv', label: '💧 NOAA Vapor d\'Água' }
       ];
 
       layers.forEach(l => {
@@ -359,7 +386,7 @@ export class SituationRoomUI {
     } else if (newSource === 'ventusky') {
       config.currentLayer = 'rain';
     } else if (newSource === 'goes16') {
-      config.currentLayer = 'ir';
+      config.currentLayer = 'ir_interactive';
     } else if (newSource === 'radar_rs') {
       config.currentLayer = 'mosaico_sul';
     } else if (newSource === 'rios_pf') {
@@ -376,14 +403,21 @@ export class SituationRoomUI {
     const spinner = document.getElementById(`spinner-${panelId}`);
     if (!config || !viewContainer) return;
 
+    // Caso 1: Nível dos Rios de Passo Fundo
     if (config.source === 'rios_pf') {
-      // Exibir cartão interativo com as cotas reais do Rio Passo Fundo
       this.renderLocalRiversCard(panelId, viewContainer);
       if (spinner) spinner.classList.add('loaded');
       return;
     }
 
-    // Caso seja iframe
+    // Caso 2: Imagem Direta de Alta Resolução da NOAA STAR (Zero bloqueios)
+    if (config.source === 'goes16' && config.currentLayer.startsWith('noaa_')) {
+      this.renderDirectNoaaSatelliteView(panelId, viewContainer, config.currentLayer);
+      if (spinner) spinner.classList.add('loaded');
+      return;
+    }
+
+    // Caso 3: Iframe Interativo (Windy, Ventusky, Radares)
     let iframe = document.getElementById(`iframe-${panelId}`);
     if (!iframe) {
       viewContainer.innerHTML = `
@@ -414,6 +448,49 @@ export class SituationRoomUI {
     iframe.src = url;
   }
 
+  renderDirectNoaaSatelliteView(panelId, container, layerId) {
+    let imgUrl = 'https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ssa/13/latest.jpg';
+    let title = 'Canal 13 — Infravermelho Limpo (10.3 µm)';
+    let subtitle = 'Realce de Topos Frios e Convecção Profunda · NOAA STAR SSA';
+
+    if (layerId === 'noaa_geo') {
+      imgUrl = 'https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ssa/GEOCOLOR/latest.jpg';
+      title = 'GeoColor — Cores Verdadeiras & Noturno';
+      subtitle = 'Visão Multiespectral em Tempo Real · NOAA STAR SSA';
+    } else if (layerId === 'noaa_wv') {
+      imgUrl = 'https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ssa/09/latest.jpg';
+      title = 'Canal 09 — Vapor d\'Água Nível Médio (6.9 µm)';
+      subtitle = 'Correntes de Jato e Dinâmica Atmosférica · NOAA STAR SSA';
+    }
+
+    const cacheBuster = `?t=${Date.now()}`;
+
+    container.innerHTML = `
+      <div class="direct-sat-view">
+        <div class="direct-sat-header-info">
+          <div>
+            <div class="direct-sat-title">🛰️ ${title}</div>
+            <div class="direct-sat-sub">${subtitle}</div>
+          </div>
+          <button class="panel-action-btn" id="btn-reload-noaa-${panelId}" title="Atualizar imagem de satélite">
+            🔄 Atualizar
+          </button>
+        </div>
+        <div class="direct-sat-img-wrapper">
+          <img src="${imgUrl}${cacheBuster}" alt="Satélite GOES-16 NOAA" class="direct-sat-img" id="noaa-img-${panelId}" />
+        </div>
+      </div>
+    `;
+
+    const reloadBtn = container.querySelector(`#btn-reload-noaa-${panelId}`);
+    if (reloadBtn) {
+      reloadBtn.addEventListener('click', () => {
+        const img = container.querySelector(`#noaa-img-${panelId}`);
+        if (img) img.src = `${imgUrl}?t=${Date.now()}`;
+      });
+    }
+  }
+
   buildUrl(config) {
     const { source, currentLayer } = config;
 
@@ -440,12 +517,12 @@ export class SituationRoomUI {
     }
 
     if (source === 'goes16') {
-      if (currentLayer === 'geocolor') {
-        return `https://rammb-slider.cira.colostate.edu/?sat=goes-16&z=4&im=12&ts=1&st=0&et=0&speed=130&motion=loop&maps%5Bborders%5D=white&lat=-28.26&lon=-52.41&opacity%5B0%5D=1&b%5B0%5D=geocolor`;
-      } else if (currentLayer === 'wv') {
-        return `https://rammb-slider.cira.colostate.edu/?sat=goes-16&z=4&im=12&ts=1&st=0&et=0&speed=130&motion=loop&maps%5Bborders%5D=white&lat=-28.26&lon=-52.41&opacity%5B0%5D=1&b%5B0%5D=band_09`;
+      // Satélite GOES-16 com animação interativa suave (Zero bloqueios)
+      if (currentLayer === 'geo_interactive') {
+        return `https://www.ventusky.com/?p=${this.lat.toFixed(2)};${this.lon.toFixed(2)};6&l=satellite`;
       }
-      return `https://rammb-slider.cira.colostate.edu/?sat=goes-16&z=4&im=12&ts=1&st=0&et=0&speed=130&motion=loop&maps%5Bborders%5D=white&lat=-28.26&lon=-52.41&opacity%5B0%5D=1&b%5B0%5D=band_13`;
+      // Padrão: Windy GOES-16 Infravermelho centrado no RS / Passo Fundo
+      return `https://embed.windy.com/embed.html?lat=${this.lat}&lon=${this.lon}&zoom=6&level=surface&overlay=satellite&product=satellite&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
     }
 
     if (source === 'radar_rs') {
@@ -464,7 +541,7 @@ export class SituationRoomUI {
     if (config.source === 'ventusky') {
       externalUrl = `https://www.ventusky.com/?p=${this.lat.toFixed(2)};${this.lon.toFixed(2)};8`;
     } else if (config.source === 'goes16') {
-      externalUrl = `https://satelite.cptec.inpe.br/home/novo.jsp`;
+      externalUrl = `https://www.star.nesdis.noaa.gov/goes/sector.php?sat=G16&sector=ssa`;
     } else if (config.source === 'radar_rs') {
       externalUrl = `https://www.redemet.aer.mil.br/`;
     } else if (config.source === 'rios_pf') {
@@ -482,82 +559,230 @@ export class SituationRoomUI {
             <span>🌊</span>
             <span>Estações Telemétricas & Nível do Rio Passo Fundo</span>
           </div>
-          <span class="situation-live-badge">
-            <span class="situation-live-dot"></span>
-            <span>Sensores Ativos</span>
-          </span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="situation-live-badge">
+              <span class="situation-live-dot"></span>
+              <span id="river-live-badge-txt">Plugfield Ao Vivo</span>
+            </span>
+            <button class="panel-action-btn" id="btn-manual-refresh-rivers" title="Atualizar leituras de telemetria">
+              🔄
+            </button>
+          </div>
         </div>
 
         <div class="local-station-grid">
-          <div class="local-station-box station-normal">
-            <div class="station-name">📍 Estação Av. Brasil (Largo)</div>
-            <div class="station-level" id="station-val-brasil">0,14 <span class="station-unit">m</span></div>
-            <div class="station-status-text">Status: Nível Normal de Calha</div>
-            <div class="station-updated" id="station-time-brasil">Última leitura: Hoje</div>
+          <!-- 4431: Av. Brasil -->
+          <div class="local-station-box station-normal" id="station-box-brasil">
+            <div class="station-name">📍 Av. Brasil (Largo da Literatura)</div>
+            <div class="station-level" id="station-val-brasil">-- <span class="station-unit">m</span></div>
+            <div class="station-status-text" id="station-status-brasil">Consultando telemetria...</div>
+            <div class="station-updated" id="station-time-brasil">Aguardando dados...</div>
           </div>
 
-          <div class="local-station-box station-normal">
-            <div class="station-name">📍 Estação Lobo da Costa</div>
-            <div class="station-level" id="station-val-lobo">0,11 <span class="station-unit">m</span></div>
-            <div class="station-status-text">Status: Nível Normal de Calha</div>
-            <div class="station-updated" id="station-time-lobo">Última leitura: Hoje</div>
+          <!-- 4714: Lobo da Costa -->
+          <div class="local-station-box station-normal" id="station-box-lobo">
+            <div class="station-name">📍 Lobo da Costa (Entre Rios)</div>
+            <div class="station-level" id="station-val-lobo">-- <span class="station-unit">m</span></div>
+            <div class="station-status-text" id="station-status-lobo">Consultando telemetria...</div>
+            <div class="station-updated" id="station-time-lobo">Aguardando dados...</div>
           </div>
 
-          <div class="local-station-box station-normal">
-            <div class="station-name">📍 Estação Quinto Giongo</div>
-            <div class="station-level" id="station-val-quinto">0,21 <span class="station-unit">m</span></div>
-            <div class="station-status-text">Status: Nível Normal de Calha</div>
-            <div class="station-updated" id="station-time-quinto">Última leitura: Hoje</div>
+          <!-- 4965: Quinto Giongo -->
+          <div class="local-station-box station-normal" id="station-box-quinto">
+            <div class="station-name">📍 Quinto Giongo (Victor Issler)</div>
+            <div class="station-level" id="station-val-quinto">-- <span class="station-unit">m</span></div>
+            <div class="station-status-text" id="station-status-quinto">Consultando telemetria...</div>
+            <div class="station-updated" id="station-time-quinto">Aguardando dados...</div>
           </div>
 
-          <div class="local-station-box station-normal">
-            <div class="station-name">📍 Rede Pluviométrica Municipal</div>
-            <div class="station-level" id="station-val-pluv">0,0 <span class="station-unit">mm / 24h</span></div>
-            <div class="station-status-text">Precipitação Acumulada Recente</div>
-            <div class="station-updated">Sensores Plugfield & DCRS</div>
+          <!-- Pluviômetros / Chuva -->
+          <div class="local-station-box station-normal" id="station-box-pluv">
+            <div class="station-name">📍 Precipitação Acumulada Hoje</div>
+            <div class="station-level" id="station-val-pluv">-- <span class="station-unit">mm</span></div>
+            <div class="station-status-text" id="station-status-pluv">Rede Pluviométrica Municipal</div>
+            <div class="station-updated" id="station-time-pluv">Plugfield (16 estações)</div>
           </div>
         </div>
 
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid #334155; border-radius: 6px; padding: 12px; margin-top: 6px;">
-          <div style="font-size: 12px; font-weight: bold; color: #f8fafc; margin-bottom: 6px;">ℹ️ Informações Técnicas de Alerta:</div>
-          <div style="font-size: 11px; color: #94a3b8; line-height: 1.5;">
-            Os sensores telemétricos operam com comunicação constante e registram variações milimétricas do nível do Rio Passo Fundo. Em caso de elevação rápida, os limiares de Atenção, Alerta e Emergência são destacados automaticamente.
+        <div class="local-rivers-info-footer">
+          <div style="font-size: 11px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; display:flex; align-items:center; gap:6px;">
+            <span>ℹ️</span>
+            <span>Limiares Oficiais da Defesa Civil Passo Fundo:</span>
+          </div>
+          <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.4;">
+            Normal: até 1,49 m • <strong style="color:#fbbf24;">Atenção: 1,50 m</strong> • <strong style="color:#f97316;">Alerta: 2,00 m</strong> • <strong style="color:#ef4444;">Emergência: 2,50 m</strong>. Atualização contínua via sensores ultrassônicos.
           </div>
         </div>
       </div>
     `;
 
-    // Atualizar dinamicamente com dados da Central Meteorológica / API se disponíveis
+    const refreshBtn = container.querySelector('#btn-manual-refresh-rivers');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        this.updateLocalRiverData();
+      });
+    }
+
+    // Disparar busca de dados imediatamente
     this.updateLocalRiverData();
+  }
+
+  parseRiverLevel(st) {
+    if (!st) return null;
+    const dash = st.dashboard || {};
+    const parse = (v) => {
+      if (v == null || v === '') return null;
+      const clean = String(v).trim().replace(',', '.');
+      const num = parseFloat(clean);
+      return (!isNaN(num) && isFinite(num)) ? num : null;
+    };
+
+    let lvl = parse(st.riverLevel);
+    if (lvl !== null) return lvl;
+    lvl = parse(dash.sc);
+    if (lvl !== null) return lvl;
+    lvl = parse(dash.riverLevel);
+    if (lvl !== null) return lvl;
+    lvl = parse(dash.levelAdditional);
+    if (lvl !== null) return lvl;
+
+    if (dash.lastSensorData && Array.isArray(dash.lastSensorData.sensorDataList)) {
+      const scSensor = dash.lastSensorData.sensorDataList.find(s =>
+        s.sensorCode === 'sc' || s.sensorId === 380 || (s.sensorName && /n[íi]vel|s[ôo]nico|l[íi]quido/i.test(s.sensorName))
+      );
+      if (scSensor && scSensor.dataValue != null && scSensor.dataValue !== '') {
+        lvl = parse(scSensor.dataValue);
+        if (lvl !== null) return lvl;
+      }
+    }
+    return null;
+  }
+
+  formatTime(st) {
+    if (!st) return 'Hoje';
+    const dash = st.dashboard || {};
+    const ts = st.lastUpdateTimestamp || dash.lastUpdateTimestamp || (dash.timestamp ? parseInt(dash.timestamp, 10) : null);
+    if (ts) {
+      const numTs = ts < 10000000000 ? ts * 1000 : ts;
+      const dt = new Date(numTs);
+      const hh = String(dt.getHours()).padStart(2, '0');
+      const mm = String(dt.getMinutes()).padStart(2, '0');
+      return `Leitura hoje às ${hh}:${mm}`;
+    }
+    if (dash.updateDateTime) {
+      const dt = new Date(dash.updateDateTime);
+      if (!isNaN(dt.getTime())) {
+        const hh = String(dt.getHours()).padStart(2, '0');
+        const mm = String(dt.getMinutes()).padStart(2, '0');
+        return `Leitura hoje às ${hh}:${mm}`;
+      }
+    }
+    return 'Hoje';
   }
 
   async updateLocalRiverData() {
     try {
-      const res = await fetch('/api/defesacivil').catch(() => null);
-      if (res && res.ok) {
-        const data = await res.json();
-        if (data && data.stations) {
-          data.stations.forEach(st => {
-            const name = (st.nome || st.estacao || '').toLowerCase();
-            const val = st.nivel || st.cota;
-            if (val !== undefined && val !== null) {
-              const formatted = typeof val === 'number' ? val.toFixed(2).replace('.', ',') : val;
-              if (name.includes('brasil')) {
-                const el = document.getElementById('station-val-brasil');
-                if (el) el.innerHTML = `${formatted} <span class="station-unit">m</span>`;
-              } else if (name.includes('lobo')) {
-                const el = document.getElementById('station-val-lobo');
-                if (el) el.innerHTML = `${formatted} <span class="station-unit">m</span>`;
-              } else if (name.includes('quinto')) {
-                const el = document.getElementById('station-val-quinto');
-                if (el) el.innerHTML = `${formatted} <span class="station-unit">m</span>`;
+      const resp = await fetch('/api/weather/plugfield?action=devices')
+        .catch(() => fetch('../api/weather/plugfield?action=devices'))
+        .catch(() => null);
+
+      if (!resp || !resp.ok) return;
+
+      const data = await resp.json();
+      if (!data || !data.data || !Array.isArray(data.data.stations)) return;
+
+      const stations = data.data.stations;
+
+      // 1. Processar Estações Hidrológicas (4431, 4714, 4965)
+      const riverConfigs = [
+        { id: 4431, boxId: 'station-box-brasil', valId: 'station-val-brasil', statusId: 'station-status-brasil', timeId: 'station-time-brasil', name: 'Av. Brasil (Largo)' },
+        { id: 4714, boxId: 'station-box-lobo', valId: 'station-val-lobo', statusId: 'station-status-lobo', timeId: 'station-time-lobo', name: 'Lobo da Costa' },
+        { id: 4965, boxId: 'station-box-quinto', valId: 'station-val-quinto', statusId: 'station-status-quinto', timeId: 'station-time-quinto', name: 'Quinto Giongo' }
+      ];
+
+      for (const rc of riverConfigs) {
+        let st = stations.find(s => s.id == rc.id || s.deviceId == rc.id);
+        let lvl = this.parseRiverLevel(st);
+
+        // Contingência individual se necessário
+        if (lvl === null) {
+          try {
+            const singleResp = await fetch(`/api/weather/plugfield?action=device&deviceId=${rc.id}`);
+            if (singleResp && singleResp.ok) {
+              const singleData = await singleResp.json();
+              if (singleData && singleData.data) {
+                st = singleData.data;
+                lvl = this.parseRiverLevel(st);
               }
             }
-          });
+          } catch (e) {}
+        }
+
+        if (lvl !== null) {
+          const valEl = document.getElementById(rc.valId);
+          const boxEl = document.getElementById(rc.boxId);
+          const statusEl = document.getElementById(rc.statusId);
+          const timeEl = document.getElementById(rc.timeId);
+
+          if (valEl) valEl.innerHTML = `${lvl.toFixed(2).replace('.', ',')} <span class="station-unit">m</span>`;
+          if (timeEl) timeEl.textContent = this.formatTime(st);
+
+          if (boxEl && statusEl) {
+            boxEl.classList.remove('station-normal', 'station-alert', 'station-emergency');
+            if (lvl >= 2.50) {
+              boxEl.classList.add('station-emergency');
+              statusEl.textContent = '🚨 COTA DE EMERGÊNCIA / TRANSBORDAMENTO';
+            } else if (lvl >= 2.00) {
+              boxEl.classList.add('station-alert');
+              statusEl.textContent = '⚠️ COTA DE ALERTA DE CHEIA';
+            } else if (lvl >= 1.50) {
+              boxEl.classList.add('station-alert');
+              statusEl.textContent = '⚠️ COTA DE ATENÇÃO HIDROLÓGICA';
+            } else {
+              boxEl.classList.add('station-normal');
+              statusEl.textContent = 'Nível Normal de Calha';
+            }
+          }
         }
       }
+
+      // 2. Processar Rede Pluviométrica (Chuva Máxima Registrada Hoje)
+      let maxRain = 0;
+      let maxStationName = '';
+      stations.forEach(s => {
+        const d = s.dashboard || {};
+        const r = parseFloat(d.rainDay || d.rain);
+        if (!isNaN(r) && r > maxRain) {
+          maxRain = r;
+          maxStationName = s.name || '';
+        }
+      });
+
+      const pluvValEl = document.getElementById('station-val-pluv');
+      const pluvStatusEl = document.getElementById('station-status-pluv');
+      const pluvBoxEl = document.getElementById('station-box-pluv');
+      const pluvTimeEl = document.getElementById('station-time-pluv');
+
+      if (pluvValEl && maxRain > 0) {
+        pluvValEl.innerHTML = `${maxRain.toFixed(1).replace('.', ',')} <span class="station-unit">mm</span>`;
+        if (pluvTimeEl) pluvTimeEl.textContent = `Pico: ${maxStationName.replace(/\(.*?\)/, '').trim()}`;
+        if (pluvBoxEl && pluvStatusEl) {
+          pluvBoxEl.classList.remove('station-normal', 'station-alert', 'station-emergency');
+          if (maxRain >= 50) {
+            pluvBoxEl.classList.add('station-alert');
+            pluvStatusEl.textContent = '⚠️ Precipitação Severa em Andamento';
+          } else if (maxRain >= 25) {
+            pluvBoxEl.classList.add('station-alert');
+            pluvStatusEl.textContent = 'Chuva Forte Acumulada';
+          } else {
+            pluvBoxEl.classList.add('station-normal');
+            pluvStatusEl.textContent = 'Chuva Fraca / Moderada';
+          }
+        }
+      }
+
     } catch (e) {
-      // Mantém valores de contingência
+      console.warn('[SituationRoom] Erro ao atualizar telemetria dos rios:', e);
     }
   }
 

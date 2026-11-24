@@ -255,7 +255,7 @@
   border-color: #38bdf8;
 }
 
-/* Barra de Botões Rápidos de Camadas (Print 1) */
+/* Barra de Botões Rápidos de Camadas */
 .panel-layers-bar {
   display: flex;
   align-items: center;
@@ -345,7 +345,7 @@
   border-color: var(--dc-orange-primary, #ff7800);
 }
 
-/* Corpo do Quadrante com Iframe */
+/* Corpo do Quadrante */
 .panel-view-container {
   flex: 1;
   width: 100%;
@@ -401,17 +401,73 @@
   to { transform: rotate(360deg); }
 }
 
+/* Visualizador Direto de Satélite NOAA STAR (Zero bloqueios) */
+.direct-sat-view {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.direct-sat-header-info {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.direct-sat-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.direct-sat-sub {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.direct-sat-img-wrapper {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #050811;
+}
+
+.direct-sat-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 /* Painel Local de Nível dos Rios de Passo Fundo */
 .local-rivers-card {
   width: 100%;
   height: 100%;
-  padding: 16px;
+  padding: 14px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   background: linear-gradient(180deg, #0f172a 0%, #090e17 100%);
   color: #e2e8f0;
+  box-sizing: border-box;
 }
 
 .local-rivers-header {
@@ -419,11 +475,12 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #1e293b;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .local-rivers-title {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #38bdf8;
   display: flex;
@@ -433,20 +490,22 @@
 
 .local-station-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .local-station-box {
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   position: relative;
   overflow: hidden;
+  transition: all 0.25s ease;
 }
 
 .local-station-box.station-normal {
@@ -455,26 +514,36 @@
 
 .local-station-box.station-alert {
   border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, #1e293b 100%);
 }
 
 .local-station-box.station-emergency {
   border-left: 4px solid #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, #1e293b 100%);
+  animation: boxPulseEmergency 2s infinite;
+}
+
+@keyframes boxPulseEmergency {
+  0% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.4); }
+  100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
 }
 
 .station-name {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #f8fafc;
 }
 
 .station-level {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 900;
   font-family: 'JetBrains Mono', monospace;
   color: #fff;
   display: flex;
   align-items: baseline;
   gap: 4px;
+  line-height: 1.1;
 }
 
 .station-unit {
@@ -484,13 +553,30 @@
 }
 
 .station-status-text {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 700;
   color: #94a3b8;
 }
 
+.local-station-box.station-alert .station-status-text {
+  color: #fbbf24;
+}
+
+.local-station-box.station-emergency .station-status-text {
+  color: #f87171;
+}
+
 .station-updated {
-  font-size: 10px;
+  font-size: 9.5px;
   color: #64748b;
-  margin-top: auto;
+  margin-top: 2px;
+}
+
+.local-rivers-info-footer {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
