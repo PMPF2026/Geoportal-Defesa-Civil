@@ -50,6 +50,7 @@ export class SituationRoomUI {
     // Passo Fundo / RS Coordinates
     this.lat = -28.2628;
     this.lon = -52.4067;
+    this.showPfMarkers = true;
   }
 
   init() {
@@ -63,6 +64,7 @@ export class SituationRoomUI {
     const fsBtn = document.getElementById('btn-fs-situation-room');
     const resetGridBtn = document.getElementById('btn-reset-grid-situation-room');
     const refreshBtn = document.getElementById('btn-refresh-situation-room');
+    const toggleMarkerBtn = document.getElementById('btn-toggle-pf-marker');
 
     if (openBtn) {
       openBtn.addEventListener('click', () => this.open());
@@ -82,6 +84,10 @@ export class SituationRoomUI {
 
     if (refreshBtn) {
       refreshBtn.addEventListener('click', () => this.refreshAllPanels());
+    }
+
+    if (toggleMarkerBtn) {
+      toggleMarkerBtn.addEventListener('click', () => this.togglePfMarkers());
     }
 
     // Tecla ESC para fechar
@@ -200,6 +206,42 @@ export class SituationRoomUI {
         maxBtn.title = 'Restaurar Grade 2x2';
       }
     }
+  }
+
+  togglePfMarkers() {
+    this.showPfMarkers = !this.showPfMarkers;
+    const grid = document.getElementById('situation-grid');
+    const toggleBtn = document.getElementById('btn-toggle-pf-marker');
+    if (grid) {
+      grid.classList.toggle('hide-pf-markers', !this.showPfMarkers);
+    }
+    if (toggleBtn) {
+      toggleBtn.classList.toggle('active', this.showPfMarkers);
+    }
+  }
+
+  renderPfBeacon(container, customClass = 'pf-beacon-center') {
+    // Remove qualquer beacon pré-existente no container
+    const existing = container.querySelector('.situation-pf-beacon');
+    if (existing) existing.remove();
+
+    const beacon = document.createElement('div');
+    beacon.className = `situation-pf-beacon ${customClass}`.trim();
+    beacon.setAttribute('title', 'Passo Fundo / RS — Localização Central');
+    beacon.innerHTML = `
+      <div class="pf-beacon-target">
+        <div class="pf-beacon-ring ring-1"></div>
+        <div class="pf-beacon-ring ring-2"></div>
+        <div class="pf-beacon-ring ring-3"></div>
+        <div class="pf-beacon-crosshair"></div>
+        <div class="pf-beacon-core"></div>
+      </div>
+      <div class="pf-beacon-badge">
+        <span class="pf-badge-dot"></span>
+        <span class="pf-badge-text">Passo Fundo</span>
+      </div>
+    `;
+    container.appendChild(beacon);
   }
 
   renderPanels() {
@@ -405,6 +447,8 @@ export class SituationRoomUI {
 
     // Caso 1: Nível dos Rios de Passo Fundo
     if (config.source === 'rios_pf') {
+      const existingBeacon = viewContainer.querySelector('.situation-pf-beacon');
+      if (existingBeacon) existingBeacon.remove();
       this.renderLocalRiversCard(panelId, viewContainer);
       if (spinner) spinner.classList.add('loaded');
       return;
@@ -446,6 +490,9 @@ export class SituationRoomUI {
 
     const url = this.buildUrl(config);
     iframe.src = url;
+
+    // Adiciona o indicador pulsante de Passo Fundo centralizado no mapa
+    this.renderPfBeacon(viewContainer, 'pf-beacon-center');
   }
 
   renderDirectNoaaSatelliteView(panelId, container, layerId) {
@@ -477,7 +524,22 @@ export class SituationRoomUI {
           </button>
         </div>
         <div class="direct-sat-img-wrapper">
-          <img src="${imgUrl}${cacheBuster}" alt="Satélite GOES-16 NOAA" class="direct-sat-img" id="noaa-img-${panelId}" />
+          <div class="direct-sat-image-box">
+            <img src="${imgUrl}${cacheBuster}" alt="Satélite GOES-16 NOAA" class="direct-sat-img" id="noaa-img-${panelId}" />
+            <div class="situation-pf-beacon pf-beacon-noaa" title="Passo Fundo / RS — Coordenada Calibrada NOAA SSA">
+              <div class="pf-beacon-target">
+                <div class="pf-beacon-ring ring-1"></div>
+                <div class="pf-beacon-ring ring-2"></div>
+                <div class="pf-beacon-ring ring-3"></div>
+                <div class="pf-beacon-crosshair"></div>
+                <div class="pf-beacon-core"></div>
+              </div>
+              <div class="pf-beacon-badge">
+                <span class="pf-badge-dot"></span>
+                <span class="pf-badge-text">Passo Fundo</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -526,7 +588,15 @@ export class SituationRoomUI {
     }
 
     if (source === 'radar_rs') {
-      return `https://embed.windy.com/embed.html?lat=-29.8&lon=-53.0&zoom=7&level=surface&overlay=radar&product=radar&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
+      let lat = this.lat;
+      let lon = this.lon;
+      let zoom = 7;
+      if (currentLayer === 'morro_igreja') {
+        lat = -28.12; lon = -49.48; zoom = 8;
+      } else if (currentLayer === 'cangucu') {
+        lat = -31.39; lon = -52.68; zoom = 8;
+      }
+      return `https://embed.windy.com/embed.html?lat=${lat}&lon=${lon}&zoom=${zoom}&level=surface&overlay=radar&product=radar&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
     }
 
     return 'about:blank';

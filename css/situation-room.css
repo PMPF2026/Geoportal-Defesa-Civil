@@ -447,6 +447,16 @@
   justify-content: center;
   overflow: hidden;
   background: #050811;
+  position: relative;
+}
+
+.direct-sat-image-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .direct-sat-img {
@@ -454,6 +464,175 @@
   max-height: 100%;
   object-fit: contain;
   display: block;
+}
+
+/* ==========================================================================
+   INDICADOR PULSANTE DE LOCALIZAÇÃO — PASSO FUNDO / RS
+   Destaque animado estilo radar tático em todas as telas de monitoramento
+   ========================================================================== */
+
+.situation-pf-beacon {
+  position: absolute;
+  pointer-events: none;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Posicionamento padrão centralizado para mapas interativos (Windy, Ventusky, Radares) */
+.situation-pf-beacon.pf-beacon-center {
+  top: 50%;
+  left: 50%;
+}
+
+/* Posicionamento calibrado para imagem de Satélite NOAA GOES-16 SSA */
+.situation-pf-beacon.pf-beacon-noaa {
+  top: 33.3%;
+  left: 55.4%;
+}
+
+/* Quando desativado pelo botão da barra superior */
+.situation-grid.hide-pf-markers .situation-pf-beacon {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Âncora central com anéis pulsantes */
+.pf-beacon-target {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Anéis de Pulso Radar (Ondas concêntricas em expansão) */
+.pf-beacon-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin-top: -16px;
+  margin-left: -16px;
+  border-radius: 50%;
+  border: 2px solid #ff7800;
+  box-shadow: 0 0 10px rgba(255, 120, 0, 0.8), inset 0 0 8px rgba(255, 120, 0, 0.4);
+  opacity: 0;
+  animation: pfRadarWave 2.4s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+
+.pf-beacon-ring.ring-1 {
+  animation-delay: 0s;
+}
+
+.pf-beacon-ring.ring-2 {
+  animation-delay: 0.8s;
+}
+
+.pf-beacon-ring.ring-3 {
+  animation-delay: 1.6s;
+}
+
+@keyframes pfRadarWave {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.95;
+    border-color: #ff9d42;
+  }
+  50% {
+    opacity: 0.6;
+    border-color: #ff7800;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+    border-color: rgba(255, 120, 0, 0);
+  }
+}
+
+/* Retículo Tático / Crosshairs */
+.pf-beacon-crosshair {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.65);
+  opacity: 0.8;
+}
+
+/* Núcleo Central de Alta Luminosidade */
+.pf-beacon-core {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 30%, #ff7800 80%, #d95300 100%);
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 0 10px #ff7800, 0 0 20px #ff9d42, 0 0 30px rgba(255, 120, 0, 0.9);
+  animation: pfCoreBreathe 1.8s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes pfCoreBreathe {
+  0% {
+    transform: scale(0.85);
+    box-shadow: 0 0 8px #ff7800, 0 0 14px rgba(255, 120, 0, 0.8);
+  }
+  50% {
+    transform: scale(1.25);
+    box-shadow: 0 0 14px #ff9d42, 0 0 26px #ff7800, 0 0 36px rgba(255, 120, 0, 0.9);
+  }
+  100% {
+    transform: scale(0.85);
+    box-shadow: 0 0 8px #ff7800, 0 0 14px rgba(255, 120, 0, 0.8);
+  }
+}
+
+/* Badge com o Nome da Cidade */
+.pf-beacon-badge {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(10, 16, 30, 0.9);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 120, 0, 0.7);
+  border-radius: 12px;
+  padding: 2px 8px 2px 6px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.75);
+  pointer-events: none;
+  animation: pfBadgeFloat 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes pfBadgeFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+.pf-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  animation: situationPulse 1.5s infinite;
+}
+
+.pf-badge-text {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
 }
 
 /* Painel Local de Nível dos Rios de Passo Fundo */
