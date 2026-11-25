@@ -34,9 +34,9 @@ export class SituationRoomUI {
       {
         id: 3,
         title: 'Painel 3',
-        source: 'ventusky',
+        source: 'windy',
         currentLayer: 'wind',
-        name: 'Ventusky — Vento e Rajadas'
+        name: 'Windy — Vento e Rajadas'
       },
       {
         id: 4,
@@ -50,7 +50,6 @@ export class SituationRoomUI {
     // Passo Fundo / RS Coordinates
     this.lat = -28.2628;
     this.lon = -52.4067;
-    this.showPfMarkers = true;
   }
 
   init() {
@@ -64,7 +63,6 @@ export class SituationRoomUI {
     const fsBtn = document.getElementById('btn-fs-situation-room');
     const resetGridBtn = document.getElementById('btn-reset-grid-situation-room');
     const refreshBtn = document.getElementById('btn-refresh-situation-room');
-    const toggleMarkerBtn = document.getElementById('btn-toggle-pf-marker');
 
     if (openBtn) {
       openBtn.addEventListener('click', () => this.open());
@@ -84,10 +82,6 @@ export class SituationRoomUI {
 
     if (refreshBtn) {
       refreshBtn.addEventListener('click', () => this.refreshAllPanels());
-    }
-
-    if (toggleMarkerBtn) {
-      toggleMarkerBtn.addEventListener('click', () => this.togglePfMarkers());
     }
 
     // Tecla ESC para fechar
@@ -206,42 +200,6 @@ export class SituationRoomUI {
         maxBtn.title = 'Restaurar Grade 2x2';
       }
     }
-  }
-
-  togglePfMarkers() {
-    this.showPfMarkers = !this.showPfMarkers;
-    const grid = document.getElementById('situation-grid');
-    const toggleBtn = document.getElementById('btn-toggle-pf-marker');
-    if (grid) {
-      grid.classList.toggle('hide-pf-markers', !this.showPfMarkers);
-    }
-    if (toggleBtn) {
-      toggleBtn.classList.toggle('active', this.showPfMarkers);
-    }
-  }
-
-  renderPfBeacon(container, customClass = 'pf-beacon-center') {
-    // Remove qualquer beacon pré-existente no container
-    const existing = container.querySelector('.situation-pf-beacon');
-    if (existing) existing.remove();
-
-    const beacon = document.createElement('div');
-    beacon.className = `situation-pf-beacon ${customClass}`.trim();
-    beacon.setAttribute('title', 'Passo Fundo / RS — Localização Central');
-    beacon.innerHTML = `
-      <div class="pf-beacon-target">
-        <div class="pf-beacon-ring ring-1"></div>
-        <div class="pf-beacon-ring ring-2"></div>
-        <div class="pf-beacon-ring ring-3"></div>
-        <div class="pf-beacon-crosshair"></div>
-        <div class="pf-beacon-core"></div>
-      </div>
-      <div class="pf-beacon-badge">
-        <span class="pf-badge-dot"></span>
-        <span class="pf-badge-text">Passo Fundo</span>
-      </div>
-    `;
-    container.appendChild(beacon);
   }
 
   renderPanels() {
@@ -447,8 +405,6 @@ export class SituationRoomUI {
 
     // Caso 1: Nível dos Rios de Passo Fundo
     if (config.source === 'rios_pf') {
-      const existingBeacon = viewContainer.querySelector('.situation-pf-beacon');
-      if (existingBeacon) existingBeacon.remove();
       this.renderLocalRiversCard(panelId, viewContainer);
       if (spinner) spinner.classList.add('loaded');
       return;
@@ -490,9 +446,6 @@ export class SituationRoomUI {
 
     const url = this.buildUrl(config);
     iframe.src = url;
-
-    // Adiciona o indicador pulsante de Passo Fundo centralizado no mapa
-    this.renderPfBeacon(viewContainer, 'pf-beacon-center');
   }
 
   renderDirectNoaaSatelliteView(panelId, container, layerId) {
@@ -524,22 +477,7 @@ export class SituationRoomUI {
           </button>
         </div>
         <div class="direct-sat-img-wrapper">
-          <div class="direct-sat-image-box">
-            <img src="${imgUrl}${cacheBuster}" alt="Satélite GOES-16 NOAA" class="direct-sat-img" id="noaa-img-${panelId}" />
-            <div class="situation-pf-beacon pf-beacon-noaa" title="Passo Fundo / RS — Coordenada Calibrada NOAA SSA">
-              <div class="pf-beacon-target">
-                <div class="pf-beacon-ring ring-1"></div>
-                <div class="pf-beacon-ring ring-2"></div>
-                <div class="pf-beacon-ring ring-3"></div>
-                <div class="pf-beacon-crosshair"></div>
-                <div class="pf-beacon-core"></div>
-              </div>
-              <div class="pf-beacon-badge">
-                <span class="pf-badge-dot"></span>
-                <span class="pf-badge-text">Passo Fundo</span>
-              </div>
-            </div>
-          </div>
+          <img src="${imgUrl}${cacheBuster}" alt="Satélite GOES-16 NOAA" class="direct-sat-img" id="noaa-img-${panelId}" />
         </div>
       </div>
     `;
@@ -579,11 +517,11 @@ export class SituationRoomUI {
     }
 
     if (source === 'goes16') {
-      // Satélite GOES-16 com animação interativa suave (Zero bloqueios)
+      // Satélite GOES-16 com animação interativa e marcador azul nativo fixo sobre Passo Fundo
       if (currentLayer === 'geo_interactive') {
-        return `https://www.ventusky.com/?p=${this.lat.toFixed(2)};${this.lon.toFixed(2)};6&l=satellite`;
+        return `https://embed.windy.com/embed.html?lat=${this.lat}&lon=${this.lon}&zoom=6&level=surface&overlay=satellite&product=visible&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
       }
-      // Padrão: Windy GOES-16 Infravermelho centrado no RS / Passo Fundo
+      // Padrão: Windy GOES-16 Infravermelho centrado no RS / Passo Fundo com marcador azul nativo
       return `https://embed.windy.com/embed.html?lat=${this.lat}&lon=${this.lon}&zoom=6&level=surface&overlay=satellite&product=satellite&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
     }
 
